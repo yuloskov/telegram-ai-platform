@@ -201,14 +201,47 @@ A unified platform that:
 
 ## 4. Technical Requirements
 
-### 4.1 Architecture
+### 4.1 Technology Stack
 
-- **Web Application**: Modern SPA with server-side rendering capability
-- **Background Workers**: Async job processing for scraping and publishing
-- **Database**: Relational database for structured data
-- **File Storage**: S3-compatible object storage for media
-- **Cache/Queue**: Redis for job queues and caching
-- **Containerized**: Docker Compose for local dev and deployment
+#### Frontend
+| Technology | Purpose |
+|------------|---------|
+| Next.js 14+ (Pages Router) | React framework with SSR |
+| Tailwind CSS | Utility-first styling |
+| React Query (TanStack Query) | Server state and data fetching |
+| Zustand | Client state management |
+| shadcn/ui | UI component library |
+| React Hook Form + Zod | Form handling and validation |
+
+#### Backend
+| Technology | Purpose |
+|------------|---------|
+| Node.js | Runtime environment |
+| Next.js API Routes | REST API endpoints |
+| PostgreSQL + Prisma ORM | Database and data access |
+| BullMQ | Job queue processing |
+| Redis | Queue backend and caching |
+| MinIO | S3-compatible file storage |
+
+#### Infrastructure
+
+**Requirement:** The entire application stack MUST run via Docker Compose for both local development and deployment. All services should be containerized with no external dependencies beyond Docker.
+
+| Service | Version/Image | Port | Purpose |
+|---------|---------------|------|---------|
+| PostgreSQL | 15-alpine | 5432 | Primary database |
+| Redis | 7-alpine | 6379 | Job queues and caching |
+| MinIO | latest | 9000, 9001 | Object storage for images |
+| Main App | Next.js | 3000 | User-facing application |
+| Admin App | Next.js | 3001 | Admin interface |
+| Worker | Node.js | - | Background job processor |
+
+**Docker Compose Requirements:**
+- Single `docker-compose up` command to start entire stack
+- Health checks for all services
+- Volume persistence for database and file storage
+- Environment variables via `.env` file
+- Hot-reload support for development
 
 ### 4.2 External Integrations
 
