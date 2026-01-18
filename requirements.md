@@ -340,6 +340,7 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - `/status` - Overview of channels, pending posts, scheduled posts
 - `/pending` - List posts awaiting review
 - `/channels` - List managed channels with quick stats
+- `/lang` - Switch language (English/Russian)
 - `/help` - Command reference and support links
 
 **Acceptance Criteria:**
@@ -363,6 +364,7 @@ The platform uses a single Telegram bot for all Telegram interactions:
 | Zustand | Client state management |
 | shadcn/ui | UI component library |
 | React Hook Form + Zod | Form handling and validation |
+| next-intl | Internationalization (English/Russian) |
 
 #### Backend
 | Technology | Purpose |
@@ -445,6 +447,35 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - Intuitive channel setup wizard
 - Clear feedback on all operations
 - Keyboard shortcuts for power users
+
+### 5.5 Internationalization (i18n)
+
+**Supported Languages:**
+- English (en) - default
+- Russian (ru)
+
+**Requirements:**
+- All UI text in web app must be translatable
+- Platform bot messages must support both languages
+- User can select preferred language in settings
+- Bot detects user's Telegram language on first interaction and sets default
+- Language preference stored per user
+- Date/time formatting respects locale (e.g., DD.MM.YYYY for Russian)
+
+**Scope:**
+- Web app interface (all pages, forms, buttons, messages)
+- Platform bot messages and commands
+- Email notifications (if added later)
+- Error messages and validation text
+- Bot inline buttons and menus
+
+**Acceptance Criteria:**
+- [ ] Language switcher available in web app header/settings
+- [ ] All static UI text extracted to translation files
+- [ ] Bot responds in user's preferred language
+- [ ] Bot `/lang` command allows language switching
+- [ ] Dates and numbers formatted per locale
+- [ ] New translations can be added without code changes
 
 ---
 
@@ -573,7 +604,7 @@ The platform uses a single Telegram bot for all Telegram interactions:
 
 ### Core Entities
 
-- **User**: Platform users (linked to Telegram account via telegramId)
+- **User**: Platform users (linked to Telegram account via telegramId, includes language preference)
 - **AuthCode**: Temporary authentication codes for Telegram login flow
 - **Channel**: Telegram channel (ID, username) with settings (platform bot publishes to all channels)
 - **ContentSource**: Source channels to scrape for inspiration
@@ -608,6 +639,7 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - Immediate publishing
 - Basic admin panel
 - Basic bot notifications (publish success/failure)
+- Multi-language support (English/Russian) for web app and bot
 
 ### Phase 2
 
