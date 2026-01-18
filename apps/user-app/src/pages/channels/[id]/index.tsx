@@ -10,7 +10,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { GenerateModal } from "~/components/posts/generate-modal";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostList } from "~/components/posts/post-list";
-import { Sparkles, Plus, Settings } from "lucide-react";
+import { Sparkles, Plus, Settings, Download } from "lucide-react";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -172,6 +172,11 @@ export default function ChannelDetailPage() {
               >
                 <Plus className="h-4 w-4" />
                 {t("channels.newPost")}
+              </Button>
+              <Button variant="ghost" size="icon" asChild>
+                <Link href={`/channels/${id}/sources`}>
+                  <Download className="h-5 w-5" />
+                </Link>
               </Button>
               <Button variant="ghost" size="icon" asChild>
                 <Link href={`/channels/${id}/settings`}>
