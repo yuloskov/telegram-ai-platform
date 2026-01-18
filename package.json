@@ -1,0 +1,35 @@
+{
+  "name": "telegram-ai-channels-platform",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:user": "turbo run dev --filter=user-app",
+    "dev:admin": "turbo run dev --filter=admin-app",
+    "dev:worker": "turbo run dev --filter=worker",
+    "dev:bot": "turbo run dev --filter=bot",
+    "lint": "turbo run lint",
+    "check": "turbo run check",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "turbo run db:generate --filter=@repo/database",
+    "db:push": "turbo run db:push --filter=@repo/database",
+    "db:migrate": "turbo run db:migrate --filter=@repo/database",
+    "db:studio": "pnpm --filter=@repo/database db:studio",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
+    "turbo": "^2.3.0",
+    "typescript": "^5.8.2"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

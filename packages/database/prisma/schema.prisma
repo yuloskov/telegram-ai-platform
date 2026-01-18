@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User Management
+// ============================================
+
+model User {
+  id          String   @id @default(cuid())
+  telegramId  BigInt   @unique
+  username    String?
+  displayName String?
+  language    String   @default("en")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  channels              Channel[]
+  authCodes             AuthCode[]
+  notificationPreferences NotificationPreference?
+
+  @@index([telegramId])
+}
+
+model AuthCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([code])
+  @@index([expiresAt])
+}
+
+model NotificationPreference {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishSuccess      Boolean @default(true)
+  publishFailure      Boolean @default(true)
+  scrapingComplete    Boolean @default(true)
+  scheduledReminder   Boolean @default(true)
+  autoPostReview      Boolean @default(true)
+
+  @@index([userId])
+}
+
+// ============================================
+// Channel Management
+// ============================================
+
+model Channel {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  telegramId       BigInt   @unique
+  username         String?
+  title            String
+  niche            String?
+  tone             String   @default("professional")
+  language         String   @default("en")
+  hashtags         String[] @default([])
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  posts           Post[]
+  contentSources  ContentSource[]
+  autoPostConfig  AutoPostConfig?
+
+  @@index([userId])
+  @@index([telegramId])
+}
+
+model ContentSource {
+  id               String   @id @default(cuid())
+  channelId        String
+  channel          Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  telegramUsername String
+  telegramId       BigInt?
+  isActive         Boolean  @default(true)
+  lastScrapedAt    DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  scrapedContent   ScrapedContent[]
+
+  @@unique([channelId, telegramUsername])
+  @@index([channelId])
+}
+
+model ScrapedContent {
+  id                String   @id @default(cuid())
+  sourceId          String
+  source            ContentSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  telegramMessageId BigInt
+  text              String?
+  mediaUrls         String[] @default([])
+  views             Int      @default(0)
+  forwards          Int      @default(0)
+  reactions         Int      @default(0)
+  scrapedAt         DateTime @default(now())
+  usedForGeneration Boolean  @default(false)
+
+  mediaFiles        MediaFile[]
+  imageAnalysis     ImageAnalysis?
+
+  @@unique([sourceId, telegramMessageId])
+  @@index([sourceId])
+  @@index([scrapedAt])
+}
+
+model ImageAnalysis {
+  id               String   @id @default(cuid())
+  scrapedContentId String   @unique
+  scrapedContent   ScrapedContent @relation(fields: [scrapedContentId], references: [id], onDelete: Cascade)
+  subject          String?
+  style            String?
+  colors           String[] @default([])
+  composition      String?
+  textOverlays     String?
+  mood             String?
+  generatedPrompt  String?
+  analyzedAt       DateTime @default(now())
+
+  @@index([scrapedContentId])
+}
+
+// ============================================
+// Post Management
+// ============================================
+
+enum PostStatus {
+  draft
+  scheduled
+  pending_review
+  publishing
+  published
+  failed
+}
+
+enum PostGenerationType {
+  manual
+  from_prompt
+  from_scraped
+  from_research
+  auto_research
+  auto_scraped
+}
+
+model Post {
+  id                 String             @id @default(cuid())
+  channelId          String
+  channel            Channel            @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  content            String
+  status             PostStatus         @default(draft)
+  generationType     PostGenerationType @default(manual)
+  generationPrompt   String?
+  scheduledAt        DateTime?
+  publishedAt        DateTime?
+  telegramMessageId  BigInt?
+  errorMessage       String?
+  retryCount         Int                @default(0)
+  isAutoGenerated    Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  mediaFiles         MediaFile[]
+  pendingReview      PendingReview?
+
+  @@index([channelId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model PendingReview {
+  id                String   @id @default(cuid())
+  postId            String   @unique
+  post              Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  telegramMessageId BigInt?
+  expiresAt         DateTime
+  feedback          String?
+  createdAt         DateTime @default(now())
+
+  @@index([postId])
+  @@index([expiresAt])
+}
+
+model MediaFile {
+  id               String          @id @default(cuid())
+  postId           String?
+  post             Post?           @relation(fields: [postId], references: [id], onDelete: SetNull)
+  scrapedContentId String?
+  scrapedContent   ScrapedContent? @relation(fields: [scrapedContentId], references: [id], onDelete: SetNull)
+  url              String
+  type             String
+  filename         String
+  size             Int?
+  mimeType         String?
+  isGenerated      Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+
+  @@index([postId])
+  @@index([scrapedContentId])
+}
+
+// ============================================
+// Auto-Posting Configuration
+// ============================================
+
+enum AutoPostSourceMode {
+  research
+  scraped
+  both
+}
+
+enum AutoPostPublishMode {
+  auto_publish
+  review_first
+  scheduled
+}
+
+model AutoPostConfig {
+  id              String              @id @default(cuid())
+  channelId       String              @unique
+  channel         Channel             @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  isEnabled       Boolean             @default(false)
+  sourceMode      AutoPostSourceMode  @default(research)
+  publishMode     AutoPostPublishMode @default(review_first)
+  cronSchedule    String              @default("0 9 * * *")
+  researchTopics  String[]            @default([])
+  minInterval     Int                 @default(60)
+  dailyLimit      Int                 @default(5)
+  weeklyLimit     Int                 @default(30)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  autoPostLogs    AutoPostLog[]
+
+  @@index([channelId])
+  @@index([isEnabled])
+}
+
+model AutoPostLog {
+  id             String         @id @default(cuid())
+  configId       String
+  config         AutoPostConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  sourceType     String
+  sourceRef      String?
+  postId         String?
+  status         String
+  errorMessage   String?
+  createdAt      DateTime       @default(now())
+
+  @@index([configId])
+  @@index([createdAt])
+}
+
+// ============================================
+// Admin Management
+// ============================================
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs    AuditLog[]
+
+  @@index([username])
+}
+
+model TelegramSession {
+  id            String   @id @default(cuid())
+  phone         String   @unique
+  sessionString String
+  isActive      Boolean  @default(true)
+  lastUsedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+// ============================================
+// Job & Audit Logging
+// ============================================
+
+enum JobStatus {
+  pending
+  running
+  completed
+  failed
+  retrying
+}
+
+model JobLog {
+  id         String    @id @default(cuid())
+  jobId      String    @unique
+  jobType    String
+  status     JobStatus @default(pending)
+  payload    Json?
+  result     Json?
+  error      String?
+  attempts   Int       @default(0)
+  startedAt  DateTime?
+  completedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([jobType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String
+  entityType String?
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
