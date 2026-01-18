@@ -59,62 +59,57 @@ export function PostList({
   }
 
   return (
-    <Card>
-      <div className="divide-y divide-[var(--border-secondary)]">
-        {posts.map((post) => (
-          <div
-            key={post.id}
-            className="p-4 hover:bg-[var(--bg-tertiary)] transition-colors"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-[var(--text-primary)] line-clamp-2">
-                  {post.content}
-                </p>
-                <div className="flex items-center gap-3 mt-2">
-                  <StatusBadge
-                    status={
-                      post.status as
-                        | "draft"
-                        | "scheduled"
-                        | "publishing"
-                        | "published"
-                        | "failed"
-                        | "pending_review"
-                    }
-                  />
-                  <span className="text-xs text-[var(--text-tertiary)]">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {post.status === "draft" && (
-                  <Button
-                    size="sm"
-                    onClick={() => onPublish(post.id)}
-                    disabled={isPublishing}
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    {t("posts.publish")}
-                  </Button>
-                )}
-                {post.status === "failed" && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => onPublish(post.id)}
-                    disabled={isPublishing}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    {t("common.retry")}
-                  </Button>
-                )}
+    <div className="space-y-3">
+      {posts.map((post) => (
+        <Card key={post.id} interactive className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-[var(--text-primary)] line-clamp-2">
+                {post.content}
+              </p>
+              <div className="flex items-center gap-3 mt-2">
+                <StatusBadge
+                  status={
+                    post.status as
+                      | "draft"
+                      | "scheduled"
+                      | "publishing"
+                      | "published"
+                      | "failed"
+                      | "pending_review"
+                  }
+                />
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </span>
               </div>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {post.status === "draft" && (
+                <Button
+                  size="sm"
+                  onClick={() => onPublish(post.id)}
+                  disabled={isPublishing}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {t("posts.publish")}
+                </Button>
+              )}
+              {post.status === "failed" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => onPublish(post.id)}
+                  disabled={isPublishing}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  {t("common.retry")}
+                </Button>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
-    </Card>
+        </Card>
+      ))}
+    </div>
   );
 }

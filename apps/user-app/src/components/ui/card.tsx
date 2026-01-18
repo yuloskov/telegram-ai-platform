@@ -9,7 +9,7 @@ const Card = React.forwardRef<
     ref={ref}
     className={cn(
       "rounded-[var(--radius-lg)] bg-[var(--bg-primary)] border border-[var(--border-secondary)]",
-      interactive && "cursor-pointer transition-colors hover:bg-[var(--bg-tertiary)]",
+      interactive && "cursor-pointer transition-colors hover:border-[var(--border-primary)]",
       className
     )}
     {...props}

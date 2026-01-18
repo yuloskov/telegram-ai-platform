@@ -47,53 +47,48 @@ export function ScrapedContentList({ content, isLoading }: ScrapedContentListPro
   }
 
   return (
-    <Card>
-      <div className="divide-y divide-[var(--border-secondary)]">
-        {content.map((item) => (
-          <div
-            key={item.id}
-            className="p-4 hover:bg-[var(--bg-tertiary)] transition-colors"
-          >
-            <div className="flex items-start gap-4">
-              {item.mediaUrls.length > 0 && (
-                <div className="shrink-0 w-16 h-16 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
-                  <img
-                    src={item.mediaUrls[0]}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm text-[var(--text-primary)] line-clamp-3">
-                    {item.text || <span className="italic text-[var(--text-tertiary)]">Media only</span>}
-                  </p>
-                  {item.usedForGeneration && (
-                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-primary-subtle)] text-[var(--accent-primary)]">
-                      <CheckCircle className="h-3 w-3" />
-                      {t("sources.usedBadge")}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <EngagementMetrics
-                    views={item.views}
-                    forwards={item.forwards}
-                    reactions={item.reactions}
-                  />
-                  <span className="text-xs text-[var(--text-tertiary)]">
-                    {new Date(item.scrapedAt).toLocaleDateString()}
+    <div className="space-y-3">
+      {content.map((item) => (
+        <Card key={item.id} interactive className="p-4">
+          <div className="flex items-start gap-4">
+            {item.mediaUrls.length > 0 && (
+              <div className="shrink-0 w-16 h-16 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
+                <img
+                  src={item.mediaUrls[0]}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm text-[var(--text-primary)] line-clamp-3">
+                  {item.text || <span className="italic text-[var(--text-tertiary)]">Media only</span>}
+                </p>
+                {item.usedForGeneration && (
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-primary-subtle)] text-[var(--accent-primary)]">
+                    <CheckCircle className="h-3 w-3" />
+                    {t("sources.usedBadge")}
                   </span>
-                </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <EngagementMetrics
+                  views={item.views}
+                  forwards={item.forwards}
+                  reactions={item.reactions}
+                />
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {new Date(item.scrapedAt).toLocaleDateString()}
+                </span>
               </div>
             </div>
           </div>
-        ))}
-      </div>
-    </Card>
+        </Card>
+      ))}
+    </div>
   );
 }

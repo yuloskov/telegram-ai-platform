@@ -10,7 +10,8 @@ import { Spinner } from "~/components/ui/spinner";
 import { GenerateModal } from "~/components/posts/generate-modal";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostList } from "~/components/posts/post-list";
-import { Sparkles, Plus, Settings, Download } from "lucide-react";
+import { Sparkles, Plus, Settings, Lightbulb, ArrowRight } from "lucide-react";
+import { Card } from "~/components/ui/card";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -174,11 +175,6 @@ export default function ChannelDetailPage() {
                 {t("channels.newPost")}
               </Button>
               <Button variant="ghost" size="icon" asChild>
-                <Link href={`/channels/${id}/sources`}>
-                  <Download className="h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="ghost" size="icon" asChild>
                 <Link href={`/channels/${id}/settings`}>
                   <Settings className="h-5 w-5" />
                 </Link>
@@ -192,6 +188,26 @@ export default function ChannelDetailPage() {
             @{channel.username}
           </p>
         )}
+
+        {/* Similar Channels Feature Card */}
+        <Card interactive className="mb-6">
+          <Link href={`/channels/${id}/sources`} className="block p-4">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent-primary-subtle)] flex items-center justify-center">
+                <Lightbulb className="h-5 w-5 text-[var(--accent-primary)]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-[var(--text-primary)]">
+                  {t("sources.featureCardTitle")}
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+                  {t("sources.featureCardDescription")}
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+            </div>
+          </Link>
+        </Card>
 
         <GenerateModal
           open={showGenerator}

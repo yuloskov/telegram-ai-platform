@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { Card } from "~/components/ui/card";
 import { ScrapedContentList } from "~/components/sources/scraped-content-list";
-import { Download, Trash2 } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -167,7 +167,7 @@ export default function SourceDetailPage() {
                   </>
                 ) : (
                   <>
-                    <Download className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4" />
                     {t("sources.scrapeNow")}
                   </>
                 )}
