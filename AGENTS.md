@@ -10,6 +10,7 @@ Guidelines for AI agents working on this codebase.
 1. `CLAUDE.md` - Project context and architecture
 2. `PROGRESS.md` - What's built vs what's pending
 3. `requirements.md` - Full requirements document
+4. `DESIGN.md` - UI design system and patterns
 
 ### Verify Understanding
 - This is a **Turborepo monorepo** with pnpm workspaces
@@ -17,6 +18,162 @@ Guidelines for AI agents working on this codebase.
 - Bot uses **Grammy** (not Telegraf or node-telegram-bot-api)
 - Database is **Prisma** with PostgreSQL
 - Background jobs use **BullMQ** with Redis
+
+---
+
+## CRITICAL: File Length & Decomposition
+
+**This is the #1 rule.** All code must be kept short and focused.
+
+### Hard Limits
+- **Maximum ~200 lines per file** - Never exceed this
+- **Maximum ~50 lines per function** - Extract if longer
+- **Maximum ~100 lines of JSX** - Split into components
+
+### Decomposition Strategies
+
+**For Components:**
+```typescript
+// BAD: Large monolithic component
+export function ChannelPage() {
+  // 400 lines of hooks, state, handlers, JSX...
+}
+
+// GOOD: Composed from focused pieces
+export function ChannelPage() {
+  const { channel, posts } = useChannelData();
+  return (
+    <PageLayout>
+      <ChannelHeader channel={channel} />
+      <PostList posts={posts} />
+      <GeneratorModal />
+    </PageLayout>
+  );
+}
+```
+
+**For Functions:**
+```typescript
+// BAD: One function doing everything
+async function handlePublish(postId: string) {
+  // 80 lines of validation, API calls, state updates...
+}
+
+// GOOD: Split into focused helpers
+async function handlePublish(postId: string) {
+  const post = await validatePost(postId);
+  await submitToQueue(post);
+  await notifyUser(post);
+}
+```
+
+**For API Routes:**
+```typescript
+// BAD: Everything in one handler
+export default async function handler(req, res) {
+  // 150 lines handling GET, POST, PUT, DELETE...
+}
+
+// GOOD: Separate handlers, composed at export
+async function handleGet(req, res) { /* 30 lines */ }
+async function handlePost(req, res) { /* 40 lines */ }
+
+export default function handler(req, res) {
+  if (req.method === 'GET') return handleGet(req, res);
+  if (req.method === 'POST') return handlePost(req, res);
+}
+```
+
+### When to Split
+- File approaching 150 lines → Start thinking about splitting
+- Function longer than 30 lines → Extract helpers
+- Component has multiple responsibilities → Split into sub-components
+- Repeated code in 2+ places → Extract to shared utility
+
+---
+
+## Internationalization (i18n)
+
+**ALL user-facing text must be translated.** Never hardcode strings.
+
+### Web App i18n
+
+**Pattern:** Nested messages with React Context
+
+```typescript
+// 1. Add translation in messages.ts (BOTH languages!)
+// apps/user-app/src/i18n/messages.ts
+export const messages = {
+  en: {
+    channels: {
+      title: "Channels",
+      addChannel: {
+        title: "Add Channel",
+        description: "Enter your channel username",
+      },
+    },
+  },
+  ru: {
+    channels: {
+      title: "Каналы",
+      addChannel: {
+        title: "Добавить канал",
+        description: "Введите username канала",
+      },
+    },
+  },
+} as const;
+
+// 2. Use in component with useI18n hook
+import { useI18n } from "~/i18n";
+
+export function ChannelHeader() {
+  const { t } = useI18n();
+
+  return (
+    <div>
+      <h1>{t("channels.title")}</h1>
+      <p>{t("channels.addChannel.description")}</p>
+    </div>
+  );
+}
+
+// 3. With parameters
+// messages.ts: postCount: "You have {count} posts"
+<span>{t("posts.postCount", { count: 5 })}</span>
+```
+
+### Bot i18n
+
+**Pattern:** Flat messages with `t()` function
+
+```typescript
+// packages/telegram/src/i18n/index.ts
+const messages = {
+  en: {
+    welcome: "Welcome to the platform!",
+    channelAdded: "Channel {name} has been added",
+  },
+  ru: {
+    welcome: "Добро пожаловать на платформу!",
+    channelAdded: "Канал {name} добавлен",
+  },
+} as const;
+
+// Usage in bot commands
+import { t, type Language } from "../../i18n/index";
+
+export async function handleStart(ctx: BotContext): Promise<void> {
+  const lang = (ctx.session.language ?? "en") as Language;
+  await ctx.reply(t(lang, "welcome"));
+}
+```
+
+### Translation Rules
+1. **Always add both languages** - Never leave a translation incomplete
+2. **Use parameters for dynamic values** - `{count}`, `{name}`, etc.
+3. **Group related translations** - Use nesting for organization
+4. **Keep keys semantic** - `channels.addChannel.title` not `button1`
 
 ---
 
@@ -128,6 +285,9 @@ import { t } from "@repo/telegram/i18n";
 
 // From ai package
 import { generateFromPrompt } from "@repo/ai";
+
+// From i18n (web app)
+import { useI18n } from "~/i18n";
 ```
 
 ---
@@ -147,13 +307,14 @@ const user = await prisma.user.findUnique({
 });
 ```
 
-### 2. Module Extensions
+### 2. Hardcoded Strings
 ```typescript
-// WRONG - Don't use .js extensions in imports
-import { foo } from "./bar.js";
+// WRONG - Not translatable
+<button>Save Changes</button>
 
-// CORRECT - No extensions
-import { foo } from "./bar";
+// CORRECT - Uses translation
+const { t } = useI18n();
+<button>{t("common.saveChanges")}</button>
 ```
 
 ### 3. API Response Format
@@ -165,6 +326,18 @@ res.json({ error: "Something failed" });
 // CORRECT - Always use ApiResponse format
 res.json({ success: true, data: result });
 res.json({ success: false, error: "Something failed" });
+```
+
+### 4. Large Files
+```typescript
+// WRONG - Single file with everything
+// components/channel-page.tsx (500 lines)
+
+// CORRECT - Split into focused components
+// components/channels/channel-page.tsx (100 lines)
+// components/channels/channel-header.tsx (50 lines)
+// components/channels/channel-stats.tsx (60 lines)
+// components/posts/post-list.tsx (80 lines)
 ```
 
 ---
@@ -195,28 +368,41 @@ res.json({ success: false, error: "Something failed" });
 ## Adding New Features
 
 ### New API Endpoint
-1. Create file: `apps/user-app/src/pages/api/your-feature/index.ts`
-2. Add types to `packages/shared/src/types/`
-3. Use `withAuth` wrapper
-4. Follow ApiResponse format
+1. Create file in `apps/user-app/src/pages/api/`
+2. Use `withAuth` wrapper
+3. Follow ApiResponse format
+4. **Keep under 200 lines** - split handlers if needed
 
 ### New Bot Command
-1. Create handler: `packages/telegram/src/bot/commands/yourcommand.ts`
-2. Add translations: `packages/telegram/src/i18n/en.ts` and `ru.ts`
-3. Export from: `packages/telegram/src/bot/commands/index.ts`
-4. Register in: `packages/telegram/src/bot/setup.ts`
-5. Add to menu in `setCommands()`
+1. Create handler in `packages/telegram/src/bot/commands/`
+2. **Add translations to both en and ru** in `packages/telegram/src/i18n/index.ts`
+3. Export from `commands/index.ts`
+4. Register in `setup.ts`
+5. Add to `setCommands()` for menu
 
 ### New Worker Job
-1. Add job type: `packages/shared/src/queues/types.ts`
-2. Create handler: `apps/worker/src/jobs/yourjob.ts`
-3. Register in: `apps/worker/src/index.ts`
+1. Define job type in `packages/shared/src/queues/types.ts`
+2. Create handler in `apps/worker/src/jobs/`
+3. Register in `apps/worker/src/index.ts`
 4. Enqueue from API or another job
 
 ### New Database Table
 1. Update schema: `packages/database/prisma/schema.prisma`
 2. Run: `pnpm db:push` (dev) or `pnpm db:migrate` (production)
 3. Regenerate client: `pnpm db:generate`
+
+### New UI Component
+1. Determine location:
+   - Reusable primitive → `src/components/ui/`
+   - Feature-specific → `src/components/{feature}/`
+2. **Keep under 200 lines**
+3. **Add translations** for all user-facing text
+4. Export from feature's `index.ts`
+
+### Adding Translations
+1. Add to `apps/user-app/src/i18n/messages.ts` (both en and ru)
+2. Use `const { t } = useI18n()` in component
+3. Access via dot notation: `t("section.key")`
 
 ---
 
@@ -228,8 +414,9 @@ res.json({ success: false, error: "Something failed" });
 | React pages | `apps/user-app/src/pages/` |
 | React components | `apps/user-app/src/components/` |
 | React hooks | `apps/user-app/src/hooks/` |
+| Web translations | `apps/user-app/src/i18n/messages.ts` |
 | Bot commands | `packages/telegram/src/bot/commands/` |
-| Bot translations | `packages/telegram/src/i18n/` |
+| Bot translations | `packages/telegram/src/i18n/index.ts` |
 | Worker jobs | `apps/worker/src/jobs/` |
 | Shared types | `packages/shared/src/types/` |
 | Queue definitions | `packages/shared/src/queues/` |
@@ -275,7 +462,8 @@ pnpm db:studio
 3. **What package should this go in?** See architecture in `CLAUDE.md`
 4. **Does this need authentication?** Use `withAuth` wrapper
 5. **Does this need background processing?** Use BullMQ job
-6. **Does this need translations?** Add to both en.ts and ru.ts
+6. **Does this need translations?** Add to both en and ru
+7. **Is the file getting too long?** Split it before it exceeds 200 lines
 
 ---
 

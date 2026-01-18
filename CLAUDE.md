@@ -25,11 +25,12 @@ telegram-ai-channels-platform/
 ├── apps/
 │   ├── user-app/           # Next.js 15 (Pages Router) - User interface
 │   ├── admin-app/          # Next.js 15 - Admin interface (minimal)
+│   ├── bot/                # Telegram bot standalone app
 │   └── worker/             # Node.js BullMQ worker for background jobs
 ├── packages/
 │   ├── database/           # Prisma ORM, schema, client
 │   ├── shared/             # Shared types, utilities, queue definitions
-│   ├── telegram/           # Grammy bot, MTProto client (future)
+│   ├── telegram/           # Grammy bot, Telegram utilities
 │   └── ai/                 # OpenRouter integration
 ├── docker/
 │   └── docker-compose.yml  # PostgreSQL, Redis, MinIO
@@ -47,6 +48,158 @@ telegram-ai-channels-platform/
 | Bot | Grammy (Telegram Bot API) |
 | AI | OpenRouter (OpenAI-compatible API) |
 | Storage | MinIO (S3-compatible) |
+
+---
+
+## Code Conventions
+
+### CRITICAL: File Length & Decomposition
+
+**This is the most important convention.** Keep all files short and focused:
+
+- **Maximum ~200 lines per file** - This is a hard limit
+- **Split large files immediately** - Don't wait until they're too big
+- **Extract functions** - If a function is getting long, split it into smaller functions
+- **Extract components** - Pages should compose components, not contain large JSX blocks
+- **One responsibility per file** - If a file does multiple things, split it
+
+**Why this matters:**
+- Easier to understand and maintain
+- Better for AI assistants to work with
+- Clearer git diffs
+- Encourages reusability
+
+**How to decompose:**
+```typescript
+// BAD: One large component with everything
+export function ChannelPage() {
+  // 300 lines of JSX, hooks, handlers...
+}
+
+// GOOD: Composed from smaller pieces
+export function ChannelPage() {
+  return (
+    <PageLayout>
+      <ChannelHeader channel={channel} />
+      <PostList posts={posts} onPublish={handlePublish} />
+      <GeneratorModal isOpen={isOpen} onGenerate={handleGenerate} />
+    </PageLayout>
+  );
+}
+```
+
+### TypeScript
+- Strict mode enabled
+- Use `type` imports: `import type { Foo } from './foo'`
+- Prefer interfaces for object shapes
+- Explicit return types for public functions
+
+### Prisma
+- Access via `import { prisma } from '@repo/database'`
+- Use BigInt for Telegram IDs (`telegramId: BigInt(ctx.from.id)`)
+
+### API Routes
+- Use `withAuth` wrapper for protected routes
+- Return `{ success: true, data: ... }` or `{ success: false, error: ... }`
+
+### React
+- Use React Query for server state
+- Use Zustand for client state
+- Forms with react-hook-form + zod validation
+
+### Bot
+- Use Grammy context typing: `BotContext`
+- Access session via `ctx.session.language`
+- Translations via `t(lang, 'key')`
+
+---
+
+## Internationalization (i18n)
+
+The platform supports English (en) and Russian (ru) with full i18n coverage.
+
+### Web App i18n
+
+**Location:** `apps/user-app/src/i18n/`
+
+**Pattern:** Nested message structure with React Context + hooks
+
+```typescript
+// messages.ts - Nested message definitions
+export const messages = {
+  en: {
+    common: { loading: "Loading...", error: "Error" },
+    auth: { pageTitle: "Login", loginTitle: "Sign in" },
+    channels: { title: "Channels", addChannel: { title: "Add Channel" } },
+  },
+  ru: { /* Russian translations */ },
+} as const;
+
+// context.tsx - Provider and hook
+export function I18nProvider({ children }) {
+  const router = useRouter();
+  const language = (router.locale || "en") as Language;
+
+  const t = (key: TranslationKey, params?: Record<string, string | number>) => {
+    // Returns translated string with parameter interpolation
+  };
+
+  return <I18nContext.Provider value={{ language, t, setLanguage }}>{children}</I18nContext.Provider>;
+}
+
+// Usage in components
+const { t } = useI18n();
+<h1>{t("channels.title")}</h1>
+<p>{t("posts.noPostsDescription")}</p>
+```
+
+**Key files:**
+- `apps/user-app/src/i18n/messages.ts` - All translations
+- `apps/user-app/src/i18n/context.tsx` - Provider and `useI18n` hook
+- `apps/user-app/src/i18n/index.ts` - Public exports
+
+**Next.js i18n config in `next.config.js`:**
+```javascript
+i18n: {
+  locales: ["en", "ru"],
+  defaultLocale: "en",
+},
+```
+
+### Bot i18n
+
+**Location:** `packages/telegram/src/i18n/`
+
+**Pattern:** Flat message object with `t()` function
+
+```typescript
+// packages/telegram/src/i18n/index.ts
+const messages = {
+  en: {
+    welcome: "Welcome!",
+    scrapingComplete: "Scraping complete: {count} posts found",
+    reviewButtons: { approve: "Approve", edit: "Edit", reject: "Reject" },
+  },
+  ru: { /* Russian translations */ },
+} as const;
+
+export function t(lang: Language, key: MessageKey, params?: Record<string, string | number>): string {
+  const message = messages[lang]?.[key] ?? messages.en[key];
+  // Interpolate params: {count} -> value
+  return interpolated;
+}
+
+// Usage in bot handlers
+const lang = (ctx.session.language ?? "en") as Language;
+await ctx.reply(t(lang, "welcome"));
+await ctx.reply(t(lang, "scrapingComplete", { count: 5 }));
+```
+
+### Adding New Translations
+
+1. **Web app:** Add to both `en` and `ru` objects in `messages.ts`
+2. **Bot:** Add to both language objects in `packages/telegram/src/i18n/index.ts`
+3. **Always add both languages** - Don't leave translations incomplete
 
 ---
 
@@ -72,10 +225,18 @@ telegram-ai-channels-platform/
 - `src/pages/api/channels/` - Channel CRUD
 - `src/pages/api/posts/` - Post CRUD
 - `src/pages/api/generate/` - AI generation
+- `src/pages/api/user/` - User settings (language)
 
 ### Worker Jobs
 - `apps/worker/src/jobs/publish.ts` - Publishing to Telegram
 - `apps/worker/src/jobs/notify.ts` - Bot notifications
+
+### Web App Components
+- `src/components/ui/` - Reusable UI primitives (Card, Button, Input, etc.)
+- `src/components/layout/` - Page layouts, headers
+- `src/components/channels/` - Channel-specific components
+- `src/components/posts/` - Post-specific components
+- `src/components/auth/` - Authentication components
 
 ---
 
@@ -176,36 +337,61 @@ NEXT_PUBLIC_USER_APP_URL=http://localhost:3000
 
 ---
 
-## Code Conventions
+## Established Patterns
 
-### File Length
-- Keep files under ~200 lines
-- If a file exceeds this limit, split it into smaller components/functions
-- Extract reusable components to `components/` directory
-- Pages should primarily compose components, not contain large JSX blocks
+### Component Decomposition Pattern
 
-### TypeScript
-- Strict mode enabled
-- Use `type` imports: `import type { Foo } from './foo'`
-- Prefer interfaces for object shapes
+```
+apps/user-app/src/components/
+├── ui/                 # Primitives (Card, Button, Input, Modal, Spinner)
+├── layout/             # PageLayout, Header, PageHeader, Section
+├── telegram/           # MessageBubble, ChannelAvatar
+├── auth/               # LoginCard, AuthCodeDisplay
+├── channels/           # ChannelCard, ChannelList, ChannelForm
+└── posts/              # PostList, PostEditor, PostPreview
+```
 
-### Prisma
-- Access via `import { prisma } from '@repo/database'`
-- Use BigInt for Telegram IDs (`telegramId: BigInt(ctx.from.id)`)
+### API Response Pattern
 
-### API Routes
-- Use `withAuth` wrapper for protected routes
-- Return `{ success: true, data: ... }` or `{ success: false, error: ... }`
+```typescript
+// Always return this format
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
 
-### React
-- Use React Query for server state
-- Use Zustand for client state
-- Forms with react-hook-form + zod validation
+res.status(200).json({ success: true, data: result });
+res.status(400).json({ success: false, error: "Validation failed" });
+```
 
-### Bot
-- Use Grammy context typing: `BotContext`
-- Access session via `ctx.session.language`
-- Translations via `t(lang, 'key')`
+### Zod Validation Pattern
+
+```typescript
+const CreateChannelSchema = z.object({
+  telegramId: z.union([z.string(), z.number()]).transform((val) => BigInt(val)),
+  title: z.string().min(1),
+  tone: z.enum(["professional", "casual", "humorous"]),
+});
+
+const parseResult = CreateChannelSchema.safeParse(req.body);
+if (!parseResult.success) {
+  return res.status(400).json({ success: false, error: parseResult.error.errors[0].message });
+}
+```
+
+### React Query + Zustand Pattern
+
+```typescript
+// Server state (React Query)
+const { data: channels, isLoading } = useQuery({
+  queryKey: ["channels"],
+  queryFn: fetchChannels,
+});
+
+// Client state (Zustand)
+const { user, setAuth, logout } = useAuthStore();
+```
 
 ---
 
@@ -214,16 +400,14 @@ NEXT_PUBLIC_USER_APP_URL=http://localhost:3000
 See `PROGRESS.md` for detailed implementation status.
 
 ### Not Yet Implemented
-- Web app i18n (only bot has translations)
 - MTProto scraping
 - Scheduled publishing
 - Media upload
 - Admin panel
-- Channel style analysis (new feature in requirements)
+- Channel style analysis
 
 ### Technical Debt
 - No Dockerfiles for apps yet (dev only)
-- Basic error handling in some places
 - No tests
 
 ---
@@ -260,11 +444,23 @@ See `PROGRESS.md` for detailed implementation status.
 2. Export from `commands/index.ts`
 3. Register in `setup.ts`
 4. Add to `setCommands()` for menu
+5. **Add translations to both en and ru**
 
 ### New Worker Job
 1. Define job type in `packages/shared/src/queues/`
 2. Create handler in `apps/worker/src/jobs/`
 3. Register processor in `apps/worker/src/index.ts`
+
+### New UI Component
+1. If reusable primitive → `src/components/ui/`
+2. If feature-specific → `src/components/{feature}/`
+3. **Keep under 200 lines**
+4. Extract sub-components as needed
+
+### Adding Translations
+1. Add key to `apps/user-app/src/i18n/messages.ts` (both en and ru)
+2. Use `const { t } = useI18n()` in component
+3. Access via dot notation: `t("section.subsection.key")`
 
 ---
 
@@ -273,3 +469,4 @@ See `PROGRESS.md` for detailed implementation status.
 - `requirements.md` - Full requirements document
 - `PROGRESS.md` - Implementation status tracker
 - `AGENTS.md` - Guidelines for AI agents
+- `DESIGN.md` - Design system and UI guidelines

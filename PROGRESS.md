@@ -20,6 +20,7 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] `packages/telegram/` - Telegram Bot API integration
 - [x] `packages/ai/` - OpenRouter AI integration
 - [x] Moved apps to `apps/` directory structure
+- [x] `apps/bot/` - Standalone bot app
 
 ### Database Schema (Prisma)
 - [x] User (id, telegramId, username, displayName, language, createdAt)
@@ -29,6 +30,8 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] ScrapedContent (id, sourceId, telegramMessageId, text, mediaUrls, views, forwards, createdAt)
 - [x] Post (id, channelId, content, status, scheduledAt, publishedAt, telegramMessageId)
 - [x] MediaFile (id, postId?, scrapedContentId?, url, type, filename)
+- [x] NotificationPreference (id, userId, settings)
+- [x] AutoPostConfig (id, channelId, settings)
 - [ ] TelegramSession (for MTProto scraping)
 - [ ] AdminUser
 - [ ] JobLog
@@ -58,6 +61,7 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Grammy bot instance (`packages/telegram/src/bot/index.ts`)
 - [x] Bot initialization and singleton pattern
 - [x] Session middleware (language storage)
+- [x] Standalone bot app (`apps/bot/`)
 
 ### Bot Commands
 - [x] `/start` - Welcome message
@@ -107,36 +111,44 @@ This file tracks what has been built compared to the requirements in `requiremen
 
 ---
 
-## Phase 6: Internationalization (i18n) [PARTIAL]
+## Phase 6: Internationalization (i18n) [COMPLETED]
 
 ### Bot i18n [COMPLETED]
 - [x] Translation files (`packages/telegram/src/i18n/`)
 - [x] English translations
 - [x] Russian translations
-- [x] `t()` translation function
+- [x] `t()` translation function with parameter interpolation
 - [x] Language-aware bot commands
+- [x] Structured access for button labels
 
-### Web App i18n [NOT STARTED]
-- [ ] next-intl configuration
-- [ ] English translations (`messages/en.json`)
-- [ ] Russian translations (`messages/ru.json`)
-- [ ] Language switcher in UI
-- [ ] Date/time locale formatting
+### Web App i18n [COMPLETED]
+- [x] Next.js i18n configuration (locales: en, ru)
+- [x] I18nProvider with React Context
+- [x] `useI18n` hook for components
+- [x] Nested message structure (`messages.ts`)
+- [x] English translations (all UI text)
+- [x] Russian translations (all UI text)
+- [x] Language switcher in UI (via user menu)
+- [x] Language persistence via API (`/api/user/language`)
+- [x] Parameter interpolation support
 
 ---
 
-## Phase 7: UI Foundation [PARTIAL]
+## Phase 7: UI Foundation [COMPLETED]
 
-- [x] Tailwind CSS v4 configured
-- [x] Basic page layouts
+- [x] Tailwind CSS v4 configured with CSS variables
+- [x] Telegram-inspired design system (DESIGN.md)
+- [x] CSS variables for colors, spacing, radius, shadows
+- [x] Light mode fully styled
+- [x] Dark mode support (CSS variables defined)
+- [x] Page layout components
 - [x] Form components with react-hook-form
-
-### Missing
-- [ ] Telegram-styled theme (CSS variables)
-- [ ] Dark mode support
-- [ ] shadcn/ui components
-- [ ] Message bubble preview component
-- [ ] Channel card component
+- [x] UI primitives (Card, Button, Input, Modal, Spinner)
+- [x] Message bubble preview component
+- [x] Channel avatar component
+- [x] Status badges (draft, published, failed, etc.)
+- [x] Empty state components
+- [x] Loading states (spinner, skeleton)
 
 ---
 
@@ -178,6 +190,7 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] BullMQ queue setup
 - [x] Redis connection
 - [x] Queue definitions (`packages/shared/src/queues/`)
+- [x] Default job options (retry, backoff, cleanup)
 
 ### Job Handlers
 - [x] Publishing job handler
@@ -200,19 +213,20 @@ This file tracks what has been built compared to the requirements in `requiremen
 
 - [x] OpenRouter client (`packages/ai/src/client.ts`)
 - [x] Generation functions (`packages/ai/src/generate.ts`)
-- [x] Prompt templates
+- [x] Prompt templates (bilingual: en/ru)
 - [x] Generate from prompt API (`/api/generate/prompt`)
-- [x] Generation UI page (`/channels/[id]/generate`)
+- [x] Generation UI (modal in channel page)
 
 ### Features
 - [x] Respects channel tone/language settings
 - [x] Returns generated content
+- [x] System prompts with channel context
+- [x] Image prompt suggestions
 
 ### Missing
 - [ ] Generate from scraped content
 - [ ] Generate from web research
 - [ ] Channel post analysis for style matching (3.3.5)
-- [ ] Image prompt suggestions
 
 ---
 
@@ -225,16 +239,16 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Update post (`PUT /api/posts/[id]`)
 - [x] Delete post (`DELETE /api/posts/[id]`)
 
-### Pages
-- [x] Posts list page (`/channels/[id]/posts`)
-- [x] Create post page (`/channels/[id]/posts/new`)
-- [x] Edit post page (`/channels/[id]/posts/[postId]`)
+### UI Components
+- [x] Post list component
+- [x] Post editor component
+- [x] Post preview (message bubble style)
+- [x] Post status badges
 
 ### Features
 - [x] Draft saving
 - [x] Post status tracking (draft, scheduled, publishing, published, failed)
 - [ ] Rich text editor with Telegram formatting
-- [ ] Post preview (Telegram message style)
 - [ ] Image upload
 
 ---
@@ -245,6 +259,7 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Publishing job in worker
 - [x] Status updates (publishing → published/failed)
 - [x] Telegram message ID tracking
+- [x] User notifications on publish success/failure
 
 ### Missing
 - [ ] Schedule API (`/api/posts/[id]/schedule`)
@@ -366,9 +381,9 @@ This file tracks what has been built compared to the requirements in `requiremen
 | Requirement | Status |
 |------------|--------|
 | Bot messages | [x] |
-| Web app UI | [ ] |
-| Language switcher | [x] Bot only |
-| Date formatting | [ ] |
+| Web app UI | [x] |
+| Language switcher | [x] Both bot & web |
+| Date formatting | [~] Basic |
 
 ---
 
@@ -379,6 +394,7 @@ telegram-ai-channels-platform/
 ├── apps/
 │   ├── user-app/           # [x] User-facing Next.js app
 │   ├── admin-app/          # [~] Basic setup only
+│   ├── bot/                # [x] Standalone Telegram bot
 │   └── worker/             # [x] BullMQ job processor
 ├── packages/
 │   ├── database/           # [x] Prisma schema and client
@@ -387,6 +403,10 @@ telegram-ai-channels-platform/
 │   └── ai/                 # [x] OpenRouter integration
 ├── docker/
 │   └── docker-compose.yml  # [x] Development services
+├── CLAUDE.md               # [x] AI assistant context
+├── AGENTS.md               # [x] AI agent guidelines
+├── DESIGN.md               # [x] Design system
+├── PROGRESS.md             # [x] This file
 └── requirements.md         # [x] Full requirements doc
 ```
 
@@ -398,6 +418,5 @@ telegram-ai-channels-platform/
 2. **MTProto Scraping** - Implement channel scraping
 3. **Scheduled Publishing** - Add scheduling UI and cron job
 4. **Media Upload** - Enable image upload for posts
-5. **Web App i18n** - Add language support to UI
-6. **Admin Panel** - User and session management
-7. **Channel Style Analysis** - Implement 3.3.5 feature
+5. **Admin Panel** - User and session management
+6. **Channel Style Analysis** - Implement 3.3.5 feature
