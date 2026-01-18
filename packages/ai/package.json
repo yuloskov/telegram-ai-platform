@@ -15,10 +15,11 @@
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
-    "openai": "^4.77.0",
-    "@repo/shared": "workspace:*"
+    "@repo/shared": "workspace:*",
+    "openai": "^4.77.0"
   },
   "devDependencies": {
+    "@types/node": "^20.14.10",
     "typescript": "^5.8.2"
   }
 }

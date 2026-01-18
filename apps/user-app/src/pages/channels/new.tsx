@@ -1,10 +1,22 @@
 import { useState } from "react";
-import Head from "next/head";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMutation } from "@tanstack/react-query";
 import { useRequireAuth } from "~/hooks/useAuth";
 import { env } from "~/env";
+import { Header } from "~/components/layout/header";
+import { PageLayout, PageSection } from "~/components/layout/page-layout";
+import { Card } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Spinner } from "~/components/ui/spinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Check, AlertCircle, AlertTriangle, ExternalLink } from "lucide-react";
 
 interface VerifyResponse {
   valid: boolean;
@@ -81,73 +93,67 @@ export default function NewChannelPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <>
-      <Head>
-        <title>Add Channel - AI Telegram Channels</title>
-      </Head>
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
-            <Link href="/channels" className="text-gray-600 hover:text-gray-900">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </Link>
-            <h1 className="text-xl font-semibold text-gray-900">Add Channel</h1>
-          </div>
-        </header>
+    <PageLayout title="Add Channel">
+      <Header title="Add Channel" backHref="/channels" />
 
-        <main className="max-w-3xl mx-auto px-4 py-8">
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center mb-8">
+      <div className="max-w-xl mx-auto">
+        {/* Progress Steps */}
+        <PageSection className="mt-6">
+          <div className="flex items-center justify-center">
             <div className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
-                1
-              </div>
-              <div className={`w-16 h-1 ${step >= 2 ? "bg-blue-500" : "bg-gray-200"}`} />
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
-                2
-              </div>
+              <StepIndicator number={1} active={step >= 1} completed={step > 1} />
+              <div
+                className={`w-16 h-0.5 ${
+                  step >= 2 ? "bg-[var(--accent-primary)]" : "bg-[var(--border-primary)]"
+                }`}
+              />
+              <StepIndicator number={2} active={step >= 2} />
             </div>
           </div>
+        </PageSection>
 
-          {step === 1 && (
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        {step === 1 && (
+          <PageSection className="mt-6">
+            <Card className="p-6">
+              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
                 Step 1: Connect your channel
               </h2>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h3 className="font-medium text-blue-900 mb-2">Before you start:</h3>
-                <ol className="text-sm text-blue-800 space-y-2">
+              {/* Instructions */}
+              <div className="bg-[var(--accent-tertiary)] rounded-[var(--radius-md)] p-4 mb-6">
+                <h3 className="font-medium text-[var(--accent-primary)] mb-2 text-sm">
+                  Before you start:
+                </h3>
+                <ol className="text-sm text-[var(--text-secondary)] space-y-2">
                   <li className="flex items-start gap-2">
-                    <span className="font-medium">1.</span>
+                    <span className="font-medium text-[var(--accent-primary)]">1.</span>
                     <span>
                       Add{" "}
                       <a
                         href={`https://t.me/${botUsername}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium underline"
+                        className="font-medium text-[var(--text-link)] hover:underline inline-flex items-center gap-1"
                       >
                         @{botUsername}
+                        <ExternalLink className="h-3 w-3" />
                       </a>{" "}
                       as an administrator to your channel
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="font-medium">2.</span>
+                    <span className="font-medium text-[var(--accent-primary)]">2.</span>
                     <span>Make sure the bot has permission to post messages</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="font-medium">3.</span>
+                    <span className="font-medium text-[var(--accent-primary)]">3.</span>
                     <span>Enter your channel username or ID below</span>
                   </li>
                 </ol>
@@ -155,154 +161,200 @@ export default function NewChannelPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                     Channel Username or ID
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     value={channelId}
                     onChange={(e) => setChannelId(e.target.value)}
                     placeholder="@channelname or -1001234567890"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                     You can find your channel ID by forwarding a message to @userinfobot
                   </p>
                 </div>
 
                 {verifyResult && !verifyResult.valid && (
-                  <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-                    {verifyResult.error || "Could not verify channel"}
+                  <div className="flex items-start gap-3 bg-[#f8d7da] text-[#721c24] p-4 rounded-[var(--radius-md)]">
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <p className="text-sm">
+                      {verifyResult.error || "Could not verify channel"}
+                    </p>
                   </div>
                 )}
 
                 {verifyResult && verifyResult.valid && !verifyResult.canPost && (
-                  <div className="bg-yellow-50 text-yellow-700 p-4 rounded-lg">
-                    Bot found in channel but doesn't have posting permissions. Please update the bot's admin rights.
+                  <div className="flex items-start gap-3 bg-[#fff3cd] text-[#856404] p-4 rounded-[var(--radius-md)]">
+                    <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <p className="text-sm">
+                      Bot found in channel but doesn't have posting permissions. Please
+                      update the bot's admin rights.
+                    </p>
                   </div>
                 )}
 
-                <button
+                <Button
                   onClick={() => verifyMutation.mutate(channelId)}
                   disabled={!channelId || verifyMutation.isPending}
-                  className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  className="w-full"
                 >
-                  {verifyMutation.isPending ? "Verifying..." : "Verify Channel"}
-                </button>
+                  {verifyMutation.isPending ? (
+                    <>
+                      <Spinner size="sm" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Verify Channel"
+                  )}
+                </Button>
               </div>
-            </div>
-          )}
+            </Card>
+          </PageSection>
+        )}
 
-          {step === 2 && verifyResult?.channelInfo && (
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        {step === 2 && verifyResult?.channelInfo && (
+          <PageSection className="mt-6">
+            <Card className="p-6">
+              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
                 Step 2: Configure your channel
               </h2>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-green-900">
-                      {verifyResult.channelInfo.title}
+              {/* Success banner */}
+              <div className="flex items-center gap-3 bg-[#d4edda] rounded-[var(--radius-md)] p-4 mb-6">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#155724]">
+                  <Check className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-medium text-[#155724]">
+                    {verifyResult.channelInfo.title}
+                  </p>
+                  {verifyResult.channelInfo.username && (
+                    <p className="text-sm text-[#155724]/80">
+                      @{verifyResult.channelInfo.username}
                     </p>
-                    {verifyResult.channelInfo.username && (
-                      <p className="text-sm text-green-700">
-                        @{verifyResult.channelInfo.username}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                     Niche/Topic (optional)
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     value={settings.niche}
                     onChange={(e) => setSettings({ ...settings, niche: e.target.value })}
                     placeholder="e.g., tech news, crypto, lifestyle"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                     Tone
                   </label>
-                  <select
+                  <Select
                     value={settings.tone}
-                    onChange={(e) => setSettings({ ...settings, tone: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onValueChange={(value) => setSettings({ ...settings, tone: value })}
                   >
-                    <option value="professional">Professional</option>
-                    <option value="casual">Casual</option>
-                    <option value="humorous">Humorous</option>
-                    <option value="informative">Informative</option>
-                    <option value="inspirational">Inspirational</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="casual">Casual</SelectItem>
+                      <SelectItem value="humorous">Humorous</SelectItem>
+                      <SelectItem value="informative">Informative</SelectItem>
+                      <SelectItem value="inspirational">Inspirational</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                     Language
                   </label>
-                  <select
+                  <Select
                     value={settings.language}
-                    onChange={(e) => setSettings({ ...settings, language: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onValueChange={(value) => setSettings({ ...settings, language: value })}
                   >
-                    <option value="en">English</option>
-                    <option value="ru">Russian</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="ru">Russian</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
                     Default Hashtags (comma-separated, optional)
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     value={settings.hashtags}
                     onChange={(e) => setSettings({ ...settings, hashtags: e.target.value })}
                     placeholder="#tech, #news, #daily"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
                 {createMutation.isError && (
-                  <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-                    {createMutation.error instanceof Error
-                      ? createMutation.error.message
-                      : "Failed to create channel"}
+                  <div className="flex items-start gap-3 bg-[#f8d7da] text-[#721c24] p-4 rounded-[var(--radius-md)]">
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                    <p className="text-sm">
+                      {createMutation.error instanceof Error
+                        ? createMutation.error.message
+                        : "Failed to create channel"}
+                    </p>
                   </div>
                 )}
 
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="flex-1 border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
+                <div className="flex gap-3 pt-2">
+                  <Button variant="secondary" onClick={() => setStep(1)} className="flex-1">
                     Back
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => createMutation.mutate()}
                     disabled={createMutation.isPending}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                    className="flex-1"
                   >
-                    {createMutation.isPending ? "Creating..." : "Add Channel"}
-                  </button>
+                    {createMutation.isPending ? (
+                      <>
+                        <Spinner size="sm" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Add Channel"
+                    )}
+                  </Button>
                 </div>
               </div>
-            </div>
-          )}
-        </main>
+            </Card>
+          </PageSection>
+        )}
       </div>
-    </>
+    </PageLayout>
+  );
+}
+
+function StepIndicator({
+  number,
+  active,
+  completed,
+}: {
+  number: number;
+  active: boolean;
+  completed?: boolean;
+}) {
+  return (
+    <div
+      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
+        active
+          ? "bg-[var(--accent-primary)] text-white"
+          : "bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]"
+      }`}
+    >
+      {completed ? <Check className="h-4 w-4" /> : number}
+    </div>
   );
 }

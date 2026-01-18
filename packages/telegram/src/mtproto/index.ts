@@ -97,13 +97,13 @@ export async function scrapeChannelMessages(
 export async function getChannelEntity(
   client: TelegramClient,
   channelUsername: string
-) {
+): Promise<{ id: string; title: string; username: string | undefined } | null> {
   try {
     const entity = await client.getEntity(channelUsername);
     return {
-      id: entity.id,
-      title: "title" in entity ? entity.title : channelUsername,
-      username: "username" in entity ? entity.username : channelUsername,
+      id: String(entity.id),
+      title: "title" in entity ? (entity.title as string) : channelUsername,
+      username: "username" in entity ? (entity.username as string | undefined) : channelUsername,
     };
   } catch {
     return null;

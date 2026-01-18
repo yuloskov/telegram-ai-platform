@@ -1,4 +1,5 @@
-import { Bot, Context, session, SessionFlavor } from "grammy";
+import { Bot, Context, session, InputFile } from "grammy";
+import type { SessionFlavor } from "grammy";
 
 interface SessionData {
   language: string;
@@ -41,13 +42,14 @@ export async function sendMessage(
   text: string,
   options?: {
     parseMode?: "HTML" | "Markdown" | "MarkdownV2";
-    replyMarkup?: Parameters<Bot["api"]["sendMessage"]>[2]["reply_markup"];
+    replyMarkup?: unknown;
   }
 ): Promise<void> {
   const bot = getBot();
   await bot.api.sendMessage(chatId, text, {
     parse_mode: options?.parseMode ?? "HTML",
-    reply_markup: options?.replyMarkup,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reply_markup: options?.replyMarkup as any,
   });
 }
 
@@ -60,7 +62,8 @@ export async function sendPhoto(
   }
 ): Promise<void> {
   const bot = getBot();
-  await bot.api.sendPhoto(chatId, photo, {
+  const photoInput = typeof photo === "string" ? photo : new InputFile(photo);
+  await bot.api.sendPhoto(chatId, photoInput, {
     caption: options?.caption,
     parse_mode: options?.parseMode ?? "HTML",
   });
@@ -184,4 +187,3 @@ export async function getChannelInfo(channelId: number | string): Promise<{
 
 export { setupBot, setCommands } from "./setup";
 export { Bot, Context } from "grammy";
-export type { BotContext, SessionData };

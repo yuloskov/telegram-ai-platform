@@ -100,10 +100,11 @@ export function t(
   const message = messages[lang]?.[key] ?? messages.en[key];
 
   if (typeof message === "string" && params) {
-    return Object.entries(params).reduce(
-      (msg, [k, v]) => msg.replace(`{${k}}`, String(v)),
-      message
-    );
+    let result: string = message;
+    for (const [k, v] of Object.entries(params)) {
+      result = result.replace(`{${k}}`, String(v));
+    }
+    return result;
   }
 
   return typeof message === "string" ? message : JSON.stringify(message);

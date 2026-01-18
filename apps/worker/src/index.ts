@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { QUEUE_NAMES } from "@repo/shared/queues";
 import { handlePublishJob } from "./jobs/publish.js";
 import { handleScrapeJob } from "./jobs/scrape.js";

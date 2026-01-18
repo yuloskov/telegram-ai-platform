@@ -1,9 +1,25 @@
 import { useState } from "react";
-import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireAuth } from "~/hooks/useAuth";
+import { Header } from "~/components/layout/header";
+import { PageLayout, PageSection } from "~/components/layout/page-layout";
+import { Card } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { Spinner } from "~/components/ui/spinner";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+} from "~/components/ui/modal";
+import { EmptyState } from "~/components/telegram/empty-state";
+import { StatusBadge } from "~/components/telegram/status-badge";
+import { MessagePreview } from "~/components/telegram/message-bubble";
+import { Sparkles, Plus, Settings, FileText, Send, RotateCcw } from "lucide-react";
 
 interface Channel {
   id: string;
@@ -53,7 +69,7 @@ export default function ChannelDetailPage() {
     queryFn: async () => {
       const res = await fetch(`/api/posts?channelId=${id}`);
       const json = await res.json();
-      return json as { data: Post[]; pagination: any };
+      return json as { data: Post[]; pagination: unknown };
     },
     enabled: !!id && !authLoading,
   });
@@ -112,213 +128,221 @@ export default function ChannelDetailPage() {
 
   if (authLoading || channelLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   if (!channel) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Channel not found</p>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
+        <p className="text-[var(--text-secondary)]">Channel not found</p>
       </div>
     );
   }
 
   const posts = postsData?.data || [];
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      draft: "bg-gray-100 text-gray-700",
-      scheduled: "bg-blue-100 text-blue-700",
-      publishing: "bg-yellow-100 text-yellow-700",
-      published: "bg-green-100 text-green-700",
-      failed: "bg-red-100 text-red-700",
-      pending_review: "bg-purple-100 text-purple-700",
-    };
-    return styles[status] || "bg-gray-100 text-gray-700";
-  };
-
   return (
-    <>
-      <Head>
-        <title>{channel.title} - AI Telegram Channels</title>
-      </Head>
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Link href="/channels" className="text-gray-600 hover:text-gray-900">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                </Link>
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900">{channel.title}</h1>
-                  {channel.username && (
-                    <p className="text-sm text-gray-500">@{channel.username}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/channels/${id}/settings`}
-                  className="text-gray-600 hover:text-gray-900 p-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </header>
+    <PageLayout title={channel.title}>
+      <Header
+        title={channel.title}
+        subtitle={channel.username ? `@${channel.username}` : undefined}
+        backHref="/channels"
+        actions={
+          <Link href={`/channels/${id}/settings`}>
+            <Button variant="ghost" size="icon">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
+        }
+      />
 
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          {/* Quick Actions */}
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={() => setShowGenerator(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+      <div className="max-w-4xl mx-auto">
+        {/* Quick Actions */}
+        <PageSection className="mt-6">
+          <div className="flex gap-3">
+            <Button onClick={() => setShowGenerator(true)}>
+              <Sparkles className="h-4 w-4" />
               Generate with AI
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() => {
                 setPostContent("");
+                setGeneratedContent("");
                 setShowPostEditor(true);
               }}
-              className="border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg flex items-center gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus className="h-4 w-4" />
               New Post
-            </button>
+            </Button>
           </div>
+        </PageSection>
 
-          {/* AI Generator Modal */}
-          {showGenerator && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-                <h2 className="text-lg font-semibold mb-4">Generate Content</h2>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Enter a topic or prompt for AI to generate content..."
-                  className="w-full h-32 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
-                />
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={() => setShowGenerator(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-900"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => generateMutation.mutate(prompt)}
-                    disabled={!prompt || generateMutation.isPending}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg"
-                  >
-                    {generateMutation.isPending ? "Generating..." : "Generate"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* AI Generator Modal */}
+        <Modal open={showGenerator} onOpenChange={setShowGenerator}>
+          <ModalContent className="max-w-lg">
+            <ModalHeader>
+              <ModalTitle>Generate Content</ModalTitle>
+            </ModalHeader>
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter a topic or prompt for AI to generate content..."
+              className="min-h-[120px]"
+            />
+            <ModalFooter>
+              <Button variant="ghost" onClick={() => setShowGenerator(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => generateMutation.mutate(prompt)}
+                disabled={!prompt || generateMutation.isPending}
+              >
+                {generateMutation.isPending ? (
+                  <>
+                    <Spinner size="sm" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-          {/* Post Editor Modal */}
-          {showPostEditor && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  {generatedContent ? "Review Generated Content" : "Create Post"}
-                </h2>
-                <textarea
+        {/* Post Editor Modal */}
+        <Modal open={showPostEditor} onOpenChange={setShowPostEditor}>
+          <ModalContent className="max-w-2xl">
+            <ModalHeader>
+              <ModalTitle>
+                {generatedContent ? "Review Generated Content" : "Create Post"}
+              </ModalTitle>
+            </ModalHeader>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Editor */}
+              <div>
+                <Textarea
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
                   placeholder="Write your post content..."
-                  className="w-full h-48 px-4 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
+                  className="min-h-[200px]"
                 />
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-xs text-[var(--text-tertiary)] mt-2">
                   {postContent.length} / 4096 characters
                 </p>
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={() => {
-                      setShowPostEditor(false);
-                      setPostContent("");
-                      setGeneratedContent("");
-                    }}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-900"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => createPostMutation.mutate(postContent)}
-                    disabled={!postContent || createPostMutation.isPending}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg"
-                  >
-                    {createPostMutation.isPending ? "Saving..." : "Save as Draft"}
-                  </button>
-                </div>
+              </div>
+
+              {/* Preview */}
+              <div>
+                <p className="text-xs text-[var(--text-secondary)] mb-2">Preview</p>
+                {postContent ? (
+                  <MessagePreview
+                    content={postContent}
+                    channelName={channel.title}
+                  />
+                ) : (
+                  <div className="bg-[var(--bg-tertiary)] rounded-[var(--radius-lg)] p-4 text-center text-sm text-[var(--text-tertiary)]">
+                    Start typing to see preview
+                  </div>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Posts List */}
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="p-4 border-b">
-              <h2 className="font-semibold text-gray-900">Posts</h2>
-            </div>
+            <ModalFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowPostEditor(false);
+                  setPostContent("");
+                  setGeneratedContent("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createPostMutation.mutate(postContent)}
+                disabled={!postContent || createPostMutation.isPending}
+              >
+                {createPostMutation.isPending ? (
+                  <>
+                    <Spinner size="sm" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save as Draft"
+                )}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Posts List */}
+        <PageSection title="Posts" className="mt-6">
+          <Card>
             {postsLoading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto" />
+              <div className="p-8 flex items-center justify-center">
+                <Spinner />
               </div>
             ) : posts.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                No posts yet. Create your first post!
-              </div>
+              <EmptyState
+                icon={<FileText className="h-8 w-8 text-[var(--text-tertiary)]" />}
+                title="No posts yet"
+                description="Create your first post using AI or manually"
+                action={
+                  <Button onClick={() => setShowGenerator(true)}>
+                    <Sparkles className="h-4 w-4" />
+                    Generate with AI
+                  </Button>
+                }
+              />
             ) : (
-              <div className="divide-y">
+              <div className="divide-y divide-[var(--border-secondary)]">
                 {posts.map((post) => (
-                  <div key={post.id} className="p-4 hover:bg-gray-50">
+                  <div
+                    key={post.id}
+                    className="p-4 hover:bg-[var(--bg-tertiary)] transition-colors"
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <p className="text-gray-900 line-clamp-2">{post.content}</p>
-                        <div className="flex items-center gap-3 mt-2 text-sm">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBadge(post.status)}`}>
-                            {post.status}
-                          </span>
-                          <span className="text-gray-500">
+                        <p className="text-sm text-[var(--text-primary)] line-clamp-2">
+                          {post.content}
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <StatusBadge status={post.status as "draft" | "scheduled" | "publishing" | "published" | "failed" | "pending_review"} />
+                          <span className="text-xs text-[var(--text-tertiary)]">
                             {new Date(post.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         {post.status === "draft" && (
-                          <button
+                          <Button
+                            size="sm"
                             onClick={() => publishMutation.mutate(post.id)}
                             disabled={publishMutation.isPending}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                           >
+                            <Send className="h-3.5 w-3.5" />
                             Publish
-                          </button>
+                          </Button>
                         )}
                         {post.status === "failed" && (
-                          <button
+                          <Button
+                            size="sm"
+                            variant="secondary"
                             onClick={() => publishMutation.mutate(post.id)}
                             disabled={publishMutation.isPending}
-                            className="text-orange-600 hover:text-orange-700 text-sm font-medium"
                           >
+                            <RotateCcw className="h-3.5 w-3.5" />
                             Retry
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -326,9 +350,9 @@ export default function ChannelDetailPage() {
                 ))}
               </div>
             )}
-          </div>
-        </main>
+          </Card>
+        </PageSection>
       </div>
-    </>
+    </PageLayout>
   );
 }
