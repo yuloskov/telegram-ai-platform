@@ -366,6 +366,64 @@ The platform uses a single Telegram bot for all Telegram interactions:
 | React Hook Form + Zod | Form handling and validation |
 | next-intl | Internationalization (English/Russian) |
 
+#### UI Design System - Telegram Style
+
+The UI must follow Telegram's visual design language to create a familiar and cohesive experience for Telegram channel managers.
+
+**Color Palette:**
+
+| Token | Light Mode | Dark Mode | Usage |
+|-------|------------|-----------|-------|
+| `--tg-primary` | `#2AABEE` | `#2AABEE` | Primary actions, links, active states |
+| `--tg-primary-dark` | `#229ED9` | `#229ED9` | Primary hover/pressed states |
+| `--tg-secondary` | `#34B7F1` | `#34B7F1` | Secondary accents |
+| `--tg-background` | `#FFFFFF` | `#212121` | Main background |
+| `--tg-surface` | `#F0F2F5` | `#2C2C2C` | Cards, panels, elevated surfaces |
+| `--tg-surface-hover` | `#E8EAED` | `#3A3A3A` | Surface hover state |
+| `--tg-text-primary` | `#000000` | `#FFFFFF` | Primary text |
+| `--tg-text-secondary` | `#707579` | `#AAAAAA` | Secondary/muted text |
+| `--tg-text-link` | `#2AABEE` | `#6AB3F3` | Links and interactive text |
+| `--tg-border` | `#E0E0E0` | `#3A3A3A` | Borders and dividers |
+| `--tg-success` | `#31B545` | `#4FAE4E` | Success states, online indicators |
+| `--tg-warning` | `#FFA500` | `#FFB347` | Warning states |
+| `--tg-error` | `#E53935` | `#F44336` | Error states, destructive actions |
+| `--tg-message-out` | `#EEFFDE` | `#2B5278` | Outgoing message bubbles |
+| `--tg-message-in` | `#FFFFFF` | `#182533` | Incoming message bubbles |
+
+**Typography:**
+
+| Element | Font | Size | Weight |
+|---------|------|------|--------|
+| Heading 1 | System/Geist | 24px | 600 (Semibold) |
+| Heading 2 | System/Geist | 20px | 600 (Semibold) |
+| Heading 3 | System/Geist | 17px | 600 (Semibold) |
+| Body | System/Geist | 15px | 400 (Regular) |
+| Body Small | System/Geist | 13px | 400 (Regular) |
+| Caption | System/Geist | 12px | 400 (Regular) |
+
+**Component Styling Guidelines:**
+
+- **Buttons**: Rounded corners (8px), solid fill for primary actions, ghost/outline for secondary
+- **Cards**: Light shadows, rounded corners (12px), subtle borders in light mode
+- **Inputs**: Clean borders, 8px border-radius, focus state with primary color
+- **Lists**: Clean dividers, generous padding, hover states
+- **Icons**: Line-style icons, consistent 24px base size
+- **Spacing**: 8px base unit (8, 16, 24, 32, 48px scale)
+- **Transitions**: Smooth 150-200ms transitions for hover/focus states
+
+**Dark Mode:**
+- Must support system-preference detection
+- User can override with manual toggle
+- Preference stored per user
+- All components must be designed for both modes
+
+**Telegram-Specific UI Elements:**
+- Message bubble preview for post previews (styled like Telegram messages)
+- Channel card design similar to Telegram's channel info
+- Avatar/profile picture circular with 2px primary border for selected states
+- Status indicators (online dot, typing animation) matching Telegram style
+- Action sheets and modals with iOS-style rounded corners and backdrop blur
+
 #### Backend
 | Technology | Purpose |
 |------------|---------|
