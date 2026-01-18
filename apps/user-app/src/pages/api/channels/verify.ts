@@ -1,7 +1,7 @@
 import type { NextApiResponse } from "next";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { verifyBotPermissions, getChannelInfo } from "@repo/telegram-bot";
+import { verifyBotPermissions, getChannelInfo } from "@repo/telegram-bot/bot";
 
 interface VerifyResponse {
   valid: boolean;

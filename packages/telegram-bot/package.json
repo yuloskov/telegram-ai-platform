@@ -6,8 +6,12 @@
   "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./src/i18n/index.ts",
+      "default": "./src/i18n/index.ts"
+    },
+    "./bot": {
+      "types": "./src/bot/index.ts",
+      "default": "./src/bot/index.ts"
     }
   },
   "scripts": {

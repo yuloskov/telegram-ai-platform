@@ -17,7 +17,6 @@ const config = {
   transpilePackages: [
     "@repo/database",
     "@repo/shared",
-    "@repo/telegram-bot",
     "@repo/ai",
   ],
 };

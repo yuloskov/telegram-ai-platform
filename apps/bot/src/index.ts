@@ -1,4 +1,4 @@
-import { createBot, setupBot, setCommands } from "@repo/telegram-bot";
+import { createBot, setupBot, setCommands } from "@repo/telegram-bot/bot";
 
 async function main() {
   console.log("Starting Telegram bot in polling mode...");

@@ -1,4 +1,4 @@
-import { sendMessage } from "@repo/telegram-bot";
+import { sendMessage } from "@repo/telegram-bot/bot";
 import type { NotificationJobPayload } from "@repo/shared/queues";
 
 export async function handleNotificationJob(data: NotificationJobPayload): Promise<void> {

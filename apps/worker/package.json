@@ -18,7 +18,7 @@
     "@repo/telegram-bot": "workspace:*",
     "@repo/telegram-mtproto": "workspace:*",
     "bullmq": "^5.34.8",
-    "ioredis": "^5.9.1"
+    "ioredis": "5.9.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
