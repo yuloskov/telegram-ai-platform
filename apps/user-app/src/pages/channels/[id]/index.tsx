@@ -5,21 +5,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRequireAuth } from "~/hooks/useAuth";
 import { Header } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
-import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Textarea } from "~/components/ui/textarea";
 import { Spinner } from "~/components/ui/spinner";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-  ModalFooter,
-} from "~/components/ui/modal";
-import { EmptyState } from "~/components/telegram/empty-state";
-import { StatusBadge } from "~/components/telegram/status-badge";
-import { MessagePreview } from "~/components/telegram/message-bubble";
-import { Sparkles, Plus, Settings, FileText, Send, RotateCcw } from "lucide-react";
+import { GenerateModal } from "~/components/posts/generate-modal";
+import { PostEditorModal } from "~/components/posts/post-editor-modal";
+import { PostList } from "~/components/posts/post-list";
+import { Sparkles, Plus, Settings } from "lucide-react";
 
 interface Channel {
   id: string;
@@ -144,6 +135,12 @@ export default function ChannelDetailPage() {
 
   const posts = postsData?.data || [];
 
+  const handleCancelEditor = () => {
+    setShowPostEditor(false);
+    setPostContent("");
+    setGeneratedContent("");
+  };
+
   return (
     <PageLayout title={channel.title}>
       <Header
@@ -159,9 +156,9 @@ export default function ChannelDetailPage() {
         }
       />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="px-4 md:px-6 lg:px-8 py-6">
         {/* Quick Actions */}
-        <PageSection className="mt-6">
+        <PageSection>
           <div className="flex gap-3">
             <Button onClick={() => setShowGenerator(true)}>
               <Sparkles className="h-4 w-4" />
@@ -181,176 +178,36 @@ export default function ChannelDetailPage() {
           </div>
         </PageSection>
 
-        {/* AI Generator Modal */}
-        <Modal open={showGenerator} onOpenChange={setShowGenerator}>
-          <ModalContent className="max-w-lg">
-            <ModalHeader>
-              <ModalTitle>Generate Content</ModalTitle>
-            </ModalHeader>
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter a topic or prompt for AI to generate content..."
-              className="min-h-[120px]"
-            />
-            <ModalFooter>
-              <Button variant="ghost" onClick={() => setShowGenerator(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => generateMutation.mutate(prompt)}
-                disabled={!prompt || generateMutation.isPending}
-              >
-                {generateMutation.isPending ? (
-                  <>
-                    <Spinner size="sm" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Generate
-                  </>
-                )}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+        <GenerateModal
+          open={showGenerator}
+          onOpenChange={setShowGenerator}
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onGenerate={() => generateMutation.mutate(prompt)}
+          isGenerating={generateMutation.isPending}
+        />
 
-        {/* Post Editor Modal */}
-        <Modal open={showPostEditor} onOpenChange={setShowPostEditor}>
-          <ModalContent className="max-w-2xl">
-            <ModalHeader>
-              <ModalTitle>
-                {generatedContent ? "Review Generated Content" : "Create Post"}
-              </ModalTitle>
-            </ModalHeader>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Editor */}
-              <div>
-                <Textarea
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Write your post content..."
-                  className="min-h-[200px]"
-                />
-                <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                  {postContent.length} / 4096 characters
-                </p>
-              </div>
-
-              {/* Preview */}
-              <div>
-                <p className="text-xs text-[var(--text-secondary)] mb-2">Preview</p>
-                {postContent ? (
-                  <MessagePreview
-                    content={postContent}
-                    channelName={channel.title}
-                  />
-                ) : (
-                  <div className="bg-[var(--bg-tertiary)] rounded-[var(--radius-lg)] p-4 text-center text-sm text-[var(--text-tertiary)]">
-                    Start typing to see preview
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <ModalFooter>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowPostEditor(false);
-                  setPostContent("");
-                  setGeneratedContent("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => createPostMutation.mutate(postContent)}
-                disabled={!postContent || createPostMutation.isPending}
-              >
-                {createPostMutation.isPending ? (
-                  <>
-                    <Spinner size="sm" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save as Draft"
-                )}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+        <PostEditorModal
+          open={showPostEditor}
+          onOpenChange={setShowPostEditor}
+          content={postContent}
+          onContentChange={setPostContent}
+          onSave={() => createPostMutation.mutate(postContent)}
+          onCancel={handleCancelEditor}
+          isSaving={createPostMutation.isPending}
+          channelName={channel.title}
+          isGenerated={!!generatedContent}
+        />
 
         {/* Posts List */}
-        <PageSection title="Posts" className="mt-6">
-          <Card>
-            {postsLoading ? (
-              <div className="p-8 flex items-center justify-center">
-                <Spinner />
-              </div>
-            ) : posts.length === 0 ? (
-              <EmptyState
-                icon={<FileText className="h-8 w-8 text-[var(--text-tertiary)]" />}
-                title="No posts yet"
-                description="Create your first post using AI or manually"
-                action={
-                  <Button onClick={() => setShowGenerator(true)}>
-                    <Sparkles className="h-4 w-4" />
-                    Generate with AI
-                  </Button>
-                }
-              />
-            ) : (
-              <div className="divide-y divide-[var(--border-secondary)]">
-                {posts.map((post) => (
-                  <div
-                    key={post.id}
-                    className="p-4 hover:bg-[var(--bg-tertiary)] transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-[var(--text-primary)] line-clamp-2">
-                          {post.content}
-                        </p>
-                        <div className="flex items-center gap-3 mt-2">
-                          <StatusBadge status={post.status as "draft" | "scheduled" | "publishing" | "published" | "failed" | "pending_review"} />
-                          <span className="text-xs text-[var(--text-tertiary)]">
-                            {new Date(post.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {post.status === "draft" && (
-                          <Button
-                            size="sm"
-                            onClick={() => publishMutation.mutate(post.id)}
-                            disabled={publishMutation.isPending}
-                          >
-                            <Send className="h-3.5 w-3.5" />
-                            Publish
-                          </Button>
-                        )}
-                        {post.status === "failed" && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => publishMutation.mutate(post.id)}
-                            disabled={publishMutation.isPending}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            Retry
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+        <PageSection title="Posts">
+          <PostList
+            posts={posts}
+            isLoading={postsLoading}
+            onPublish={(postId) => publishMutation.mutate(postId)}
+            isPublishing={publishMutation.isPending}
+            onOpenGenerator={() => setShowGenerator(true)}
+          />
         </PageSection>
       </div>
     </PageLayout>

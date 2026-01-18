@@ -7,7 +7,6 @@ interface PageLayoutProps {
   description?: string;
   children: React.ReactNode;
   className?: string;
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
 export function PageLayout({
@@ -15,16 +14,7 @@ export function PageLayout({
   description,
   children,
   className,
-  maxWidth = "lg",
 }: PageLayoutProps) {
-  const maxWidthClasses = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-4xl",
-    xl: "max-w-6xl",
-    full: "max-w-full",
-  };
-
   return (
     <>
       <Head>
@@ -32,13 +22,7 @@ export function PageLayout({
         {description && <meta name="description" content={description} />}
       </Head>
       <div className="min-h-screen bg-[var(--bg-secondary)]">
-        <main
-          className={cn(
-            "mx-auto px-4 py-6",
-            maxWidthClasses[maxWidth],
-            className
-          )}
-        >
+        <main className={cn("w-full", className)}>
           {children}
         </main>
       </div>

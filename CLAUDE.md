@@ -178,6 +178,12 @@ NEXT_PUBLIC_USER_APP_URL=http://localhost:3000
 
 ## Code Conventions
 
+### File Length
+- Keep files under ~200 lines
+- If a file exceeds this limit, split it into smaller components/functions
+- Extract reusable components to `components/` directory
+- Pages should primarily compose components, not contain large JSX blocks
+
 ### TypeScript
 - Strict mode enabled
 - Use `type` imports: `import type { Foo } from './foo'`

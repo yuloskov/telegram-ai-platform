@@ -101,11 +101,35 @@
 }
 
 /* Base styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background-color: var(--bg-secondary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure all interactive elements have pointer cursor */
+a,
+button,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+select,
+summary {
+  cursor: pointer;
 }
 
 /* Scrollbar styling (Telegram-like) */

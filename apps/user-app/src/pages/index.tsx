@@ -47,9 +47,9 @@ export default function Home() {
     <PageLayout title="Dashboard" description="Manage your AI-powered Telegram channels">
       <AppHeader user={user} onLogout={logout} />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="px-4 md:px-6 lg:px-8 py-6">
         {/* Welcome Section */}
-        <PageSection className="mt-6">
+        <PageSection>
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-1">
               Welcome back{user?.displayName ? `, ${user.displayName}` : ""}!
@@ -169,3 +169,4 @@ export default function Home() {
     </PageLayout>
   );
 }
+

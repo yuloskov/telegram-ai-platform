@@ -66,9 +66,9 @@ export default function ChannelsPage() {
         }
       />
 
-      <div className="max-w-4xl mx-auto">
+      <div className="px-4 md:px-6 lg:px-8 py-6">
         {channels.length === 0 ? (
-          <PageSection className="mt-6">
+          <PageSection>
             <Card>
               <EmptyState
                 icon={<MessageCircle className="h-8 w-8 text-[var(--text-tertiary)]" />}
@@ -86,7 +86,7 @@ export default function ChannelsPage() {
             </Card>
           </PageSection>
         ) : (
-          <PageSection className="mt-6">
+          <PageSection>
             <div className="space-y-3">
               {channels.map((channel) => (
                 <Link key={channel.id} href={`/channels/${channel.id}`}>
