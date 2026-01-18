@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { useRequireAuth } from "~/hooks/useAuth";
-import { Header } from "~/components/layout/header";
+import { useAuth, useRequireAuth } from "~/hooks/useAuth";
+import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -30,6 +30,7 @@ interface Channel {
 
 export default function ChannelsPage() {
   const { isLoading: authLoading } = useRequireAuth();
+  const { user, logout } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["channels"],
@@ -53,20 +54,25 @@ export default function ChannelsPage() {
 
   return (
     <PageLayout title="My Channels">
-      <Header
-        title="My Channels"
-        backHref="/"
-        actions={
-          <Button asChild>
-            <Link href="/channels/new">
-              <Plus className="h-4 w-4" />
-              Add Channel
-            </Link>
-          </Button>
-        }
-      />
+      <AppHeader user={user} onLogout={logout} />
 
-      <div className="px-4 md:px-6 lg:px-8 py-6">
+      <div className="px-4 md:px-6 lg:px-8 py-6 max-w-5xl mx-auto">
+        <PageHeader
+          title="My Channels"
+          breadcrumbs={[
+            { label: "Home", href: "/" },
+            { label: "Channels" },
+          ]}
+          actions={
+            <Button asChild>
+              <Link href="/channels/new">
+                <Plus className="h-4 w-4" />
+                Add Channel
+              </Link>
+            </Button>
+          }
+        />
+
         {channels.length === 0 ? (
           <PageSection>
             <Card>

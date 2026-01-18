@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
-import { AppHeader } from "~/components/layout/header";
+import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
-import { Card, CardContent } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { EmptyState } from "~/components/telegram/empty-state";
@@ -47,18 +47,10 @@ export default function Home() {
     <PageLayout title="Dashboard" description="Manage your AI-powered Telegram channels">
       <AppHeader user={user} onLogout={logout} />
 
-      <div className="px-4 md:px-6 lg:px-8 py-6">
-        {/* Welcome Section */}
-        <PageSection>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-1">
-              Welcome back{user?.displayName ? `, ${user.displayName}` : ""}!
-            </h2>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Manage your Telegram channels and create AI-powered content.
-            </p>
-          </div>
-        </PageSection>
+      <div className="px-4 md:px-6 lg:px-8 py-6 max-w-5xl mx-auto">
+        <PageHeader
+          title={`Welcome back${user?.displayName ? `, ${user.displayName}` : ""}!`}
+        />
 
         {/* Quick Actions */}
         <PageSection>

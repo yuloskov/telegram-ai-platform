@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useMutation } from "@tanstack/react-query";
-import { useRequireAuth } from "~/hooks/useAuth";
+import { useAuth, useRequireAuth } from "~/hooks/useAuth";
 import { env } from "~/env";
-import { Header } from "~/components/layout/header";
+import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Spinner } from "~/components/ui/spinner";
 import { StepIndicator } from "~/components/channels/step-indicator";
@@ -24,6 +24,7 @@ interface VerifyResponse {
 export default function NewChannelPage() {
   const router = useRouter();
   const { isLoading: authLoading } = useRequireAuth();
+  const { user, logout } = useAuth();
 
   const [step, setStep] = useState(1);
   const [channelId, setChannelId] = useState("");
@@ -93,9 +94,18 @@ export default function NewChannelPage() {
 
   return (
     <PageLayout title="Add Channel">
-      <Header title="Add Channel" backHref="/channels" />
+      <AppHeader user={user} onLogout={logout} />
 
       <div className="px-4 md:px-6 lg:px-8 py-6 max-w-xl mx-auto">
+        <PageHeader
+          title="Add Channel"
+          breadcrumbs={[
+            { label: "Home", href: "/" },
+            { label: "Channels", href: "/channels" },
+            { label: "Add Channel" },
+          ]}
+        />
+
         {/* Progress Steps */}
         <PageSection>
           <div className="flex items-center justify-center">

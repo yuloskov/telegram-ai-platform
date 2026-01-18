@@ -1,6 +1,6 @@
-# DESIGN.md - Telegram-Style Design System
+# DESIGN.md - Design System
 
-This document defines the design standards for the AI Telegram Channels Platform. The UI should closely resemble Telegram's native aesthetic while maintaining usability for channel management workflows.
+This document defines the design standards for the AI Telegram Channels Platform. The UI follows modern SaaS web application patterns with a clean, professional aesthetic.
 
 ---
 
@@ -8,17 +8,16 @@ This document defines the design standards for the AI Telegram Channels Platform
 
 ### Core Principles
 
-1. **Telegram-Native Feel**: Users should feel like they're using an extension of Telegram
+1. **Standard Web Experience**: A professional web application, not a mini-app
 2. **Clean & Minimal**: Prioritize content over chrome
 3. **Fast & Responsive**: Animations should be subtle and purposeful
-4. **Dark Mode First**: Telegram users expect dark mode support
-5. **Mobile-Friendly**: Touch-friendly targets, responsive layouts
+4. **Dark Mode Support**: Optional dark mode for user preference
+5. **Mobile-Friendly**: Responsive layouts, touch-friendly targets
 
 ### Visual Reference
 
-- Telegram Desktop (macOS/Windows)
-- Telegram Web (web.telegram.org)
-- Telegram iOS/Android for mobile patterns
+- Modern SaaS dashboards (Linear, Vercel, Notion)
+- Clean, professional interfaces with clear hierarchy
 
 ---
 
@@ -315,7 +314,12 @@ margin-top: 2px;
 
 ### Navigation
 
-#### Header
+#### App Header (Global)
+The app header is **fixed and consistent** across all pages. It contains:
+- Logo/brand on the left
+- Navigation links (optional)
+- User menu on the right
+
 ```css
 background: var(--bg-primary);
 border-bottom: 1px solid var(--border-secondary);
@@ -323,12 +327,29 @@ height: 56px;
 padding: 0 16px;
 display: flex;
 align-items: center;
+justify-content: space-between;
 position: sticky;
 top: 0;
 z-index: 100;
 ```
 
-#### Sidebar (Desktop)
+**Important**: The app header does NOT change based on page context. No back arrows, no page-specific titles. Those belong on the page itself.
+
+#### Page Header (Per-Page)
+Each page has its own header section with:
+- Page title
+- Optional breadcrumbs
+- Action buttons (right-aligned)
+
+```css
+padding: 24px 0 16px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 16px;
+```
+
+#### Sidebar (Desktop, optional)
 ```css
 width: 320px;
 background: var(--bg-secondary);
@@ -455,30 +476,40 @@ border-radius: var(--radius-md);
 ### Page Structure
 ```
 ┌────────────────────────────────────┐
-│  Header (56px)                     │
+│  App Header (56px) - Logo + User   │
 ├────────────────────────────────────┤
+│  ┌──────────────────────────────┐  │
+│  │  Page Header                 │  │
+│  │  Title          [Actions]    │  │
+│  └──────────────────────────────┘  │
 │                                    │
 │  Main Content                      │
-│  (max-width: 768px, centered)      │
+│  (max-width: 1200px, centered)     │
 │                                    │
 └────────────────────────────────────┘
 ```
 
-### Channel Management View (Desktop)
-```
-┌──────────┬─────────────────────────┐
-│          │  Header                 │
-│ Sidebar  ├─────────────────────────┤
-│ (320px)  │                         │
-│          │  Content Area           │
-│          │                         │
-└──────────┴─────────────────────────┘
-```
+### Key Principle
+- **App Header**: Fixed, never changes. Contains logo and user menu.
+- **Page Header**: Part of page content. Contains page title, breadcrumbs, action buttons.
 
-### Post Editor View
+### Channel Detail View
 ```
 ┌────────────────────────────────────┐
-│  Header with Actions               │
+│  App Header                        │
+├────────────────────────────────────┤
+│  Channels > Channel Name           │ ← Breadcrumb
+│  Channel Name        [Generate] [+]│ ← Page header with actions
+│                                    │
+│  Posts section                     │
+│  ...                               │
+└────────────────────────────────────┘
+```
+
+### Post Editor View (Modal)
+```
+┌────────────────────────────────────┐
+│  Modal Header with Actions         │
 ├──────────────────┬─────────────────┤
 │                  │                 │
 │  Editor          │  Preview        │
@@ -602,16 +633,17 @@ Use Tailwind CSS utility classes that map to these design tokens. Define custom 
 
 ## Implementation Checklist
 
-- [ ] Set up CSS variables for colors (light/dark)
+- [x] Set up CSS variables for colors (light/dark)
 - [ ] Implement dark mode toggle
-- [ ] Create base button components
-- [ ] Create input/textarea components
-- [ ] Create card component
-- [ ] Create message bubble preview
-- [ ] Create modal component
-- [ ] Create header component
-- [ ] Create status badges
-- [ ] Create loading states (spinner, skeleton)
+- [x] Create base button components
+- [x] Create input/textarea components
+- [x] Create card component
+- [x] Create message bubble preview
+- [x] Create modal component
+- [x] Create AppHeader component (global, fixed)
+- [x] Create PageHeader component (per-page, with breadcrumbs)
+- [x] Create status badges
+- [x] Create loading states (spinner, skeleton)
 - [ ] Test all components in both themes
 - [ ] Test responsive breakpoints
 - [ ] Verify accessibility (contrast, focus states)

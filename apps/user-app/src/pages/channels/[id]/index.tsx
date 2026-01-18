@@ -2,8 +2,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRequireAuth } from "~/hooks/useAuth";
-import { Header } from "~/components/layout/header";
+import { useAuth, useRequireAuth } from "~/hooks/useAuth";
+import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
@@ -38,6 +38,7 @@ export default function ChannelDetailPage() {
   const { id } = router.query;
   const queryClient = useQueryClient();
   const { isLoading: authLoading } = useRequireAuth();
+  const { user, logout } = useAuth();
 
   const [showGenerator, setShowGenerator] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -143,40 +144,47 @@ export default function ChannelDetailPage() {
 
   return (
     <PageLayout title={channel.title}>
-      <Header
-        title={channel.title}
-        subtitle={channel.username ? `@${channel.username}` : undefined}
-        backHref="/channels"
-        actions={
-          <Link href={`/channels/${id}/settings`}>
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </Link>
-        }
-      />
+      <AppHeader user={user} onLogout={logout} />
 
-      <div className="px-4 md:px-6 lg:px-8 py-6">
-        {/* Quick Actions */}
-        <PageSection>
-          <div className="flex gap-3">
-            <Button onClick={() => setShowGenerator(true)}>
-              <Sparkles className="h-4 w-4" />
-              Generate with AI
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setPostContent("");
-                setGeneratedContent("");
-                setShowPostEditor(true);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              New Post
-            </Button>
-          </div>
-        </PageSection>
+      <div className="px-4 md:px-6 lg:px-8 py-6 max-w-5xl mx-auto">
+        <PageHeader
+          title={channel.title}
+          breadcrumbs={[
+            { label: "Home", href: "/" },
+            { label: "Channels", href: "/channels" },
+            { label: channel.title },
+          ]}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setShowGenerator(true)}>
+                <Sparkles className="h-4 w-4" />
+                Generate
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setPostContent("");
+                  setGeneratedContent("");
+                  setShowPostEditor(true);
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                New Post
+              </Button>
+              <Button variant="ghost" size="icon" asChild>
+                <Link href={`/channels/${id}/settings`}>
+                  <Settings className="h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          }
+        />
+
+        {channel.username && (
+          <p className="text-sm text-[var(--text-secondary)] -mt-4 mb-6">
+            @{channel.username}
+          </p>
+        )}
 
         <GenerateModal
           open={showGenerator}
