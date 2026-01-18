@@ -43,8 +43,8 @@ A unified platform that:
 ### 3.1 Channel Management
 
 **Requirements:**
-- Users can add Telegram channels by providing a bot token
-- System verifies bot has admin/posting permissions on the channel
+- Users add Telegram channels by making the platform bot an admin of their channel
+- User provides channel username or ID, system verifies platform bot has posting permissions
 - Users can configure channel settings:
   - Niche/topic (e.g., "tech news", "crypto", "lifestyle")
   - Tone (e.g., "professional", "casual", "humorous")
@@ -53,10 +53,10 @@ A unified platform that:
   - Posting schedule preferences
 
 **Acceptance Criteria:**
-- [ ] User can add a channel with bot token
-- [ ] System validates bot permissions before saving
+- [ ] User can add a channel by username/ID after adding platform bot as admin
+- [ ] System validates platform bot has posting permissions on the channel
 - [ ] User can update channel settings
-- [ ] User can delete a channel
+- [ ] User can delete a channel (removes from platform, bot remains in channel until manually removed)
 - [ ] User can view list of all their channels
 
 ---
@@ -77,6 +77,25 @@ A unified platform that:
 - [ ] User can manually trigger a scrape
 - [ ] Images from posts are preserved
 - [ ] System tracks which content has been used for generation
+
+#### 3.2.1 Image Analysis and Generation
+
+**Requirements:**
+- System analyzes images from scraped posts using AI vision models
+- AI extracts visual style, composition, subjects, and mood from images
+- When generating content based on scraped posts with images, system can generate similar images
+- Users can choose to use original images, generate new similar ones, or skip images
+- Generated images match the visual style and theme of the source content
+
+**Acceptance Criteria:**
+- [ ] System automatically analyzes images when scraping posts
+- [ ] Image analysis extracts: subject matter, style, colors, composition, text overlays
+- [ ] User can view image analysis results in the UI
+- [ ] When generating from scraped content, user can opt to generate similar images
+- [ ] AI generates image prompts based on analysis of source images
+- [ ] Generated images are created via image generation API
+- [ ] User can regenerate images with modified prompts
+- [ ] System respects copyright by generating original images, not copies
 
 ---
 
@@ -124,6 +143,49 @@ A unified platform that:
 - [ ] Generated post includes factual, up-to-date information
 - [ ] Sources (URLs) are provided with the post
 - [ ] User can review sources before publishing
+
+#### 3.3.4 Fully Automatic Content Generation & Posting
+
+**Requirements:**
+- Users can configure fully autonomous content pipelines per channel
+- System operates in two source modes: research-based and scraped content-based
+- Posts are automatically published or sent to bot for review based on user preference
+- Entire workflow runs without user intervention (scrape → analyze → generate → publish)
+
+**Source Modes:**
+
+1. **Research-Based Auto-Posting**
+   - System periodically performs web research on configured topics/keywords
+   - AI generates posts based on fresh research findings
+   - System tracks trending topics and news in the channel's niche
+
+2. **Scraped Content-Based Auto-Posting**
+   - System monitors configured source channels for new posts
+   - When new content is scraped, AI automatically generates inspired posts
+   - Optionally analyzes and generates similar images for scraped posts with media
+   - Maintains originality while capturing trending topics from competitors
+
+**Publishing Modes:**
+- **Auto-Publish**: Posts are published immediately after generation
+- **Review-First**: Posts are sent to platform bot for user approval before publishing
+- **Scheduled**: Posts are queued and published at optimal times based on channel settings
+
+**Acceptance Criteria:**
+- [ ] User can enable/disable automatic posting per channel
+- [ ] User can configure auto-generation schedule (e.g., hourly, daily, custom cron)
+- [ ] User can select source mode: research-only, scraped-only, or both
+- [ ] User can define research topics/keywords for research-based generation
+- [ ] User can select which content sources trigger auto-generation
+- [ ] User can choose publishing mode: auto-publish, review-first, or scheduled
+- [ ] System generates unique, non-duplicate content for each post
+- [ ] User can set minimum time interval between auto-posts
+- [ ] User can pause/resume automatic posting
+- [ ] User receives bot notifications for all auto-generated posts
+- [ ] System avoids duplicate topics within configurable time window
+- [ ] Failed generations are logged and retried with exponential backoff
+- [ ] User can set daily/weekly limits on auto-generated posts
+- [ ] Auto-generated posts are clearly marked in the dashboard
+- [ ] User can review auto-posting history and performance metrics
 
 ---
 
@@ -199,6 +261,95 @@ A unified platform that:
 
 ---
 
+### 3.8 Platform Bot
+
+The platform uses a single Telegram bot for all Telegram interactions:
+- **User authentication** (login via bot)
+- **Channel publishing** (bot is added as admin to user's channels)
+- **Notifications** (publish status, alerts, reminders)
+- **Post review** (approve/reject auto-generated posts)
+
+#### 3.8.1 Telegram Bot Authentication
+
+**Requirements:**
+- Users authenticate via the platform's Telegram bot (no email/password)
+- Web app displays a unique, time-limited code for authentication
+- User sends the code to the bot to verify identity
+- Bot confirms authentication and web app receives session token
+- User accounts are auto-created on first successful authentication
+
+**Acceptance Criteria:**
+- [ ] Web app shows "Login with Telegram" button
+- [ ] System generates unique 6-character alphanumeric code (expires in 5 minutes)
+- [ ] Web app displays code and deep link to the platform bot
+- [ ] Bot validates code and links Telegram user to platform account
+- [ ] Web app polls for authentication status and redirects on success
+- [ ] JWT token issued upon successful authentication
+- [ ] User's Telegram ID, username, and display name stored in database
+- [ ] Returning users can re-authenticate seamlessly
+
+#### 3.8.2 Bot Notifications
+
+**Requirements:**
+- Platform bot sends notifications to users for important events
+- Users can configure notification preferences
+- Notifications are sent in real-time via Telegram messages
+
+**Notification Types:**
+- Post published successfully
+- Post publishing failed (with error details)
+- Scheduled post reminder (configurable time before)
+- Auto-generated post ready for review
+- Scraping completed with new content found
+- System alerts (e.g., bot token expired, channel access lost)
+
+**Acceptance Criteria:**
+- [ ] Bot sends notifications for all configured event types
+- [ ] User can enable/disable each notification type
+- [ ] Notifications include relevant context and deep links to web app
+- [ ] Failed notifications are retried
+- [ ] Rate limiting prevents notification spam
+
+#### 3.8.3 Post Review via Bot
+
+**Requirements:**
+- When auto-posting is set to "review mode", posts are sent to the bot for approval
+- User can approve, edit, or reject posts directly in Telegram
+- Approved posts are published immediately or at scheduled time
+- Rejected posts are archived with optional feedback
+
+**Acceptance Criteria:**
+- [ ] Bot sends post preview with text and images
+- [ ] Inline buttons for: Approve, Edit, Reject, Schedule
+- [ ] "Approve" publishes the post immediately
+- [ ] "Edit" opens web app to the post editor
+- [ ] "Reject" archives the post and optionally collects feedback
+- [ ] "Schedule" prompts for date/time selection
+- [ ] User can view pending review queue via bot command
+- [ ] Posts awaiting review expire after configurable time (default: 24 hours)
+
+#### 3.8.4 Bot Commands
+
+**Requirements:**
+- Bot supports commands for quick actions without opening web app
+- Commands provide status updates and basic management
+
+**Commands:**
+- `/start` - Initial bot interaction and help
+- `/login` - Generate new authentication code
+- `/status` - Overview of channels, pending posts, scheduled posts
+- `/pending` - List posts awaiting review
+- `/channels` - List managed channels with quick stats
+- `/help` - Command reference and support links
+
+**Acceptance Criteria:**
+- [ ] All commands respond within 2 seconds
+- [ ] Commands are context-aware (different response if authenticated vs not)
+- [ ] Bot provides helpful error messages for invalid commands
+- [ ] Commands support channel selection for multi-channel users
+
+---
+
 ## 4. Technical Requirements
 
 ### 4.1 Technology Stack
@@ -247,24 +398,22 @@ A unified platform that:
 
 | Service | Purpose | API Type |
 |---------|---------|----------|
-| Telegram Bot API | Publishing posts | REST |
+| Telegram Bot API (Platform Bot) | Authentication, notifications, post review, channel publishing | REST (webhooks) |
 | Telegram MTProto | Scraping channels | MTProto |
 | OpenRouter | AI content generation | REST (OpenAI-compatible) |
 
 ### 4.3 AI Provider
 
 - **Provider**: OpenRouter (unified API for multiple AI models)
-- **Default Model**: `anthropic/claude-sonnet-4` for content generation
-- **Research Model**: `perplexity/llama-3.1-sonar-large-128k-online` for web search
-- **Flexibility**: Model can be changed without code modifications
+- **Default Model**: `google/gemini-3-flash-preview`
 
 ### 4.4 Security Requirements
 
-- JWT-based authentication
+- JWT-based authentication (issued after Telegram verification)
+- Telegram Bot-based user authentication (no email/password)
 - Encrypted storage for sensitive data (bot tokens, session strings)
 - Rate limiting on API endpoints
 - Input validation and sanitization
-- No external auth providers (self-contained)
 
 ---
 
@@ -304,15 +453,20 @@ A unified platform that:
 ### 6.1 New User Onboarding
 
 ```
-1. User registers with email/password
-2. User creates first channel
-   - Enters bot token
-   - System verifies bot permissions
+1. User opens web app and clicks "Login with Telegram"
+2. User is shown a unique code and link to the platform bot
+3. User sends the code to the platform bot in Telegram
+4. Bot verifies the code and authenticates the user
+5. User is redirected to the dashboard (account auto-created on first login)
+6. User creates first channel:
+   - User adds platform bot as admin to their Telegram channel
+   - User enters channel username/ID in the web app
+   - System verifies bot has posting permissions
    - User configures channel settings (niche, tone, language)
-3. User adds content sources (optional)
+7. User adds content sources (optional)
    - Enters source channel username
    - System assigns scraping session
-4. User can now generate content
+8. User can now generate content
 ```
 
 ### 6.2 Content Generation Flow
@@ -343,18 +497,94 @@ A unified platform that:
 6. User sees result in dashboard
 ```
 
+### 6.4 Automatic Posting Setup Flow
+
+```
+1. User navigates to channel settings -> "Auto-Posting"
+2. User enables automatic posting
+3. User configures source mode:
+   a. Research-based: Enter topics/keywords to monitor
+   b. Scraped-based: Select content sources to trigger auto-generation
+   c. Both: Configure both options
+4. User configures schedule:
+   - Frequency (hourly, daily, custom cron)
+   - Time windows (e.g., only post between 9am-9pm)
+   - Daily/weekly post limits
+5. User selects publishing mode:
+   - Auto-publish (fully autonomous)
+   - Review-first (posts sent to bot for approval)
+   - Scheduled (queue for optimal times)
+6. User enables/pauses auto-posting
+7. System starts autonomous operation
+```
+
+### 6.5 Automatic Posting Execution Flow (Scraped Content)
+
+```
+1. Scraping worker finds new posts from content sources
+2. System checks if auto-posting is enabled for the channel
+3. For each new scraped post:
+   - AI analyzes content and extracts key themes
+   - If post has images: AI analyzes images via vision model
+   - AI generates original post inspired by scraped content
+   - If configured: AI generates similar images
+4. Based on publishing mode:
+   a. Auto-publish: Post is published immediately
+   b. Review-first: Post sent to user via platform bot
+   c. Scheduled: Post queued for next optimal time slot
+5. User receives notification via bot
+6. Post logged in auto-posting history
+```
+
+### 6.6 Automatic Posting Execution Flow (Research-Based)
+
+```
+1. Scheduler triggers research job based on configured schedule
+2. System performs web research on configured topics/keywords
+3. AI synthesizes findings and generates post content
+4. If configured: AI generates relevant images
+5. Based on publishing mode:
+   a. Auto-publish: Post is published immediately
+   b. Review-first: Post sent to user via platform bot
+   c. Scheduled: Post queued for next optimal time slot
+6. User receives notification via bot
+7. Post logged in auto-posting history
+```
+
+### 6.7 Post Review via Bot Flow
+
+```
+1. Auto-generated post is ready for review
+2. Platform bot sends message to user with:
+   - Post preview (text + images)
+   - Source information (research topic or scraped post reference)
+   - Inline buttons: [Approve] [Edit] [Reject] [Schedule]
+3. User taps a button:
+   a. Approve: Post published immediately, user notified
+   b. Edit: Deep link opens web app post editor
+   c. Reject: Post archived, optional feedback prompt
+   d. Schedule: Bot prompts for date/time, then queues post
+4. Action logged and dashboard updated
+```
+
 ---
 
 ## 7. Data Model (High-Level)
 
 ### Core Entities
 
-- **User**: Platform users who own channels
-- **Channel**: Telegram channel with bot token and settings
+- **User**: Platform users (linked to Telegram account via telegramId)
+- **AuthCode**: Temporary authentication codes for Telegram login flow
+- **Channel**: Telegram channel (ID, username) with settings (platform bot publishes to all channels)
 - **ContentSource**: Source channels to scrape for inspiration
 - **ScrapedContent**: Posts scraped from source channels
-- **Post**: Generated/written posts (draft, scheduled, published)
+- **Post**: Generated/written posts (draft, scheduled, pending_review, published)
 - **MediaFile**: Uploaded or scraped images
+- **ImageAnalysis**: AI-generated analysis of scraped images (style, subject, composition)
+- **AutoPostConfig**: Configuration for automatic research-based posting per channel
+- **AutoPostLog**: History of automatically generated posts and their status
+- **NotificationPreference**: User preferences for bot notifications
+- **PendingReview**: Posts awaiting user approval via bot
 
 ### Admin Entities
 
@@ -369,7 +599,7 @@ A unified platform that:
 
 ### Phase 1 (MVP)
 
-- User registration and authentication
+- Telegram bot authentication (login via platform bot)
 - Channel management (add, configure, delete)
 - Content source management
 - Basic scraping (text only)
@@ -377,6 +607,7 @@ A unified platform that:
 - Manual post creation
 - Immediate publishing
 - Basic admin panel
+- Basic bot notifications (publish success/failure)
 
 ### Phase 2
 
@@ -385,11 +616,16 @@ A unified platform that:
 - Image support (upload and scraped)
 - Scheduled publishing
 - Post analytics (views, forwards)
+- Image analysis for scraped content (Gemini Flash 3)
+- AI image generation based on analyzed images
+- Post review via bot (approve/reject/edit)
+- Full notification preferences
 
 ### Phase 3
 
 - Multiple images per post
 - Advanced scheduling (recurring posts)
+- Automatic research-based posting (auto-generation schedules)
 - Content calendar view
 - Bulk operations
 - Export/import functionality
@@ -420,7 +656,10 @@ A unified platform that:
 
 ### Assumptions
 
-- Users have existing Telegram channels with bot admin access
+- Users have Telegram accounts for authentication
+- Users have existing Telegram channels and can add bots as admins
 - Users understand basic Telegram channel concepts
 - Admin will manage session pool for scraping
 - OpenRouter API availability and pricing remains stable
+- Platform bot token is configured and accessible
+- Users will add the single platform bot as admin to their channels
