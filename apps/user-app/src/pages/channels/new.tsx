@@ -9,6 +9,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { StepIndicator } from "~/components/channels/step-indicator";
 import { ConnectChannelStep } from "~/components/channels/connect-channel-step";
 import { ConfigureChannelStep } from "~/components/channels/configure-channel-step";
+import { useI18n } from "~/i18n";
 
 interface VerifyResponse {
   valid: boolean;
@@ -25,6 +26,7 @@ export default function NewChannelPage() {
   const router = useRouter();
   const { isLoading: authLoading } = useRequireAuth();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
 
   const [step, setStep] = useState(1);
   const [channelId, setChannelId] = useState("");
@@ -93,16 +95,16 @@ export default function NewChannelPage() {
   }
 
   return (
-    <PageLayout title="Add Channel">
+    <PageLayout title={t("addChannel.pageTitle")}>
       <AppHeader user={user} onLogout={logout} />
 
       <div className="px-4 md:px-6 lg:px-8 py-6 max-w-xl mx-auto">
         <PageHeader
-          title="Add Channel"
+          title={t("addChannel.title")}
           breadcrumbs={[
-            { label: "Home", href: "/" },
-            { label: "Channels", href: "/channels" },
-            { label: "Add Channel" },
+            { label: t("common.home"), href: "/" },
+            { label: t("nav.channels"), href: "/channels" },
+            { label: t("addChannel.title") },
           ]}
         />
 

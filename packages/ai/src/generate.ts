@@ -18,7 +18,7 @@ export async function generateFromPrompt(
   additionalInstructions?: string
 ): Promise<GenerationResult> {
   const systemPrompt = getSystemPrompt(channel);
-  const userPrompt = getGenerateFromPromptPrompt(prompt, additionalInstructions);
+  const userPrompt = getGenerateFromPromptPrompt(prompt, additionalInstructions, channel.language);
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
@@ -49,7 +49,8 @@ export async function generateFromScrapedContent(
   const systemPrompt = getSystemPrompt(channel);
   const userPrompt = getGenerateFromScrapedPrompt(
     scrapedPosts,
-    additionalInstructions
+    additionalInstructions,
+    channel.language
   );
 
   const messages: ChatMessage[] = [

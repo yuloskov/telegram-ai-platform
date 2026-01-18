@@ -1,7 +1,9 @@
 import * as React from "react";
 import Link from "next/link";
+import { Globe } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { useI18n, type Language } from "~/i18n";
 
 interface AppHeaderProps {
   user?: {
@@ -12,6 +14,28 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ user, onLogout }: AppHeaderProps) {
+  const { t, language, setLanguage } = useI18n();
+  const [langMenuOpen, setLangMenuOpen] = React.useState(false);
+  const langMenuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        langMenuRef.current &&
+        !langMenuRef.current.contains(event.target as Node)
+      ) {
+        setLangMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+    setLangMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-[var(--border-secondary)] bg-[var(--bg-primary)] px-4 md:px-6">
       <Link href="/" className="flex items-center gap-3">
@@ -19,19 +43,61 @@ export function AppHeader({ user, onLogout }: AppHeaderProps) {
           <TelegramIcon className="h-5 w-5 text-white" />
         </div>
         <span className="text-base font-semibold text-[var(--text-primary)]">
-          AI Channels
+          {t("header.appName")}
         </span>
       </Link>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {/* Language Switcher */}
+        <div className="relative" ref={langMenuRef}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLangMenuOpen(!langMenuOpen)}
+            className="gap-1.5"
+          >
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {t(`language.${language}` as const)}
+            </span>
+          </Button>
+
+          {langMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-32 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-primary)] py-1 shadow-lg">
+              <button
+                onClick={() => handleLanguageChange("en")}
+                className={cn(
+                  "flex w-full items-center px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-secondary)]",
+                  language === "en"
+                    ? "text-[var(--accent-primary)] font-medium"
+                    : "text-[var(--text-primary)]"
+                )}
+              >
+                {t("language.en")}
+              </button>
+              <button
+                onClick={() => handleLanguageChange("ru")}
+                className={cn(
+                  "flex w-full items-center px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-secondary)]",
+                  language === "ru"
+                    ? "text-[var(--accent-primary)] font-medium"
+                    : "text-[var(--text-primary)]"
+                )}
+              >
+                {t("language.ru")}
+              </button>
+            </div>
+          )}
+        </div>
+
         {user && (
           <span className="text-sm text-[var(--text-secondary)] hidden sm:inline">
-            {user.displayName || user.username || "User"}
+            {user.displayName || user.username || t("common.user")}
           </span>
         )}
         {onLogout && (
           <Button variant="ghost" size="sm" onClick={onLogout}>
-            Logout
+            {t("header.logout")}
           </Button>
         )}
       </div>

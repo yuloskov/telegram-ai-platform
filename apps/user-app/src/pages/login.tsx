@@ -8,10 +8,12 @@ import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/ui/spinner";
 import { TelegramIcon } from "~/components/auth/telegram-icon";
 import { LoginCodeDisplay } from "~/components/auth/login-code-display";
+import { useI18n } from "~/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth, isAuthenticated } = useAuthStore();
+  const { t } = useI18n();
   const [code, setCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -39,14 +41,14 @@ export default function LoginPage() {
         setExpiresAt(new Date(data.data.expiresAt));
         setIsPolling(true);
       } else {
-        setError(data.error || "Failed to generate code");
+        setError(data.error || t("auth.failedToGenerate"));
       }
     } catch {
-      setError("Failed to generate code. Please try again.");
+      setError(t("auth.failedToGenerateRetry"));
     } finally {
       setIsGenerating(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!code || !isPolling) return;
@@ -55,7 +57,7 @@ export default function LoginPage() {
       if (expiresAt && new Date() > expiresAt) {
         setIsPolling(false);
         setCode(null);
-        setError("Code expired. Please generate a new one.");
+        setError(t("auth.codeExpired"));
         return;
       }
 
@@ -87,7 +89,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Login - AI Telegram Channels</title>
+        <title>{t("auth.pageTitle")}</title>
       </Head>
       <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-secondary)]">
         <Card className="w-full max-w-md p-8">
@@ -97,10 +99,10 @@ export default function LoginPage() {
               <TelegramIcon className="h-10 w-10 text-white" />
             </div>
             <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-              Login with Telegram
+              {t("auth.loginTitle")}
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mt-2">
-              Authenticate securely via our Telegram bot
+              {t("auth.loginDescription")}
             </p>
           </div>
 
@@ -126,12 +128,12 @@ export default function LoginPage() {
                 <div className="flex flex-col items-center gap-4">
                   <Spinner size="lg" />
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Generating code...
+                    {t("auth.generatingCode")}
                   </p>
                 </div>
               ) : (
                 <Button onClick={generateCode} size="lg">
-                  Generate Login Code
+                  {t("auth.generateCode")}
                 </Button>
               )}
             </div>

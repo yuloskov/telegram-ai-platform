@@ -1,0 +1,412 @@
+export const messages = {
+  en: {
+    // Common
+    common: {
+      loading: "Loading...",
+      error: "An error occurred",
+      save: "Save",
+      cancel: "Cancel",
+      delete: "Delete",
+      edit: "Edit",
+      create: "Create",
+      back: "Back",
+      viewAll: "View all",
+      user: "User",
+      home: "Home",
+      retry: "Retry",
+      sources: "sources",
+      characters: "characters",
+    },
+
+    // Header
+    header: {
+      appName: "AI Channels",
+      logout: "Logout",
+    },
+
+    // Navigation
+    nav: {
+      home: "Home",
+      channels: "Channels",
+      posts: "Posts",
+      settings: "Settings",
+    },
+
+    // Auth / Login
+    auth: {
+      pageTitle: "Login - AI Telegram Channels",
+      loginTitle: "Login with Telegram",
+      loginDescription: "Authenticate securely via our Telegram bot",
+      generateCode: "Generate Login Code",
+      generatingCode: "Generating code...",
+      failedToGenerate: "Failed to generate code",
+      failedToGenerateRetry: "Failed to generate code. Please try again.",
+      codeExpired: "Code expired. Please generate a new one.",
+      yourLoginCode: "Your login code:",
+      expiresIn: "Expires in {minutes} minutes",
+      step1: "Open our bot",
+      step1Suffix: "in Telegram",
+      step2: "Send the code",
+      step2Suffix: "to the bot",
+      step3: "You'll be automatically redirected once verified",
+      openTelegramBot: "Open Telegram Bot",
+      waitingForVerification: "Waiting for verification...",
+      generateNewCode: "Generate new code",
+    },
+
+    // Dashboard
+    dashboard: {
+      title: "Dashboard",
+      description: "Manage your AI-powered Telegram channels",
+      welcomeBack: "Welcome back",
+      addChannel: "Add Channel",
+      addChannelDescription: "Connect a new Telegram channel",
+      myChannels: "My Channels",
+      myChannelsDescription: "View and manage your channels",
+      generateContent: "Generate Content",
+      generateContentDescription: "Create AI-powered posts",
+      selectChannelFirst: "Select a channel first",
+      recentChannels: "Recent Channels",
+      noChannelsTitle: "No channels yet",
+      noChannelsDescription: "Get started by adding your first Telegram channel",
+      posts: "posts",
+    },
+
+    // Channels
+    channels: {
+      title: "My Channels",
+      pageTitle: "My Channels",
+      description: "Manage your Telegram channels",
+      addNew: "Add Channel",
+      noChannels: "No channels yet",
+      noChannelsDescription: "Add your first Telegram channel to get started",
+      channelSettings: "Channel Settings",
+      delete: "Delete Channel",
+      deleteConfirm: "Are you sure you want to delete this channel?",
+      posts: "posts",
+      sources: "sources",
+      noPosts: "No posts yet",
+      createPost: "Create Post",
+      notFound: "Channel not found",
+      generate: "Generate",
+      newPost: "New Post",
+    },
+
+    // Add Channel
+    addChannel: {
+      title: "Add Channel",
+      pageTitle: "Add Channel",
+      description: "Connect a new Telegram channel",
+      // Step 1 - Connect
+      step1Title: "Step 1: Connect your channel",
+      beforeYouStart: "Before you start:",
+      addBot: "Add",
+      asAdmin: "as an administrator to your channel",
+      ensurePermissions: "Make sure the bot has permission to post messages",
+      enterUsername: "Enter your channel username or ID below",
+      channelUsernameLabel: "Channel Username or ID",
+      channelUsernamePlaceholder: "@channelname or -1001234567890",
+      channelUsernameHint: "You can find your channel ID by forwarding a message to @userinfobot",
+      couldNotVerify: "Could not verify channel",
+      noPostingPermissions: "Bot found in channel but doesn't have posting permissions. Please update the bot's admin rights.",
+      verifying: "Verifying...",
+      verifyChannel: "Verify Channel",
+      // Step 2 - Configure
+      step2Title: "Step 2: Configure your channel",
+      nicheLabel: "Niche/Topic (optional)",
+      nichePlaceholder: "e.g., tech news, crypto, lifestyle",
+      toneLabel: "Tone",
+      toneProfessional: "Professional",
+      toneCasual: "Casual",
+      toneHumorous: "Humorous",
+      toneInformative: "Informative",
+      toneInspirational: "Inspirational",
+      contentLanguageLabel: "Language",
+      contentLanguageEnglish: "English",
+      contentLanguageRussian: "Russian",
+      hashtagsLabel: "Default Hashtags (comma-separated, optional)",
+      hashtagsPlaceholder: "#tech, #news, #daily",
+      failedToCreate: "Failed to create channel",
+      creating: "Creating...",
+    },
+
+    // Posts
+    posts: {
+      title: "Posts",
+      noPostsTitle: "No posts yet",
+      noPostsDescription: "Create your first post using AI or manually",
+      generateWithAI: "Generate with AI",
+      publish: "Publish",
+      status: {
+        draft: "Draft",
+        scheduled: "Scheduled",
+        publishing: "Publishing",
+        published: "Published",
+        failed: "Failed",
+        pending_review: "Pending Review",
+      },
+      publishing: "Publishing...",
+      publishSuccess: "Post published successfully!",
+      publishError: "Failed to publish post",
+    },
+
+    // Generate Modal
+    generate: {
+      title: "Generate Content",
+      placeholder: "Enter a topic or prompt for AI to generate content...",
+      generating: "Generating...",
+      generate: "Generate",
+    },
+
+    // Post Editor Modal
+    postEditor: {
+      titleReview: "Review Generated Content",
+      titleCreate: "Create Post",
+      placeholder: "Write your post content...",
+      charactersCount: "/ 4096 characters",
+      preview: "Preview",
+      previewEmpty: "Start typing to see preview",
+      saving: "Saving...",
+      saveAsDraft: "Save as Draft",
+    },
+
+    // Language
+    language: {
+      title: "Language",
+      en: "English",
+      ru: "Русский",
+    },
+
+    // Channel Settings
+    channelSettings: {
+      title: "Channel Settings",
+      nicheLabel: "Niche/Topic",
+      nichePlaceholder: "e.g., tech news, crypto, lifestyle",
+      nicheHint: "Helps AI understand what topics to focus on",
+      toneLabel: "Tone",
+      toneProfessional: "Professional",
+      toneCasual: "Casual",
+      toneHumorous: "Humorous",
+      toneInformative: "Informative",
+      toneInspirational: "Inspirational",
+      contentLanguageLabel: "Content Language",
+      contentLanguageEnglish: "English",
+      contentLanguageRussian: "Russian",
+      contentLanguageHint: "AI will generate content in this language",
+      hashtagsLabel: "Default Hashtags",
+      hashtagsPlaceholder: "#tech, #news, #daily",
+      hashtagsHint: "Comma-separated, will be added to generated posts",
+      save: "Save Settings",
+      saving: "Saving...",
+      saveSuccess: "Settings saved successfully",
+      saveError: "Failed to save settings",
+    },
+  },
+
+  ru: {
+    // Common
+    common: {
+      loading: "Загрузка...",
+      error: "Произошла ошибка",
+      save: "Сохранить",
+      cancel: "Отмена",
+      delete: "Удалить",
+      edit: "Редактировать",
+      create: "Создать",
+      back: "Назад",
+      viewAll: "Смотреть все",
+      user: "Пользователь",
+      home: "Главная",
+      retry: "Повторить",
+      sources: "источников",
+      characters: "символов",
+    },
+
+    // Header
+    header: {
+      appName: "AI Каналы",
+      logout: "Выйти",
+    },
+
+    // Navigation
+    nav: {
+      home: "Главная",
+      channels: "Каналы",
+      posts: "Посты",
+      settings: "Настройки",
+    },
+
+    // Auth / Login
+    auth: {
+      pageTitle: "Вход - AI Telegram Каналы",
+      loginTitle: "Вход через Telegram",
+      loginDescription: "Безопасная авторизация через нашего Telegram бота",
+      generateCode: "Получить код входа",
+      generatingCode: "Генерация кода...",
+      failedToGenerate: "Не удалось сгенерировать код",
+      failedToGenerateRetry: "Не удалось сгенерировать код. Попробуйте ещё раз.",
+      codeExpired: "Код истёк. Пожалуйста, сгенерируйте новый.",
+      yourLoginCode: "Ваш код входа:",
+      expiresIn: "Истекает через {minutes} мин.",
+      step1: "Откройте нашего бота",
+      step1Suffix: "в Telegram",
+      step2: "Отправьте код",
+      step2Suffix: "боту",
+      step3: "Вы будете автоматически перенаправлены после подтверждения",
+      openTelegramBot: "Открыть Telegram бота",
+      waitingForVerification: "Ожидание подтверждения...",
+      generateNewCode: "Сгенерировать новый код",
+    },
+
+    // Dashboard
+    dashboard: {
+      title: "Панель управления",
+      description: "Управляйте вашими AI-каналами в Telegram",
+      welcomeBack: "С возвращением",
+      addChannel: "Добавить канал",
+      addChannelDescription: "Подключить новый Telegram канал",
+      myChannels: "Мои каналы",
+      myChannelsDescription: "Просмотр и управление каналами",
+      generateContent: "Генерация контента",
+      generateContentDescription: "Создание постов с помощью AI",
+      selectChannelFirst: "Сначала выберите канал",
+      recentChannels: "Последние каналы",
+      noChannelsTitle: "Каналов пока нет",
+      noChannelsDescription: "Начните с добавления вашего первого Telegram канала",
+      posts: "постов",
+    },
+
+    // Channels
+    channels: {
+      title: "Мои каналы",
+      pageTitle: "Мои каналы",
+      description: "Управление вашими Telegram каналами",
+      addNew: "Добавить канал",
+      noChannels: "Каналов пока нет",
+      noChannelsDescription: "Добавьте ваш первый Telegram канал, чтобы начать",
+      channelSettings: "Настройки канала",
+      delete: "Удалить канал",
+      deleteConfirm: "Вы уверены, что хотите удалить этот канал?",
+      posts: "постов",
+      sources: "источников",
+      noPosts: "Постов пока нет",
+      createPost: "Создать пост",
+      notFound: "Канал не найден",
+      generate: "Генерировать",
+      newPost: "Новый пост",
+    },
+
+    // Add Channel
+    addChannel: {
+      title: "Добавить канал",
+      pageTitle: "Добавить канал",
+      description: "Подключить новый Telegram канал",
+      // Step 1 - Connect
+      step1Title: "Шаг 1: Подключите ваш канал",
+      beforeYouStart: "Перед началом:",
+      addBot: "Добавьте",
+      asAdmin: "администратором в ваш канал",
+      ensurePermissions: "Убедитесь, что у бота есть права на публикацию сообщений",
+      enterUsername: "Введите имя пользователя или ID канала ниже",
+      channelUsernameLabel: "Имя канала или ID",
+      channelUsernamePlaceholder: "@channelname или -1001234567890",
+      channelUsernameHint: "Вы можете узнать ID канала, переслав сообщение боту @userinfobot",
+      couldNotVerify: "Не удалось проверить канал",
+      noPostingPermissions: "Бот найден в канале, но не имеет прав на публикацию. Обновите права администратора бота.",
+      verifying: "Проверка...",
+      verifyChannel: "Проверить канал",
+      // Step 2 - Configure
+      step2Title: "Шаг 2: Настройте ваш канал",
+      nicheLabel: "Тематика (необязательно)",
+      nichePlaceholder: "напр., технологии, крипто, лайфстайл",
+      toneLabel: "Тон",
+      toneProfessional: "Профессиональный",
+      toneCasual: "Неформальный",
+      toneHumorous: "Юмористический",
+      toneInformative: "Информативный",
+      toneInspirational: "Вдохновляющий",
+      contentLanguageLabel: "Язык контента",
+      contentLanguageEnglish: "Английский",
+      contentLanguageRussian: "Русский",
+      hashtagsLabel: "Хештеги по умолчанию (через запятую, необязательно)",
+      hashtagsPlaceholder: "#технологии, #новости, #ежедневно",
+      failedToCreate: "Не удалось создать канал",
+      creating: "Создание...",
+    },
+
+    // Posts
+    posts: {
+      title: "Посты",
+      noPostsTitle: "Постов пока нет",
+      noPostsDescription: "Создайте свой первый пост с помощью AI или вручную",
+      generateWithAI: "Сгенерировать с AI",
+      publish: "Опубликовать",
+      status: {
+        draft: "Черновик",
+        scheduled: "Запланирован",
+        publishing: "Публикация",
+        published: "Опубликован",
+        failed: "Ошибка",
+        pending_review: "На проверке",
+      },
+      publishing: "Публикация...",
+      publishSuccess: "Пост успешно опубликован!",
+      publishError: "Не удалось опубликовать пост",
+    },
+
+    // Generate Modal
+    generate: {
+      title: "Генерация контента",
+      placeholder: "Введите тему или запрос для генерации контента...",
+      generating: "Генерация...",
+      generate: "Сгенерировать",
+    },
+
+    // Post Editor Modal
+    postEditor: {
+      titleReview: "Просмотр сгенерированного контента",
+      titleCreate: "Создать пост",
+      placeholder: "Напишите текст поста...",
+      charactersCount: "/ 4096 символов",
+      preview: "Предпросмотр",
+      previewEmpty: "Начните вводить текст для предпросмотра",
+      saving: "Сохранение...",
+      saveAsDraft: "Сохранить как черновик",
+    },
+
+    // Language
+    language: {
+      title: "Язык",
+      en: "English",
+      ru: "Русский",
+    },
+
+    // Channel Settings
+    channelSettings: {
+      title: "Настройки канала",
+      nicheLabel: "Тематика",
+      nichePlaceholder: "напр., технологии, крипто, лайфстайл",
+      nicheHint: "Помогает AI понять, на каких темах сосредоточиться",
+      toneLabel: "Тон",
+      toneProfessional: "Профессиональный",
+      toneCasual: "Неформальный",
+      toneHumorous: "Юмористический",
+      toneInformative: "Информативный",
+      toneInspirational: "Вдохновляющий",
+      contentLanguageLabel: "Язык контента",
+      contentLanguageEnglish: "Английский",
+      contentLanguageRussian: "Русский",
+      contentLanguageHint: "AI будет генерировать контент на этом языке",
+      hashtagsLabel: "Хештеги по умолчанию",
+      hashtagsPlaceholder: "#технологии, #новости, #ежедневно",
+      hashtagsHint: "Через запятую, будут добавлены к сгенерированным постам",
+      save: "Сохранить настройки",
+      saving: "Сохранение...",
+      saveSuccess: "Настройки успешно сохранены",
+      saveError: "Не удалось сохранить настройки",
+    },
+  },
+} as const;
+
+export type Language = keyof typeof messages;
+export type Messages = (typeof messages)["en"];

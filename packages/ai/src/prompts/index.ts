@@ -5,7 +5,64 @@ export interface ChannelContext {
   hashtags: string[];
 }
 
+// Tone translations
+const toneTranslations: Record<string, Record<string, string>> = {
+  en: {
+    professional: "professional",
+    casual: "casual",
+    humorous: "humorous",
+    informative: "informative",
+    inspirational: "inspirational",
+  },
+  ru: {
+    professional: "профессиональный",
+    casual: "неформальный",
+    humorous: "юмористический",
+    informative: "информативный",
+    inspirational: "вдохновляющий",
+  },
+};
+
 export function getSystemPrompt(channel: ChannelContext): string {
+  const lang = channel.language;
+  const tone = toneTranslations[lang]?.[channel.tone] || channel.tone;
+
+  if (lang === "ru") {
+    const nicheContext = channel.niche
+      ? `Канал посвящён теме: ${channel.niche}.`
+      : "";
+
+    const hashtagsContext =
+      channel.hashtags.length > 0
+        ? `Часто используемые хештеги: ${channel.hashtags.join(", ")}.`
+        : "";
+
+    return `Ты — опытный создатель контента для Telegram-каналов. Твоя задача — генерировать увлекательные, качественные посты на русском языке.
+
+Детали канала:
+- Тон: ${tone}
+- Язык: Русский
+${nicheContext}
+${hashtagsContext}
+
+Правила:
+1. Пиши в ${tone} тоне, подходящем для Telegram
+2. Посты должны быть лаконичными, но увлекательными (оптимальная длина: 100-500 символов)
+3. Используй форматирование (жирный, курсив) умеренно
+4. Добавляй эмодзи естественно, но не злоупотребляй
+5. Если указаны хештеги, органично добавляй их в конце
+6. Никогда не добавляй ссылки, если не просят специально
+7. Пиши оригинальный, уникальный контент
+8. Пиши ТОЛЬКО на русском языке
+
+Для форматирования в Telegram используй:
+- **жирный** для акцента
+- _курсив_ для мягкого выделения
+- \`код\` для технических терминов
+- Переносы строк для читабельности`;
+  }
+
+  // English (default)
   const nicheContext = channel.niche
     ? `The channel focuses on: ${channel.niche}.`
     : "";
@@ -15,23 +72,23 @@ export function getSystemPrompt(channel: ChannelContext): string {
       ? `Commonly used hashtags: ${channel.hashtags.join(", ")}.`
       : "";
 
-  return `You are an expert content creator for Telegram channels. Your task is to generate engaging, high-quality posts.
+  return `You are an expert content creator for Telegram channels. Your task is to generate engaging, high-quality posts in English.
 
 Channel Details:
-- Tone: ${channel.tone}
-- Language: ${channel.language === "ru" ? "Russian" : "English"}
+- Tone: ${tone}
+- Language: English
 ${nicheContext}
 ${hashtagsContext}
 
 Guidelines:
-1. Write in a ${channel.tone} tone appropriate for Telegram
+1. Write in a ${tone} tone appropriate for Telegram
 2. Keep posts concise but engaging (optimal length: 100-500 characters)
 3. Use appropriate formatting (bold, italic) sparingly
 4. Include relevant emojis naturally, but don't overuse
 5. If hashtags are provided, incorporate them naturally at the end
 6. Never include links unless specifically asked
 7. Write original, unique content
-8. Match the specified language exactly
+8. Write ONLY in English
 
 For Telegram formatting, use:
 - **bold** for emphasis
@@ -42,8 +99,29 @@ For Telegram formatting, use:
 
 export function getGenerateFromPromptPrompt(
   userPrompt: string,
-  additionalInstructions?: string
+  additionalInstructions?: string,
+  language: string = "en"
 ): string {
+  if (language === "ru") {
+    let prompt = `Сгенерируй пост для Telegram на основе этой темы/запроса:
+
+"${userPrompt}"`;
+
+    if (additionalInstructions) {
+      prompt += `
+
+Дополнительные инструкции от пользователя:
+${additionalInstructions}`;
+    }
+
+    prompt += `
+
+Ответь ТОЛЬКО текстом поста, готовым к публикации. Без пояснений или мета-комментариев.`;
+
+    return prompt;
+  }
+
+  // English (default)
   let prompt = `Generate a Telegram post based on this topic/prompt:
 
 "${userPrompt}"`;
@@ -64,8 +142,40 @@ Respond with ONLY the post content, ready to be published. No explanations or me
 
 export function getGenerateFromScrapedPrompt(
   scrapedPosts: Array<{ text: string | null; views: number }>,
-  additionalInstructions?: string
+  additionalInstructions?: string,
+  language: string = "en"
 ): string {
+  if (language === "ru") {
+    const postsContext = scrapedPosts
+      .filter((p) => p.text)
+      .map((p, i) => `Пост ${i + 1} (${p.views} просмотров):\n${p.text}`)
+      .join("\n\n---\n\n");
+
+    let prompt = `На основе этих популярных постов из похожих каналов, создай оригинальный пост, который использует их лучшие элементы, но будет полностью уникальным:
+
+${postsContext}
+
+Важно:
+- НЕ копируй и не пересказывай близко к тексту ни один из постов
+- Выдели ключевые темы и идеи, которые делают их увлекательными
+- Создай что-то свежее и оригинальное, сохраняя релевантность
+- Учитывай, почему эти посты были популярны (по количеству просмотров)`;
+
+    if (additionalInstructions) {
+      prompt += `
+
+Дополнительные инструкции:
+${additionalInstructions}`;
+    }
+
+    prompt += `
+
+Ответь ТОЛЬКО текстом поста, готовым к публикации.`;
+
+    return prompt;
+  }
+
+  // English (default)
   const postsContext = scrapedPosts
     .filter((p) => p.text)
     .map((p, i) => `Post ${i + 1} (${p.views} views):\n${p.text}`)
@@ -98,8 +208,40 @@ Respond with ONLY the post content, ready to be published.`;
 export function getGenerateFromResearchPrompt(
   topic: string,
   researchResults: string[],
-  additionalInstructions?: string
+  additionalInstructions?: string,
+  language: string = "en"
 ): string {
+  if (language === "ru") {
+    const researchContext = researchResults
+      .map((r, i) => `Источник ${i + 1}:\n${r}`)
+      .join("\n\n---\n\n");
+
+    let prompt = `На основе исследования темы "${topic}", создай информативный и увлекательный пост для Telegram:
+
+Результаты исследования:
+${researchContext}
+
+Важно:
+- Синтезируй информацию в связный, увлекательный пост
+- Включи самые интересные или важные факты
+- Сделай текст доступным для широкой аудитории
+- Не включай URL или ссылки в пост`;
+
+    if (additionalInstructions) {
+      prompt += `
+
+Дополнительные инструкции:
+${additionalInstructions}`;
+    }
+
+    prompt += `
+
+Ответь ТОЛЬКО текстом поста, готовым к публикации.`;
+
+    return prompt;
+  }
+
+  // English (default)
   const researchContext = researchResults
     .map((r, i) => `Source ${i + 1}:\n${r}`)
     .join("\n\n---\n\n");

@@ -2,6 +2,7 @@ import { ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { TelegramIcon } from "./telegram-icon";
 import { LoginStep } from "./login-step";
+import { useI18n } from "~/i18n";
 
 interface LoginCodeDisplayProps {
   code: string;
@@ -20,6 +21,7 @@ export function LoginCodeDisplay({
   botUsername,
   onGenerateNew,
 }: LoginCodeDisplayProps) {
+  const { t } = useI18n();
   const telegramLink = `https://t.me/${botUsername}`;
   const minutesRemaining = expiresAt
     ? Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000 / 60))
@@ -30,20 +32,20 @@ export function LoginCodeDisplay({
       {/* Code display */}
       <div className="bg-[var(--bg-secondary)] rounded-[var(--radius-lg)] p-6 text-center">
         <p className="text-sm text-[var(--text-secondary)] mb-2">
-          Your login code:
+          {t("auth.yourLoginCode")}
         </p>
         <div className="text-4xl font-mono font-bold tracking-[0.3em] text-[var(--accent-primary)]">
           {code}
         </div>
         <p className="text-xs text-[var(--text-tertiary)] mt-3">
-          Expires in {minutesRemaining} minutes
+          {t("auth.expiresIn", { minutes: minutesRemaining })}
         </p>
       </div>
 
       {/* Steps */}
       <div className="space-y-4">
         <LoginStep number={1}>
-          Open our bot{" "}
+          {t("auth.step1")}{" "}
           <a
             href={telegramLink}
             target="_blank"
@@ -52,17 +54,17 @@ export function LoginCodeDisplay({
           >
             @{botUsername}
           </a>{" "}
-          in Telegram
+          {t("auth.step1Suffix")}
         </LoginStep>
         <LoginStep number={2}>
-          Send the code{" "}
+          {t("auth.step2")}{" "}
           <span className="font-mono font-semibold text-[var(--text-primary)]">
             {code}
           </span>{" "}
-          to the bot
+          {t("auth.step2Suffix")}
         </LoginStep>
         <LoginStep number={3}>
-          You'll be automatically redirected once verified
+          {t("auth.step3")}
         </LoginStep>
       </div>
 
@@ -70,7 +72,7 @@ export function LoginCodeDisplay({
       <Button asChild className="w-full" size="lg">
         <a href={telegramLink} target="_blank" rel="noopener noreferrer">
           <TelegramIcon className="h-5 w-5" />
-          Open Telegram Bot
+          {t("auth.openTelegramBot")}
           <ExternalLink className="h-4 w-4 ml-1" />
         </a>
       </Button>
@@ -79,7 +81,7 @@ export function LoginCodeDisplay({
       {isPolling && (
         <p className="text-center text-sm text-[var(--text-secondary)] flex items-center justify-center gap-2">
           <span className="h-2 w-2 rounded-full bg-[var(--status-online)] animate-pulse" />
-          Waiting for verification...
+          {t("auth.waitingForVerification")}
         </p>
       )}
 
@@ -91,7 +93,7 @@ export function LoginCodeDisplay({
         className="w-full"
       >
         <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
-        Generate new code
+        {t("auth.generateNewCode")}
       </Button>
     </div>
   );

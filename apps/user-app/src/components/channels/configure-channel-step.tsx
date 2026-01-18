@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useI18n } from "~/i18n";
 
 interface ChannelInfo {
   id: number;
@@ -43,10 +44,12 @@ export function ConfigureChannelStep({
   isCreating,
   error,
 }: ConfigureChannelStepProps) {
+  const { t } = useI18n();
+
   return (
     <Card className="p-6">
       <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
-        Step 2: Configure your channel
+        {t("addChannel.step2Title")}
       </h2>
 
       {/* Success banner */}
@@ -65,20 +68,20 @@ export function ConfigureChannelStep({
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            Niche/Topic (optional)
+            {t("addChannel.nicheLabel")}
           </label>
           <Input
             value={settings.niche}
             onChange={(e) =>
               onSettingsChange({ ...settings, niche: e.target.value })
             }
-            placeholder="e.g., tech news, crypto, lifestyle"
+            placeholder={t("addChannel.nichePlaceholder")}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            Tone
+            {t("addChannel.toneLabel")}
           </label>
           <Select
             value={settings.tone}
@@ -90,18 +93,18 @@ export function ConfigureChannelStep({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="professional">Professional</SelectItem>
-              <SelectItem value="casual">Casual</SelectItem>
-              <SelectItem value="humorous">Humorous</SelectItem>
-              <SelectItem value="informative">Informative</SelectItem>
-              <SelectItem value="inspirational">Inspirational</SelectItem>
+              <SelectItem value="professional">{t("addChannel.toneProfessional")}</SelectItem>
+              <SelectItem value="casual">{t("addChannel.toneCasual")}</SelectItem>
+              <SelectItem value="humorous">{t("addChannel.toneHumorous")}</SelectItem>
+              <SelectItem value="informative">{t("addChannel.toneInformative")}</SelectItem>
+              <SelectItem value="inspirational">{t("addChannel.toneInspirational")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            Language
+            {t("addChannel.contentLanguageLabel")}
           </label>
           <Select
             value={settings.language}
@@ -113,44 +116,44 @@ export function ConfigureChannelStep({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="ru">Russian</SelectItem>
+              <SelectItem value="en">{t("addChannel.contentLanguageEnglish")}</SelectItem>
+              <SelectItem value="ru">{t("addChannel.contentLanguageRussian")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            Default Hashtags (comma-separated, optional)
+            {t("addChannel.hashtagsLabel")}
           </label>
           <Input
             value={settings.hashtags}
             onChange={(e) =>
               onSettingsChange({ ...settings, hashtags: e.target.value })
             }
-            placeholder="#tech, #news, #daily"
+            placeholder={t("addChannel.hashtagsPlaceholder")}
           />
         </div>
 
         {error && (
           <div className="flex items-start gap-3 bg-[#f8d7da] text-[#721c24] p-4 rounded-[var(--radius-md)]">
             <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-            <p className="text-sm">{error.message || "Failed to create channel"}</p>
+            <p className="text-sm">{error.message || t("addChannel.failedToCreate")}</p>
           </div>
         )}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={onBack} className="flex-1">
-            Back
+            {t("common.back")}
           </Button>
           <Button onClick={onCreate} disabled={isCreating} className="flex-1">
             {isCreating ? (
               <>
                 <Spinner size="sm" />
-                Creating...
+                {t("addChannel.creating")}
               </>
             ) : (
-              "Add Channel"
+              t("addChannel.title")
             )}
           </Button>
         </div>

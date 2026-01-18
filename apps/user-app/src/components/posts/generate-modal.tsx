@@ -9,6 +9,7 @@ import {
   ModalTitle,
   ModalFooter,
 } from "~/components/ui/modal";
+import { useI18n } from "~/i18n";
 
 interface GenerateModalProps {
   open: boolean;
@@ -27,32 +28,34 @@ export function GenerateModal({
   onGenerate,
   isGenerating,
 }: GenerateModalProps) {
+  const { t } = useI18n();
+
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
       <ModalContent className="max-w-lg">
         <ModalHeader>
-          <ModalTitle>Generate Content</ModalTitle>
+          <ModalTitle>{t("generate.title")}</ModalTitle>
         </ModalHeader>
         <Textarea
           value={prompt}
           onChange={(e) => onPromptChange(e.target.value)}
-          placeholder="Enter a topic or prompt for AI to generate content..."
+          placeholder={t("generate.placeholder")}
           className="min-h-[120px]"
         />
         <ModalFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button onClick={onGenerate} disabled={!prompt || isGenerating}>
             {isGenerating ? (
               <>
                 <Spinner size="sm" />
-                Generating...
+                {t("generate.generating")}
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                Generate
+                {t("generate.generate")}
               </>
             )}
           </Button>

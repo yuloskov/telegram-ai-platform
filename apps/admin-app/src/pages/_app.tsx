@@ -1,18 +1,27 @@
 import type { AppType } from "next/app";
-import { Geist } from "next/font/google";
+import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "~/styles/globals.css";
 
-const geist = Geist({
-	subsets: ["latin"],
-});
-
 const MyApp: AppType = ({ Component, pageProps }) => {
-	return (
-		<div className={geist.className}>
-			<Component {...pageProps} />
-		</div>
-	);
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 1000 * 60, // 1 minute
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Component {...pageProps} />
+    </QueryClientProvider>
+  );
 };
 
 export default MyApp;

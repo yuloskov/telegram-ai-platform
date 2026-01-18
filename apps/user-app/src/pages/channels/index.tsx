@@ -10,6 +10,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { EmptyState } from "~/components/telegram/empty-state";
 import { ChannelAvatar } from "~/components/telegram/channel-avatar";
 import { Plus, MessageCircle, FileText, Radio } from "lucide-react";
+import { useI18n } from "~/i18n";
 
 interface Channel {
   id: string;
@@ -31,6 +32,7 @@ interface Channel {
 export default function ChannelsPage() {
   const { isLoading: authLoading } = useRequireAuth();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
 
   const { data, isLoading } = useQuery({
     queryKey: ["channels"],
@@ -53,21 +55,21 @@ export default function ChannelsPage() {
   const channels = data || [];
 
   return (
-    <PageLayout title="My Channels">
+    <PageLayout title={t("channels.pageTitle")}>
       <AppHeader user={user} onLogout={logout} />
 
       <div className="px-4 md:px-6 lg:px-8 py-6 max-w-5xl mx-auto">
         <PageHeader
-          title="My Channels"
+          title={t("channels.title")}
           breadcrumbs={[
-            { label: "Home", href: "/" },
-            { label: "Channels" },
+            { label: t("common.home"), href: "/" },
+            { label: t("nav.channels") },
           ]}
           actions={
             <Button asChild>
               <Link href="/channels/new">
                 <Plus className="h-4 w-4" />
-                Add Channel
+                {t("channels.addNew")}
               </Link>
             </Button>
           }
@@ -78,13 +80,13 @@ export default function ChannelsPage() {
             <Card>
               <EmptyState
                 icon={<MessageCircle className="h-8 w-8 text-[var(--text-tertiary)]" />}
-                title="No channels yet"
-                description="Add your first Telegram channel to get started"
+                title={t("channels.noChannels")}
+                description={t("channels.noChannelsDescription")}
                 action={
                   <Button asChild>
                     <Link href="/channels/new">
                       <Plus className="h-4 w-4" />
-                      Add Channel
+                      {t("channels.addNew")}
                     </Link>
                   </Button>
                 }
@@ -117,11 +119,11 @@ export default function ChannelsPage() {
                         <div className="flex items-center gap-4 mt-2 text-sm text-[var(--text-tertiary)]">
                           <span className="flex items-center gap-1">
                             <FileText className="h-3.5 w-3.5" />
-                            {channel._count?.posts || 0} posts
+                            {channel._count?.posts || 0} {t("channels.posts")}
                           </span>
                           <span className="flex items-center gap-1">
                             <Radio className="h-3.5 w-3.5" />
-                            {channel._count?.contentSources || 0} sources
+                            {channel._count?.contentSources || 0} {t("channels.sources")}
                           </span>
                         </div>
 

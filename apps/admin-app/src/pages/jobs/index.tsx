@@ -1,0 +1,270 @@
+import Head from "next/head";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Loader, RefreshCw } from "lucide-react";
+import { AdminLayout } from "~/components/layout";
+import { Card, CardContent, Button, Badge, Spinner } from "~/components/ui";
+
+type JobStatus = "pending" | "running" | "completed" | "failed" | "retrying";
+
+interface JobLog {
+  id: string;
+  jobId: string;
+  jobType: string;
+  status: JobStatus;
+  payload: Record<string, unknown> | null;
+  result: Record<string, unknown> | null;
+  error: string | null;
+  attempts: number;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+interface JobsResponse {
+  data: JobLog[];
+  jobTypes: string[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+async function fetchJobs(page: number, status: string, jobType: string): Promise<JobsResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: "20",
+    ...(status && { status }),
+    ...(jobType && { jobType }),
+  });
+  const res = await fetch(`/api/jobs?${params}`);
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error);
+  }
+  return {
+    data: data.data,
+    jobTypes: data.jobTypes,
+    pagination: data.pagination,
+  };
+}
+
+function getStatusIcon(status: JobStatus) {
+  switch (status) {
+    case "completed":
+      return <CheckCircle className="h-4 w-4 text-[var(--status-success)]" />;
+    case "failed":
+      return <XCircle className="h-4 w-4 text-[var(--status-error)]" />;
+    case "running":
+      return <Loader className="h-4 w-4 text-[var(--accent-primary)] animate-spin" />;
+    case "retrying":
+      return <RefreshCw className="h-4 w-4 text-[var(--status-warning)]" />;
+    default:
+      return <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />;
+  }
+}
+
+function getStatusVariant(status: JobStatus): "success" | "error" | "warning" | "info" | "default" {
+  switch (status) {
+    case "completed":
+      return "success";
+    case "failed":
+      return "error";
+    case "running":
+      return "info";
+    case "retrying":
+      return "warning";
+    default:
+      return "default";
+  }
+}
+
+export default function JobsPage() {
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["admin", "jobs", page, statusFilter, typeFilter],
+    queryFn: () => fetchJobs(page, statusFilter, typeFilter),
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
+  return (
+    <>
+      <Head>
+        <title>Jobs - Admin Panel</title>
+      </Head>
+      <AdminLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--text-primary)]">Jobs</h1>
+              <p className="text-[var(--text-secondary)]">Monitor background job queue</p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
+
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] border-none"
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="running">Running</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="retrying">Retrying</option>
+                </select>
+
+                {data?.jobTypes && data.jobTypes.length > 0 && (
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => {
+                      setTypeFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] border-none"
+                  >
+                    <option value="">All Types</option>
+                    {data.jobTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {isLoading && (
+                <div className="flex justify-center py-12">
+                  <Spinner size="lg" />
+                </div>
+              )}
+
+              {error && (
+                <div className="p-4 rounded-[var(--radius-md)] bg-[#f8d7da] text-[#721c24]">
+                  Failed to load jobs: {error instanceof Error ? error.message : "Unknown error"}
+                </div>
+              )}
+
+              {data && (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-[var(--border-secondary)]">
+                          <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Status
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Job ID
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Type
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Attempts
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Created
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Completed
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.data.map((job) => (
+                          <tr key={job.id} className="border-b border-[var(--border-secondary)]">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(job.status)}
+                                <Badge variant={getStatusVariant(job.status)}>
+                                  {job.status}
+                                </Badge>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-[var(--text-primary)] font-mono text-sm">
+                                {job.jobId.slice(0, 8)}...
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge variant="primary">{job.jobType}</Badge>
+                            </td>
+                            <td className="py-3 px-4 text-[var(--text-secondary)]">
+                              {job.attempts}
+                            </td>
+                            <td className="py-3 px-4 text-[var(--text-secondary)] text-sm">
+                              {new Date(job.createdAt).toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-[var(--text-secondary)] text-sm">
+                              {job.completedAt
+                                ? new Date(job.completedAt).toLocaleString()
+                                : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {data.data.length === 0 && (
+                    <div className="text-center py-12 text-[var(--text-secondary)]">
+                      No jobs found
+                    </div>
+                  )}
+
+                  {data.pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--border-secondary)]">
+                      <div className="text-sm text-[var(--text-secondary)]">
+                        Showing {(page - 1) * 20 + 1} to{" "}
+                        {Math.min(page * 20, data.pagination.total)} of {data.pagination.total}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={page === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
+                          disabled={page === data.pagination.totalPages}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
+    </>
+  );
+}

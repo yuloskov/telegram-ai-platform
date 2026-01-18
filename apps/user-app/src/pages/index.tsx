@@ -9,6 +9,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { EmptyState } from "~/components/telegram/empty-state";
 import { ChannelAvatar } from "~/components/telegram/channel-avatar";
 import { Plus, Layers, Sparkles, MessageCircle } from "lucide-react";
+import { useI18n } from "~/i18n";
 
 interface Channel {
   id: string;
@@ -22,6 +23,7 @@ interface Channel {
 export default function Home() {
   const { isLoading } = useRequireAuth();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
 
   const { data: channels, isLoading: channelsLoading } = useQuery({
     queryKey: ["channels"],
@@ -44,12 +46,12 @@ export default function Home() {
   const hasChannels = channels && channels.length > 0;
 
   return (
-    <PageLayout title="Dashboard" description="Manage your AI-powered Telegram channels">
+    <PageLayout title={t("dashboard.title")} description={t("dashboard.description")}>
       <AppHeader user={user} onLogout={logout} />
 
       <div className="px-4 md:px-6 lg:px-8 py-6 max-w-5xl mx-auto">
         <PageHeader
-          title={`Welcome back${user?.displayName ? `, ${user.displayName}` : ""}!`}
+          title={`${t("dashboard.welcomeBack")}${user?.displayName ? `, ${user.displayName}` : ""}!`}
         />
 
         {/* Quick Actions */}
@@ -61,10 +63,10 @@ export default function Home() {
                   <Plus className="h-5 w-5 text-[var(--accent-primary)]" />
                 </div>
                 <h3 className="font-medium text-[var(--text-primary)] mb-1">
-                  Add Channel
+                  {t("dashboard.addChannel")}
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Connect a new Telegram channel
+                  {t("dashboard.addChannelDescription")}
                 </p>
               </Card>
             </Link>
@@ -75,10 +77,10 @@ export default function Home() {
                   <Layers className="h-5 w-5 text-[#155724]" />
                 </div>
                 <h3 className="font-medium text-[var(--text-primary)] mb-1">
-                  My Channels
+                  {t("dashboard.myChannels")}
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  View and manage your channels
+                  {t("dashboard.myChannelsDescription")}
                 </p>
               </Card>
             </Link>
@@ -88,10 +90,10 @@ export default function Home() {
                 <Sparkles className="h-5 w-5 text-[#7c3aed]" />
               </div>
               <h3 className="font-medium text-[var(--text-primary)] mb-1">
-                Generate Content
+                {t("dashboard.generateContent")}
               </h3>
               <p className="text-sm text-[var(--text-secondary)]">
-                {hasChannels ? "Create AI-powered posts" : "Select a channel first"}
+                {hasChannels ? t("dashboard.generateContentDescription") : t("dashboard.selectChannelFirst")}
               </p>
             </Card>
           </div>
@@ -99,12 +101,12 @@ export default function Home() {
 
         {/* Recent Channels or Empty State */}
         <PageSection
-          title={hasChannels ? "Recent Channels" : undefined}
+          title={hasChannels ? t("dashboard.recentChannels") : undefined}
           actions={
             hasChannels && (
               <Link href="/channels">
                 <Button variant="ghost" size="sm">
-                  View all
+                  {t("common.viewAll")}
                 </Button>
               </Link>
             )
@@ -132,7 +134,7 @@ export default function Home() {
                         )}
                       </div>
                       <span className="text-sm text-[var(--text-tertiary)]">
-                        {channel._count?.posts || 0} posts
+                        {channel._count?.posts || 0} {t("dashboard.posts")}
                       </span>
                     </div>
                   </Card>
@@ -143,13 +145,13 @@ export default function Home() {
             <Card>
               <EmptyState
                 icon={<MessageCircle className="h-8 w-8 text-[var(--text-tertiary)]" />}
-                title="No channels yet"
-                description="Get started by adding your first Telegram channel"
+                title={t("dashboard.noChannelsTitle")}
+                description={t("dashboard.noChannelsDescription")}
                 action={
                   <Button asChild>
                     <Link href="/channels/new">
                       <Plus className="h-4 w-4" />
-                      Add Channel
+                      {t("dashboard.addChannel")}
                     </Link>
                   </Button>
                 }

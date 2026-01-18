@@ -11,6 +11,7 @@ import { GenerateModal } from "~/components/posts/generate-modal";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostList } from "~/components/posts/post-list";
 import { Sparkles, Plus, Settings } from "lucide-react";
+import { useI18n } from "~/i18n";
 
 interface Channel {
   id: string;
@@ -39,6 +40,7 @@ export default function ChannelDetailPage() {
   const queryClient = useQueryClient();
   const { isLoading: authLoading } = useRequireAuth();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
 
   const [showGenerator, setShowGenerator] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -129,7 +131,7 @@ export default function ChannelDetailPage() {
   if (!channel) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
-        <p className="text-[var(--text-secondary)]">Channel not found</p>
+        <p className="text-[var(--text-secondary)]">{t("channels.notFound")}</p>
       </div>
     );
   }
@@ -150,15 +152,15 @@ export default function ChannelDetailPage() {
         <PageHeader
           title={channel.title}
           breadcrumbs={[
-            { label: "Home", href: "/" },
-            { label: "Channels", href: "/channels" },
+            { label: t("common.home"), href: "/" },
+            { label: t("nav.channels"), href: "/channels" },
             { label: channel.title },
           ]}
           actions={
             <div className="flex items-center gap-2">
               <Button onClick={() => setShowGenerator(true)}>
                 <Sparkles className="h-4 w-4" />
-                Generate
+                {t("channels.generate")}
               </Button>
               <Button
                 variant="secondary"
@@ -169,7 +171,7 @@ export default function ChannelDetailPage() {
                 }}
               >
                 <Plus className="h-4 w-4" />
-                New Post
+                {t("channels.newPost")}
               </Button>
               <Button variant="ghost" size="icon" asChild>
                 <Link href={`/channels/${id}/settings`}>
@@ -208,7 +210,7 @@ export default function ChannelDetailPage() {
         />
 
         {/* Posts List */}
-        <PageSection title="Posts">
+        <PageSection title={t("posts.title")}>
           <PostList
             posts={posts}
             isLoading={postsLoading}

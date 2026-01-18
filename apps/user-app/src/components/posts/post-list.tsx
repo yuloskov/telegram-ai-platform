@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { EmptyState } from "~/components/telegram/empty-state";
 import { StatusBadge } from "~/components/telegram/status-badge";
+import { useI18n } from "~/i18n";
 
 interface Post {
   id: string;
@@ -27,6 +28,8 @@ export function PostList({
   isPublishing,
   onOpenGenerator,
 }: PostListProps) {
+  const { t } = useI18n();
+
   if (isLoading) {
     return (
       <Card>
@@ -42,12 +45,12 @@ export function PostList({
       <Card>
         <EmptyState
           icon={<FileText className="h-8 w-8 text-[var(--text-tertiary)]" />}
-          title="No posts yet"
-          description="Create your first post using AI or manually"
+          title={t("posts.noPostsTitle")}
+          description={t("posts.noPostsDescription")}
           action={
             <Button onClick={onOpenGenerator}>
               <Sparkles className="h-4 w-4" />
-              Generate with AI
+              {t("posts.generateWithAI")}
             </Button>
           }
         />
@@ -93,7 +96,7 @@ export function PostList({
                     disabled={isPublishing}
                   >
                     <Send className="h-3.5 w-3.5" />
-                    Publish
+                    {t("posts.publish")}
                   </Button>
                 )}
                 {post.status === "failed" && (
@@ -104,7 +107,7 @@ export function PostList({
                     disabled={isPublishing}
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    Retry
+                    {t("common.retry")}
                   </Button>
                 )}
               </div>

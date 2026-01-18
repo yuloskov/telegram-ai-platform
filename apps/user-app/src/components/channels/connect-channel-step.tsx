@@ -3,6 +3,7 @@ import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
+import { useI18n } from "~/i18n";
 
 interface VerifyResponse {
   valid: boolean;
@@ -32,22 +33,24 @@ export function ConnectChannelStep({
   isVerifying,
   botUsername,
 }: ConnectChannelStepProps) {
+  const { t } = useI18n();
+
   return (
     <Card className="p-6">
       <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
-        Step 1: Connect your channel
+        {t("addChannel.step1Title")}
       </h2>
 
       {/* Instructions */}
       <div className="bg-[var(--accent-tertiary)] rounded-[var(--radius-md)] p-4 mb-6">
         <h3 className="font-medium text-[var(--accent-primary)] mb-2 text-sm">
-          Before you start:
+          {t("addChannel.beforeYouStart")}
         </h3>
         <ol className="text-sm text-[var(--text-secondary)] space-y-2">
           <li className="flex items-start gap-2">
             <span className="font-medium text-[var(--accent-primary)]">1.</span>
             <span>
-              Add{" "}
+              {t("addChannel.addBot")}{" "}
               <a
                 href={`https://t.me/${botUsername}`}
                 target="_blank"
@@ -57,16 +60,16 @@ export function ConnectChannelStep({
                 @{botUsername}
                 <ExternalLink className="h-3 w-3" />
               </a>{" "}
-              as an administrator to your channel
+              {t("addChannel.asAdmin")}
             </span>
           </li>
           <li className="flex items-start gap-2">
             <span className="font-medium text-[var(--accent-primary)]">2.</span>
-            <span>Make sure the bot has permission to post messages</span>
+            <span>{t("addChannel.ensurePermissions")}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="font-medium text-[var(--accent-primary)]">3.</span>
-            <span>Enter your channel username or ID below</span>
+            <span>{t("addChannel.enterUsername")}</span>
           </li>
         </ol>
       </div>
@@ -74,15 +77,15 @@ export function ConnectChannelStep({
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            Channel Username or ID
+            {t("addChannel.channelUsernameLabel")}
           </label>
           <Input
             value={channelId}
             onChange={(e) => onChannelIdChange(e.target.value)}
-            placeholder="@channelname or -1001234567890"
+            placeholder={t("addChannel.channelUsernamePlaceholder")}
           />
           <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
-            You can find your channel ID by forwarding a message to @userinfobot
+            {t("addChannel.channelUsernameHint")}
           </p>
         </div>
 
@@ -90,7 +93,7 @@ export function ConnectChannelStep({
           <div className="flex items-start gap-3 bg-[#f8d7da] text-[#721c24] p-4 rounded-[var(--radius-md)]">
             <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
             <p className="text-sm">
-              {verifyResult.error || "Could not verify channel"}
+              {verifyResult.error || t("addChannel.couldNotVerify")}
             </p>
           </div>
         )}
@@ -99,8 +102,7 @@ export function ConnectChannelStep({
           <div className="flex items-start gap-3 bg-[#fff3cd] text-[#856404] p-4 rounded-[var(--radius-md)]">
             <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
             <p className="text-sm">
-              Bot found in channel but doesn't have posting permissions. Please
-              update the bot's admin rights.
+              {t("addChannel.noPostingPermissions")}
             </p>
           </div>
         )}
@@ -113,10 +115,10 @@ export function ConnectChannelStep({
           {isVerifying ? (
             <>
               <Spinner size="sm" />
-              Verifying...
+              {t("addChannel.verifying")}
             </>
           ) : (
-            "Verify Channel"
+            t("addChannel.verifyChannel")
           )}
         </Button>
       </div>

@@ -1,7 +1,242 @@
 @import "tailwindcss";
 
+/* Telegram-inspired CSS Variables */
+:root {
+  /* Light mode colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f4f5;
+  --bg-tertiary: #e8e8e9;
+  --bg-message: #effdde;
+  --bg-message-incoming: #ffffff;
+
+  --accent-primary: #3390ec;
+  --accent-secondary: #50a8eb;
+  --accent-tertiary: #c5e1f9;
+
+  --text-primary: #000000;
+  --text-secondary: #707579;
+  --text-tertiary: #999999;
+  --text-link: #3390ec;
+  --text-on-accent: #ffffff;
+
+  --status-online: #0ac630;
+  --status-success: #31b545;
+  --status-warning: #e9a519;
+  --status-error: #e53935;
+  --status-pending: #999999;
+
+  --border-primary: #e0e0e0;
+  --border-secondary: #f0f0f0;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-popup: 0 2px 20px rgba(0, 0, 0, 0.16);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+}
+
+/* Dark mode colors */
+.dark {
+  --bg-primary: #212121;
+  --bg-secondary: #181818;
+  --bg-tertiary: #2c2c2c;
+  --bg-message: #766ac8;
+  --bg-message-incoming: #2c2c2c;
+
+  --accent-primary: #8774e1;
+  --accent-secondary: #9d8ce8;
+  --accent-tertiary: #3d3654;
+
+  --text-primary: #ffffff;
+  --text-secondary: #aaaaaa;
+  --text-tertiary: #707070;
+  --text-link: #8774e1;
+  --text-on-accent: #ffffff;
+
+  --status-online: #0ac630;
+  --status-success: #4fae4e;
+  --status-warning: #daa520;
+  --status-error: #ff6b6b;
+  --status-pending: #707070;
+
+  --border-primary: #303030;
+  --border-secondary: #252525;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-popup: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
 @theme {
-	--font-sans:
-		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* Map CSS variables to Tailwind theme */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-message: var(--bg-message);
+
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-tertiary: var(--accent-tertiary);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-error: var(--status-error);
+}
+
+/* Base styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure all interactive elements have pointer cursor */
+a,
+button,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+select,
+summary {
+  cursor: pointer;
+}
+
+/* Scrollbar styling (Telegram-like) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-modal-enter {
+  animation: modal-enter 0.2s ease;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease;
 }
