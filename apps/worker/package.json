@@ -15,7 +15,8 @@
     "@repo/ai": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@repo/telegram": "workspace:*",
+    "@repo/telegram-bot": "workspace:*",
+    "@repo/telegram-mtproto": "workspace:*",
     "bullmq": "^5.34.8",
     "ioredis": "^5.9.1"
   },

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createBot, setupBot } from "@repo/telegram/bot";
+import { createBot, setupBot } from "@repo/telegram-bot";
 import { webhookCallback } from "grammy";
 
 // Create and setup bot

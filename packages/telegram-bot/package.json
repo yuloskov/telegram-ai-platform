@@ -1,5 +1,5 @@
 {
-  "name": "@repo/telegram",
+  "name": "@repo/telegram-bot",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -8,14 +8,6 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    },
-    "./bot": {
-      "types": "./src/bot/index.ts",
-      "default": "./src/bot/index.ts"
-    },
-    "./mtproto": {
-      "types": "./src/mtproto/index.ts",
-      "default": "./src/mtproto/index.ts"
     }
   },
   "scripts": {
@@ -24,7 +16,6 @@
   },
   "dependencies": {
     "grammy": "^1.31.3",
-    "telegram": "^2.26.22",
     "@repo/database": "workspace:*",
     "@repo/shared": "workspace:*"
   },

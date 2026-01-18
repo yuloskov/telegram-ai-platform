@@ -279,9 +279,11 @@ import type { ApiResponse } from "@repo/shared/types";
 import { prisma } from "@repo/database";
 import type { Channel, Post } from "@repo/database";
 
-// From telegram package
-import { sendMessage, getBot } from "@repo/telegram/bot";
-import { t } from "@repo/telegram/i18n";
+// From telegram-bot package (lightweight - grammy only)
+import { sendMessage, getBot, t } from "@repo/telegram-bot";
+
+// From telegram-mtproto package (heavy - for scraping, worker only)
+// import { getMTProtoClient, scrapeChannelMessages } from "@repo/telegram-mtproto";
 
 // From ai package
 import { generateFromPrompt } from "@repo/ai";

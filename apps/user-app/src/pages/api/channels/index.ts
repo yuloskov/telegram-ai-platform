@@ -3,7 +3,7 @@ import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 import { CreateChannelSchema } from "@repo/shared/types";
-import { verifyBotPermissions, getChannelInfo } from "@repo/telegram/bot";
+import { verifyBotPermissions, getChannelInfo } from "@repo/telegram-bot";
 
 interface ChannelResponse {
   id: string;

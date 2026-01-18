@@ -1,5 +1,5 @@
 import { prisma } from "@repo/database";
-import { getMTProtoClient, scrapeChannelMessages, disconnectClient } from "@repo/telegram/mtproto";
+import { getMTProtoClient, scrapeChannelMessages, disconnectClient } from "@repo/telegram-mtproto";
 import type { ScrapingJobPayload } from "@repo/shared/queues";
 
 export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {

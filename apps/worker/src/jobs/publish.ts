@@ -1,5 +1,5 @@
 import { prisma } from "@repo/database";
-import { sendMessage, sendPhoto, sendMediaGroup, getBot } from "@repo/telegram/bot";
+import { sendMessage, sendPhoto, sendMediaGroup, getBot } from "@repo/telegram-bot";
 import type { PublishingJobPayload } from "@repo/shared/queues";
 
 export async function handlePublishJob(data: PublishingJobPayload): Promise<void> {
