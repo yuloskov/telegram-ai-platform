@@ -129,6 +129,38 @@ A unified platform that:
 - [ ] Response includes suggested media prompt
 - [ ] Generation completes within reasonable time (<30s)
 
+#### 3.3.5 Channel Post Analysis for Style Matching
+
+**Requirements:**
+- System analyzes existing posts from the target channel (the channel being posted to)
+- AI learns the channel's writing style, tone, vocabulary, and formatting patterns
+- Generated content mimics the established voice of the channel
+- System can generate content based on themes/topics from previous posts
+- Analysis is periodically updated to reflect evolving channel style
+
+**Analysis Features:**
+- **Tone Detection**: Identifies if channel uses formal, casual, humorous, or technical tone
+- **Vocabulary Patterns**: Extracts commonly used phrases, terminology, and expressions
+- **Formatting Style**: Learns emoji usage, paragraph structure, list preferences, hashtag patterns
+- **Content Themes**: Identifies recurring topics and angles covered by the channel
+- **Posting Patterns**: Analyzes post length, media usage frequency, and engagement patterns
+
+**Generation Modes:**
+1. **Style-Matched Generation**: User prompt + channel style = content that sounds like the channel
+2. **Continuation Generation**: Generate follow-up content based on recent posts/themes
+3. **Gap-Filling Generation**: Identify topics the channel hasn't covered recently and suggest new posts
+
+**Acceptance Criteria:**
+- [ ] System scrapes and stores recent posts from target channel (via Bot API or stored data)
+- [ ] AI analyzes channel posts to extract style fingerprint
+- [ ] Style fingerprint includes: tone, vocabulary, formatting, themes, average post length
+- [ ] Generated content adopts the identified writing style
+- [ ] User can view the analyzed style profile for their channel
+- [ ] User can regenerate style analysis manually
+- [ ] Style analysis updates automatically when new posts are published
+- [ ] User can override/adjust detected style preferences
+- [ ] AI explains how it's matching the channel style in generation responses
+
 #### 3.3.3 Generate from Web Research
 
 **Requirements:**
