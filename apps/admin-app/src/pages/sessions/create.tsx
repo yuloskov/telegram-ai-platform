@@ -2,7 +2,7 @@ import Head from "next/head";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Phone, Key, Lock, CheckCircle, Download } from "lucide-react";
+import { ArrowLeft, Phone, Key, Lock, CheckCircle, Download, Upload } from "lucide-react";
 import Link from "next/link";
 import { AdminLayout } from "~/components/layout";
 import { Card, CardContent, Button, Input, Spinner } from "~/components/ui";
@@ -53,9 +53,23 @@ async function importAuthKey(authKey: string, dcId: number) {
   return data.data;
 }
 
+async function importTelethonFile(file: File) {
+  const buffer = await file.arrayBuffer();
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+  const res = await fetch("/api/sessions/auth/import-telethon", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fileContent: base64 }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error);
+  return data.data;
+}
+
 export default function CreateSessionPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"auth" | "manual" | "authkey">("authkey");
+  const [mode, setMode] = useState<"auth" | "manual" | "authkey" | "telethon">("telethon");
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -65,6 +79,7 @@ export default function CreateSessionPage() {
   const [authKey, setAuthKey] = useState("");
   const [dcId, setDcId] = useState(2);
   const [error, setError] = useState("");
+  const [telethonFile, setTelethonFile] = useState<File | null>(null);
 
   const sendCodeMutation = useMutation({
     mutationFn: sendCode,
@@ -107,6 +122,18 @@ export default function CreateSessionPage() {
     onError: (err: Error) => setError(err.message),
   });
 
+  const telethonMutation = useMutation({
+    mutationFn: () => {
+      if (!telethonFile) throw new Error("No file selected");
+      return importTelethonFile(telethonFile);
+    },
+    onSuccess: () => {
+      setStep("success");
+      setError("");
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
   const handleSendCode = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -135,6 +162,12 @@ export default function CreateSessionPage() {
     e.preventDefault();
     setError("");
     authKeyMutation.mutate();
+  };
+
+  const handleTelethonSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    telethonMutation.mutate();
   };
 
   return (
@@ -166,6 +199,15 @@ export default function CreateSessionPage() {
 
               <Card>
                 <CardContent className="pt-6">
+                  {mode === "telethon" && (
+                    <TelethonFlow
+                      file={telethonFile}
+                      error={error}
+                      isLoading={telethonMutation.isPending}
+                      onFileChange={setTelethonFile}
+                      onSubmit={handleTelethonSubmit}
+                    />
+                  )}
                   {mode === "authkey" && (
                     <AuthKeyFlow
                       authKey={authKey}
@@ -215,25 +257,30 @@ export default function CreateSessionPage() {
 }
 
 interface ModeSelectorProps {
-  mode: "auth" | "manual" | "authkey";
-  onModeChange: (mode: "auth" | "manual" | "authkey") => void;
+  mode: "auth" | "manual" | "authkey" | "telethon";
+  onModeChange: (mode: "auth" | "manual" | "authkey" | "telethon") => void;
 }
 
 function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
   return (
-    <div className="flex gap-2">
+    <div className="grid grid-cols-2 gap-2">
+      <Button
+        variant={mode === "telethon" ? "default" : "secondary"}
+        onClick={() => onModeChange("telethon")}
+      >
+        <Upload className="h-4 w-4 mr-2" />
+        Telethon File
+      </Button>
       <Button
         variant={mode === "authkey" ? "default" : "secondary"}
         onClick={() => onModeChange("authkey")}
-        className="flex-1"
       >
         <Download className="h-4 w-4 mr-2" />
-        Import Auth Key
+        Auth Key
       </Button>
       <Button
         variant={mode === "manual" ? "default" : "secondary"}
         onClick={() => onModeChange("manual")}
-        className="flex-1"
       >
         <Key className="h-4 w-4 mr-2" />
         Session String
@@ -241,7 +288,6 @@ function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
       <Button
         variant={mode === "auth" ? "default" : "secondary"}
         onClick={() => onModeChange("auth")}
-        className="flex-1"
       >
         <Phone className="h-4 w-4 mr-2" />
         Phone Auth
@@ -545,6 +591,102 @@ function AuthKeyFlow({
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading || !authKey}>
+        {isLoading ? <Spinner size="sm" /> : "Import Session"}
+      </Button>
+    </form>
+  );
+}
+
+interface TelethonFlowProps {
+  file: File | null;
+  error: string;
+  isLoading: boolean;
+  onFileChange: (file: File | null) => void;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+function TelethonFlow({
+  file,
+  error,
+  isLoading,
+  onFileChange,
+  onSubmit,
+}: TelethonFlowProps) {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    onFileChange(selectedFile);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const droppedFile = e.dataTransfer.files?.[0] || null;
+    if (droppedFile && droppedFile.name.endsWith(".session")) {
+      onFileChange(droppedFile);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      {error && (
+        <div className="p-4 rounded-[var(--radius-md)] bg-[#fef2f2] text-[#991b1b] text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="p-4 rounded-[var(--radius-md)] bg-[#f0f9ff] text-[#0369a1] text-sm">
+        <strong>Easiest method.</strong> Upload a Telethon/Pyrogram .session file directly.
+        The auth key and DC will be extracted automatically.
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+          Session File
+        </label>
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          className={`border-2 border-dashed rounded-[var(--radius-md)] p-8 text-center cursor-pointer transition-colors ${
+            file
+              ? "border-[var(--success)] bg-[#f0fdf4]"
+              : "border-[var(--border)] hover:border-[var(--accent-primary)] hover:bg-[var(--bg-secondary)]"
+          }`}
+          onClick={() => document.getElementById("telethon-file-input")?.click()}
+        >
+          <input
+            id="telethon-file-input"
+            type="file"
+            accept=".session"
+            onChange={handleFileSelect}
+            className="hidden"
+            disabled={isLoading}
+          />
+          {file ? (
+            <div className="space-y-2">
+              <CheckCircle className="h-8 w-8 mx-auto text-[var(--success)]" />
+              <p className="text-sm font-medium text-[var(--text-primary)]">{file.name}</p>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                {(file.size / 1024).toFixed(1)} KB
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Upload className="h-8 w-8 mx-auto text-[var(--text-tertiary)]" />
+              <p className="text-sm text-[var(--text-secondary)]">
+                Drop your .session file here or click to browse
+              </p>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                Supports Telethon and Pyrogram session files
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Button type="submit" className="w-full" disabled={isLoading || !file}>
         {isLoading ? <Spinner size="sm" /> : "Import Session"}
       </Button>
     </form>

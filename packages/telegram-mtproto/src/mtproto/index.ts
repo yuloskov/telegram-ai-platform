@@ -1,4 +1,4 @@
-import { TelegramClient } from "telegram";
+import { TelegramClient, Api } from "telegram";
 import { StringSession } from "telegram/sessions";
 
 export interface MTProtoConfig {
@@ -39,6 +39,22 @@ export async function getMTProtoClient(
   });
 }
 
+async function resolveUsername(client: TelegramClient, username: string) {
+  // Remove @ prefix if present
+  const cleanUsername = username.startsWith("@") ? username.slice(1) : username;
+
+  const result = await client.invoke(
+    new Api.contacts.ResolveUsername({ username: cleanUsername })
+  );
+
+  const channel = result.chats?.[0];
+  if (!channel) {
+    throw new Error(`Channel not found: ${username}`);
+  }
+
+  return channel;
+}
+
 export async function scrapeChannelMessages(
   client: TelegramClient,
   channelUsername: string,
@@ -54,7 +70,8 @@ export async function scrapeChannelMessages(
     mediaUrls: string[];
   }>
 > {
-  const entity = await client.getEntity(channelUsername);
+  const channel = await resolveUsername(client, channelUsername);
+  const entity = await client.getEntity(channel);
 
   const messages = await client.getMessages(entity, {
     limit,
@@ -99,11 +116,11 @@ export async function getChannelEntity(
   channelUsername: string
 ): Promise<{ id: string; title: string; username: string | undefined } | null> {
   try {
-    const entity = await client.getEntity(channelUsername);
+    const channel = await resolveUsername(client, channelUsername);
     return {
-      id: String(entity.id),
-      title: "title" in entity ? (entity.title as string) : channelUsername,
-      username: "username" in entity ? (entity.username as string | undefined) : channelUsername,
+      id: String(channel.id),
+      title: "title" in channel ? (channel.title as string) : channelUsername,
+      username: "username" in channel ? (channel.username as string | undefined) : channelUsername,
     };
   } catch {
     return null;
