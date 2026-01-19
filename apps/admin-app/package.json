@@ -18,6 +18,8 @@
     "@repo/database": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/telegram-bot": "workspace:*",
+    "@repo/telegram-mtproto": "workspace:*",
+    "telegram": "^2.26.22",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.62.8",
     "@radix-ui/react-dialog": "^1.1.6",

@@ -32,10 +32,10 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] MediaFile (id, postId?, scrapedContentId?, url, type, filename)
 - [x] NotificationPreference (id, userId, settings)
 - [x] AutoPostConfig (id, channelId, settings)
-- [ ] TelegramSession (for MTProto scraping)
-- [ ] AdminUser
-- [ ] JobLog
-- [ ] AuditLog
+- [x] TelegramSession (for MTProto scraping)
+- [x] AdminUser
+- [x] JobLog
+- [x] AuditLog
 
 ---
 
@@ -195,17 +195,18 @@ This file tracks what has been built compared to the requirements in `requiremen
 ### Job Handlers
 - [x] Publishing job handler
 - [x] Notification job handler
-- [ ] Scraping job handler
+- [x] Scraping job handler
 
 ---
 
-## Phase 11: MTProto Scraping [NOT STARTED]
+## Phase 11: MTProto Scraping [PARTIALLY COMPLETED]
 
-- [ ] MTProto client setup (telegram package)
-- [ ] Session management APIs
-- [ ] Session management UI (admin)
-- [ ] Scraping job implementation
+- [x] MTProto client setup (telegram package in @repo/telegram-mtproto)
+- [x] Session management APIs (admin-app)
+- [x] Session management UI (admin-app)
+- [x] Scraping job implementation (worker)
 - [ ] Rate limiting
+- [ ] Content source management UI
 
 ---
 
@@ -269,13 +270,23 @@ This file tracks what has been built compared to the requirements in `requiremen
 
 ---
 
-## Phase 15: Basic Admin Panel [NOT STARTED]
+## Phase 15: Basic Admin Panel [PARTIALLY COMPLETED]
 
-- [ ] Admin dashboard page
-- [ ] User management pages/APIs
-- [ ] Session management pages/APIs
-- [ ] Job queue monitoring
+- [x] Admin dashboard page
+- [x] User management pages/APIs
+- [x] Session management pages/APIs
+- [x] Job queue monitoring
 - [ ] Audit logs
+
+### Session Management (New)
+- [x] List sessions API (`GET /api/sessions`)
+- [x] Create session API (`POST /api/sessions`)
+- [x] Get/Update/Delete session APIs (`/api/sessions/[id]`)
+- [x] Test session connection API (`POST /api/sessions/[id]/test`)
+- [x] Phone authentication flow APIs (`/api/sessions/auth/send-code`, `verify-code`)
+- [x] Sessions list page with table view
+- [x] Session creation page with phone auth and manual entry modes
+- [x] Sidebar navigation for Sessions
 
 ---
 
@@ -363,10 +374,10 @@ This file tracks what has been built compared to the requirements in `requiremen
 ### 3.7 Admin Features
 | Requirement | Status |
 |------------|--------|
-| Admin login | [ ] |
-| Session creation | [ ] |
-| User management | [ ] |
-| Job monitoring | [ ] |
+| Admin login | [x] |
+| Session creation | [x] |
+| User management | [x] |
+| Job monitoring | [x] |
 | Audit logs | [ ] |
 
 ### 3.8 Platform Bot

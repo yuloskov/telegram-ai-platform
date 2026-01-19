@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { LayoutDashboard, Users, ListTodo } from "lucide-react";
+import { LayoutDashboard, Users, ListTodo, Wifi } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 interface NavItem {
@@ -12,6 +12,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/users", label: "Users", icon: Users },
+  { href: "/sessions", label: "Sessions", icon: Wifi },
   { href: "/jobs", label: "Jobs", icon: ListTodo },
 ];
 
