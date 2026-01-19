@@ -114,4 +114,66 @@ export async function disconnectClient(client: TelegramClient): Promise<void> {
   await client.disconnect();
 }
 
+export interface AuthKeyImportParams {
+  authKey: string; // base64 encoded auth key
+  dcId: number; // 1-5
+}
+
+const DC_ADDRESSES: Record<number, { ip: string; port: number }> = {
+  1: { ip: "149.154.175.53", port: 443 },
+  2: { ip: "149.154.167.50", port: 443 },
+  3: { ip: "149.154.175.100", port: 443 },
+  4: { ip: "149.154.167.92", port: 443 },
+  5: { ip: "91.108.56.128", port: 443 },
+};
+
+export async function createSessionFromAuthKey(
+  params: AuthKeyImportParams
+): Promise<{ sessionString: string; phone: string; userId: string }> {
+  const apiId = process.env.TELEGRAM_API_ID;
+  const apiHash = process.env.TELEGRAM_API_HASH;
+
+  if (!apiId || !apiHash) {
+    throw new Error("TELEGRAM_API_ID and TELEGRAM_API_HASH must be set");
+  }
+
+  const dcInfo = DC_ADDRESSES[params.dcId];
+  if (!dcInfo) {
+    throw new Error(`Invalid DC ID: ${params.dcId}. Must be 1-5.`);
+  }
+
+  // Create session and set auth key
+  const session = new StringSession("");
+  const authKeyBuffer = Buffer.from(params.authKey, "base64");
+
+  if (authKeyBuffer.length !== 256) {
+    throw new Error(`Invalid auth key length: ${authKeyBuffer.length}. Expected 256 bytes.`);
+  }
+
+  session.setDC(params.dcId, dcInfo.ip, dcInfo.port);
+  // @ts-expect-error - setAuthKey exists but types are incomplete
+  session.setAuthKey(authKeyBuffer, params.dcId);
+
+  const client = new TelegramClient(session, parseInt(apiId, 10), apiHash, {
+    connectionRetries: 5,
+  });
+
+  await client.connect();
+
+  // Verify the session works by getting user info
+  const me = await client.getMe();
+  if (!me) {
+    await client.disconnect();
+    throw new Error("Failed to authenticate with provided auth key");
+  }
+
+  const sessionString = client.session.save() as unknown as string;
+  const phone = me.phone ?? `user_${me.id}`;
+  const userId = String(me.id);
+
+  await client.disconnect();
+
+  return { sessionString, phone, userId };
+}
+
 export { TelegramClient, StringSession };

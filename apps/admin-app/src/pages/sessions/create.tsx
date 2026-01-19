@@ -2,7 +2,7 @@ import Head from "next/head";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Phone, Key, Lock, CheckCircle } from "lucide-react";
+import { ArrowLeft, Phone, Key, Lock, CheckCircle, Download } from "lucide-react";
 import Link from "next/link";
 import { AdminLayout } from "~/components/layout";
 import { Card, CardContent, Button, Input, Spinner } from "~/components/ui";
@@ -42,15 +42,28 @@ async function createSessionManual(phone: string, sessionString: string) {
   return data.data;
 }
 
+async function importAuthKey(authKey: string, dcId: number) {
+  const res = await fetch("/api/sessions/auth/import-key", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ authKey, dcId }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error);
+  return data.data;
+}
+
 export default function CreateSessionPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"auth" | "manual">("auth");
+  const [mode, setMode] = useState<"auth" | "manual" | "authkey">("authkey");
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [authSessionId, setAuthSessionId] = useState("");
   const [manualSessionString, setManualSessionString] = useState("");
+  const [authKey, setAuthKey] = useState("");
+  const [dcId, setDcId] = useState(2);
   const [error, setError] = useState("");
 
   const sendCodeMutation = useMutation({
@@ -85,6 +98,15 @@ export default function CreateSessionPage() {
     onError: (err: Error) => setError(err.message),
   });
 
+  const authKeyMutation = useMutation({
+    mutationFn: () => importAuthKey(authKey, dcId),
+    onSuccess: () => {
+      setStep("success");
+      setError("");
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
   const handleSendCode = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -107,6 +129,12 @@ export default function CreateSessionPage() {
     e.preventDefault();
     setError("");
     manualMutation.mutate();
+  };
+
+  const handleAuthKeySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    authKeyMutation.mutate();
   };
 
   return (
@@ -138,7 +166,29 @@ export default function CreateSessionPage() {
 
               <Card>
                 <CardContent className="pt-6">
-                  {mode === "auth" ? (
+                  {mode === "authkey" && (
+                    <AuthKeyFlow
+                      authKey={authKey}
+                      dcId={dcId}
+                      error={error}
+                      isLoading={authKeyMutation.isPending}
+                      onAuthKeyChange={setAuthKey}
+                      onDcIdChange={setDcId}
+                      onSubmit={handleAuthKeySubmit}
+                    />
+                  )}
+                  {mode === "manual" && (
+                    <ManualFlow
+                      phone={phone}
+                      sessionString={manualSessionString}
+                      error={error}
+                      isLoading={manualMutation.isPending}
+                      onPhoneChange={setPhone}
+                      onSessionStringChange={setManualSessionString}
+                      onSubmit={handleManualSubmit}
+                    />
+                  )}
+                  {mode === "auth" && (
                     <AuthFlow
                       step={step}
                       phone={phone}
@@ -153,16 +203,6 @@ export default function CreateSessionPage() {
                       onVerifyCode={handleVerifyCode}
                       onSubmitPassword={handleSubmitPassword}
                     />
-                  ) : (
-                    <ManualFlow
-                      phone={phone}
-                      sessionString={manualSessionString}
-                      error={error}
-                      isLoading={manualMutation.isPending}
-                      onPhoneChange={setPhone}
-                      onSessionStringChange={setManualSessionString}
-                      onSubmit={handleManualSubmit}
-                    />
                   )}
                 </CardContent>
               </Card>
@@ -175,20 +215,20 @@ export default function CreateSessionPage() {
 }
 
 interface ModeSelectorProps {
-  mode: "auth" | "manual";
-  onModeChange: (mode: "auth" | "manual") => void;
+  mode: "auth" | "manual" | "authkey";
+  onModeChange: (mode: "auth" | "manual" | "authkey") => void;
 }
 
 function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
   return (
     <div className="flex gap-2">
       <Button
-        variant={mode === "auth" ? "default" : "secondary"}
-        onClick={() => onModeChange("auth")}
+        variant={mode === "authkey" ? "default" : "secondary"}
+        onClick={() => onModeChange("authkey")}
         className="flex-1"
       >
-        <Phone className="h-4 w-4 mr-2" />
-        Phone Authentication
+        <Download className="h-4 w-4 mr-2" />
+        Import Auth Key
       </Button>
       <Button
         variant={mode === "manual" ? "default" : "secondary"}
@@ -196,7 +236,15 @@ function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
         className="flex-1"
       >
         <Key className="h-4 w-4 mr-2" />
-        Manual Entry
+        Session String
+      </Button>
+      <Button
+        variant={mode === "auth" ? "default" : "secondary"}
+        onClick={() => onModeChange("auth")}
+        className="flex-1"
+      >
+        <Phone className="h-4 w-4 mr-2" />
+        Phone Auth
       </Button>
     </div>
   );
@@ -421,6 +469,83 @@ function ManualFlow({
 
       <Button type="submit" className="w-full" disabled={isLoading || !phone || !sessionString}>
         {isLoading ? <Spinner size="sm" /> : "Create Session"}
+      </Button>
+    </form>
+  );
+}
+
+interface AuthKeyFlowProps {
+  authKey: string;
+  dcId: number;
+  error: string;
+  isLoading: boolean;
+  onAuthKeyChange: (value: string) => void;
+  onDcIdChange: (value: number) => void;
+  onSubmit: (e: React.FormEvent) => void;
+}
+
+function AuthKeyFlow({
+  authKey,
+  dcId,
+  error,
+  isLoading,
+  onAuthKeyChange,
+  onDcIdChange,
+  onSubmit,
+}: AuthKeyFlowProps) {
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      {error && (
+        <div className="p-4 rounded-[var(--radius-md)] bg-[#fef2f2] text-[#991b1b] text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="p-4 rounded-[var(--radius-md)] bg-[#f0f9ff] text-[#0369a1] text-sm">
+        <strong>No phone required.</strong> Import an existing auth key directly.
+        The phone number will be retrieved automatically from the session.
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+          Auth Key (Base64)
+        </label>
+        <textarea
+          placeholder="Paste your base64-encoded auth key here (256 bytes)..."
+          value={authKey}
+          onChange={(e) => onAuthKeyChange(e.target.value)}
+          disabled={isLoading}
+          rows={4}
+          className="w-full rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono"
+        />
+        <p className="text-xs text-[var(--text-tertiary)] mt-1">
+          The auth key from TData or another MTProto client (256 bytes, base64 encoded)
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+          Data Center (DC)
+        </label>
+        <select
+          value={dcId}
+          onChange={(e) => onDcIdChange(parseInt(e.target.value, 10))}
+          disabled={isLoading}
+          className="w-full rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+        >
+          <option value={1}>DC1 - Miami</option>
+          <option value={2}>DC2 - Amsterdam (default)</option>
+          <option value={3}>DC3 - Miami</option>
+          <option value={4}>DC4 - Amsterdam</option>
+          <option value={5}>DC5 - Singapore</option>
+        </select>
+        <p className="text-xs text-[var(--text-tertiary)] mt-1">
+          Select the data center where the account is registered (usually DC2)
+        </p>
+      </div>
+
+      <Button type="submit" className="w-full" disabled={isLoading || !authKey}>
+        {isLoading ? <Spinner size="sm" /> : "Import Session"}
       </Button>
     </form>
   );
