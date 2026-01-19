@@ -1,9 +1,41 @@
 import { Worker } from "bullmq";
 import { Redis } from "ioredis";
 import { QUEUE_NAMES } from "@repo/shared/queues";
+import { prisma } from "@repo/database";
 import { handlePublishJob } from "./jobs/publish.js";
 import { handleScrapeJob } from "./jobs/scrape.js";
 import { handleNotificationJob } from "./jobs/notify.js";
+
+// Helper to update job status in database
+async function updateJobStatus(
+  jobId: string,
+  status: "running" | "completed" | "failed",
+  extra?: { error?: string; result?: unknown }
+) {
+  try {
+    const jobLog = await prisma.jobLog.findFirst({ where: { jobId } });
+    if (!jobLog) return;
+
+    if (status === "running") {
+      await prisma.jobLog.update({
+        where: { id: jobLog.id },
+        data: { status, startedAt: new Date(), attempts: jobLog.attempts + 1 },
+      });
+    } else if (status === "completed") {
+      await prisma.jobLog.update({
+        where: { id: jobLog.id },
+        data: { status, completedAt: new Date(), result: extra?.result ?? null },
+      });
+    } else if (status === "failed") {
+      await prisma.jobLog.update({
+        where: { id: jobLog.id },
+        data: { status, completedAt: new Date(), error: extra?.error },
+      });
+    }
+  } catch (e) {
+    console.error(`Failed to update job status for ${jobId}:`, e);
+  }
+}
 
 const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
 
@@ -40,6 +72,7 @@ const scrapingWorker = new Worker(
   QUEUE_NAMES.SCRAPING,
   async (job) => {
     console.log(`Processing scraping job: ${job.id}`);
+    if (job.id) await updateJobStatus(job.id, "running");
     return handleScrapeJob(job.data);
   },
   {
@@ -48,12 +81,14 @@ const scrapingWorker = new Worker(
   }
 );
 
-scrapingWorker.on("completed", (job) => {
+scrapingWorker.on("completed", async (job) => {
   console.log(`Scraping job ${job.id} completed`);
+  if (job.id) await updateJobStatus(job.id, "completed");
 });
 
-scrapingWorker.on("failed", (job, err) => {
+scrapingWorker.on("failed", async (job, err) => {
   console.error(`Scraping job ${job?.id} failed:`, err.message);
+  if (job?.id) await updateJobStatus(job.id, "failed", { error: err.message });
 });
 
 // Notifications worker

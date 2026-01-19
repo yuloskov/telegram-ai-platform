@@ -6,13 +6,24 @@ import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 import { QUEUE_NAMES, SCRAPING_JOB_OPTIONS, type ScrapingJobPayload } from "@repo/shared/queues";
 
-const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
-  maxRetriesPerRequest: null,
-});
+const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
 
-const scrapingQueue = new Queue<ScrapingJobPayload>(QUEUE_NAMES.SCRAPING, {
-  connection: redis,
-});
+// Use a singleton pattern to avoid multiple connections in dev mode
+const globalForRedis = globalThis as unknown as { scrapingRedis?: Redis; scrapingQueue?: Queue<ScrapingJobPayload> };
+
+if (!globalForRedis.scrapingRedis) {
+  globalForRedis.scrapingRedis = new Redis(redisUrl, {
+    maxRetriesPerRequest: null,
+  });
+}
+
+if (!globalForRedis.scrapingQueue) {
+  globalForRedis.scrapingQueue = new Queue<ScrapingJobPayload>(QUEUE_NAMES.SCRAPING, {
+    connection: globalForRedis.scrapingRedis,
+  });
+}
+
+const scrapingQueue = globalForRedis.scrapingQueue;
 
 async function handler(
   req: AuthenticatedRequest,
@@ -47,18 +58,53 @@ async function handler(
     return res.status(404).json({ success: false, error: "Source not found" });
   }
 
-  // Add to scraping queue
-  const job = await scrapingQueue.add(
-    "scrape",
-    { sourceId: source.id },
-    SCRAPING_JOB_OPTIONS
-  );
-
-  return res.status(200).json({
-    success: true,
-    data: { jobId: job.id ?? "" },
-    message: "Scrape job started",
+  // Check if there's already a pending or running job for this source
+  const existingJob = await prisma.jobLog.findFirst({
+    where: {
+      jobType: "scraping",
+      status: { in: ["pending", "running"] },
+      payload: { path: ["sourceId"], equals: source.id },
+    },
   });
+
+  if (existingJob) {
+    return res.status(200).json({
+      success: true,
+      data: { jobId: existingJob.jobId },
+      message: "Scrape job already in progress",
+    });
+  }
+
+  try {
+    // Add to scraping queue
+    const job = await scrapingQueue.add(
+      "scrape",
+      { sourceId: source.id },
+      SCRAPING_JOB_OPTIONS
+    );
+
+    // Log job to database for admin dashboard
+    await prisma.jobLog.create({
+      data: {
+        jobId: job.id ?? `scrape-${source.id}-${Date.now()}`,
+        jobType: "scraping",
+        status: "pending",
+        payload: { sourceId: source.id },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: { jobId: job.id ?? "" },
+      message: "Scrape job started",
+    });
+  } catch (error) {
+    console.error("[scrape] Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create scrape job",
+    });
+  }
 }
 
 export default withAuth(handler);

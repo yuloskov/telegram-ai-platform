@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Loader, RefreshCw } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Loader, RefreshCw, Trash2, StopCircle } from "lucide-react";
 import { AdminLayout } from "~/components/layout";
 import { Card, CardContent, Button, Badge, Spinner } from "~/components/ui";
 
@@ -85,11 +85,40 @@ export default function JobsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["admin", "jobs", page, statusFilter, typeFilter],
     queryFn: () => fetchJobs(page, statusFilter, typeFilter),
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 10000,
+  });
+
+  const stopMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "stop" }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const res = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
   });
 
   return (
@@ -189,6 +218,9 @@ export default function JobsPage() {
                           <th className="text-left py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
                             Completed
                           </th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-[var(--text-secondary)]">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -220,6 +252,34 @@ export default function JobsPage() {
                               {job.completedAt
                                 ? new Date(job.completedAt).toLocaleString()
                                 : "-"}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center justify-end gap-2">
+                                {(job.status === "pending" || job.status === "running") && (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => stopMutation.mutate(job.id)}
+                                    disabled={stopMutation.isPending}
+                                    title="Stop job"
+                                  >
+                                    <StopCircle className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this job?")) {
+                                      deleteMutation.mutate(job.id);
+                                    }
+                                  }}
+                                  disabled={deleteMutation.isPending}
+                                  title="Delete job"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
