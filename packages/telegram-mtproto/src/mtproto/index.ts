@@ -115,17 +115,64 @@ export async function disconnectClient(client: TelegramClient): Promise<void> {
 }
 
 export interface AuthKeyImportParams {
-  authKey: string; // base64 encoded auth key
+  authKey: string; // hex encoded auth key (512 hex chars = 256 bytes)
   dcId: number; // 1-5
 }
 
-const DC_ADDRESSES: Record<number, { ip: string; port: number }> = {
-  1: { ip: "149.154.175.53", port: 443 },
-  2: { ip: "149.154.167.50", port: 443 },
-  3: { ip: "149.154.175.100", port: 443 },
-  4: { ip: "149.154.167.92", port: 443 },
-  5: { ip: "91.108.56.128", port: 443 },
+// DC IP addresses (must match Telethon/Pyrogram format)
+const DC_ADDRESSES: Record<number, string> = {
+  1: "149.154.175.53",
+  2: "149.154.167.51",
+  3: "149.154.175.100",
+  4: "149.154.167.91",
+  5: "91.108.56.130",
 };
+
+function ipToBytes(ip: string): Buffer {
+  const parts = ip.split(".").map(Number);
+  return Buffer.from(parts);
+}
+
+function buildSessionString(authKeyHex: string, dcId: number): string {
+  const ip = DC_ADDRESSES[dcId];
+  if (!ip) {
+    throw new Error(`Invalid DC ID: ${dcId}. Must be 1-5.`);
+  }
+
+  // Normalize: remove spaces, newlines, and validate hex
+  const cleanedHex = authKeyHex.replace(/[\s\n\r]/g, "").toLowerCase();
+
+  if (!/^[0-9a-f]+$/.test(cleanedHex)) {
+    throw new Error("Auth key must be a valid hex string");
+  }
+
+  if (cleanedHex.length !== 512) {
+    throw new Error(`Invalid auth key length: ${cleanedHex.length / 2} bytes. Expected 256 bytes (512 hex characters).`);
+  }
+
+  const authKey = Buffer.from(cleanedHex, "hex");
+  const port = 443;
+
+  // Telethon session format (also supported by GramJS):
+  // - Prefix: "1" (version character)
+  // - URL-safe Base64: dcId(1) + ip(4, packed IPv4) + port(2, uint16BE) + authKey(256)
+  // Total payload: 1 + 4 + 2 + 256 = 263 bytes -> 352 base64 chars
+  const ipBytes = ipToBytes(ip);
+  const buffer = Buffer.alloc(1 + 4 + 2 + 256);
+
+  let offset = 0;
+  buffer.writeUInt8(dcId, offset++);                  // DC ID (1 byte)
+  ipBytes.copy(buffer, offset);                       // IP address (4 bytes, packed)
+  offset += 4;
+  buffer.writeUInt16BE(port, offset);                 // port (2 bytes, uint16BE)
+  offset += 2;
+  authKey.copy(buffer, offset);                       // auth key (256 bytes)
+
+  // Version "1" prefix + URL-safe base64 encoded payload (with padding)
+  // Use standard base64 and convert to URL-safe to preserve padding
+  const base64 = buffer.toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
+  return "1" + base64;
+}
 
 export async function createSessionFromAuthKey(
   params: AuthKeyImportParams
@@ -137,23 +184,10 @@ export async function createSessionFromAuthKey(
     throw new Error("TELEGRAM_API_ID and TELEGRAM_API_HASH must be set");
   }
 
-  const dcInfo = DC_ADDRESSES[params.dcId];
-  if (!dcInfo) {
-    throw new Error(`Invalid DC ID: ${params.dcId}. Must be 1-5.`);
-  }
+  // Build session string from hex auth key
+  const sessionString = buildSessionString(params.authKey, params.dcId);
 
-  // Create session and set auth key
-  const session = new StringSession("");
-  const authKeyBuffer = Buffer.from(params.authKey, "base64");
-
-  if (authKeyBuffer.length !== 256) {
-    throw new Error(`Invalid auth key length: ${authKeyBuffer.length}. Expected 256 bytes.`);
-  }
-
-  session.setDC(params.dcId, dcInfo.ip, dcInfo.port);
-  // @ts-expect-error - setAuthKey exists but types are incomplete
-  session.setAuthKey(authKeyBuffer, params.dcId);
-
+  const session = new StringSession(sessionString);
   const client = new TelegramClient(session, parseInt(apiId, 10), apiHash, {
     connectionRetries: 5,
   });
@@ -167,13 +201,14 @@ export async function createSessionFromAuthKey(
     throw new Error("Failed to authenticate with provided auth key");
   }
 
-  const sessionString = client.session.save() as unknown as string;
+  // Get the final session string (may be updated after connection)
+  const finalSessionString = client.session.save() as unknown as string;
   const phone = me.phone ?? `user_${me.id}`;
   const userId = String(me.id);
 
   await client.disconnect();
 
-  return { sessionString, phone, userId };
+  return { sessionString: finalSessionString, phone, userId };
 }
 
 export { TelegramClient, StringSession };

@@ -508,10 +508,10 @@ function AuthKeyFlow({
 
       <div>
         <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-          Auth Key (Base64)
+          Auth Key (Hex)
         </label>
         <textarea
-          placeholder="Paste your base64-encoded auth key here (256 bytes)..."
+          placeholder="Paste your hex-encoded auth key here (512 hex characters)..."
           value={authKey}
           onChange={(e) => onAuthKeyChange(e.target.value)}
           disabled={isLoading}
@@ -519,7 +519,7 @@ function AuthKeyFlow({
           className="w-full rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono"
         />
         <p className="text-xs text-[var(--text-tertiary)] mt-1">
-          The auth key from TData or another MTProto client (256 bytes, base64 encoded)
+          The auth key from TData or another MTProto client (256 bytes = 512 hex characters)
         </p>
       </div>
 

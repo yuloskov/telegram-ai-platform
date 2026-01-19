@@ -62,7 +62,10 @@ async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
 
 async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
-    const { phone, sessionString } = req.body;
+    const { phone, sessionString: rawSessionString } = req.body;
+
+    // Strip whitespace from session string (users often copy with line breaks)
+    const sessionString = rawSessionString?.replace(/\s/g, "");
 
     if (!phone || !sessionString) {
       return res.status(400).json({
