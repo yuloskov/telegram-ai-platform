@@ -4,10 +4,13 @@
  */
 import "./src/env.js";
 
+const isDev = process.env.NODE_ENV === "development";
+
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: true,
-  output: "standalone",
+  // Only use standalone output for production builds
+  ...(isDev ? {} : { output: "standalone" }),
 
   i18n: {
     locales: ["en"],
