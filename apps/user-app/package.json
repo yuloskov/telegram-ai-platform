@@ -8,7 +8,7 @@
     "check": "biome check .",
     "check:unsafe": "biome check --write --unsafe .",
     "check:write": "biome check --write .",
-    "dev": "SKIP_ENV_VALIDATION=1 next dev --port 3000",
+    "dev": "WATCHPACK_POLLING=true SKIP_ENV_VALIDATION=1 next dev --port 3000",
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "tsc --noEmit",

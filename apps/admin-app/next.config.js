@@ -25,6 +25,21 @@ const config = {
     "@repo/telegram-bot",
     "@repo/telegram-mtproto",
   ],
+
+  // Enable watching for symlinked workspace packages
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        followSymlinks: true,
+      };
+      config.snapshot = {
+        ...(config.snapshot ?? {}),
+        managedPaths: [],
+      };
+    }
+    return config;
+  },
 };
 
 export default config;

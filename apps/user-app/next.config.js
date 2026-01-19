@@ -19,8 +19,28 @@ const config = {
     defaultLocale: "en",
   },
 
-  // Only transpile the database package for Prisma
-  transpilePackages: ["@repo/database"],
+  // Transpile all workspace packages for proper hot reload
+  transpilePackages: [
+    "@repo/database",
+    "@repo/shared",
+    "@repo/telegram-bot",
+    "@repo/ai",
+  ],
+
+  // Enable watching for symlinked workspace packages
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        followSymlinks: true,
+      };
+      config.snapshot = {
+        ...(config.snapshot ?? {}),
+        managedPaths: [],
+      };
+    }
+    return config;
+  },
 };
 
 export default config;
