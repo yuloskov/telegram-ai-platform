@@ -42,12 +42,12 @@ async function handler(
     return res.status(404).json({ success: false, error: "Channel not found" });
   }
 
-  // Fetch all sources with their scraped content, ordered by scrapedAt (most recent first)
+  // Fetch all sources with their scraped content, ordered by telegramMessageId (most recent first)
   const sources = await prisma.contentSource.findMany({
     where: { channelId },
     include: {
       scrapedContent: {
-        orderBy: { scrapedAt: "desc" },
+        orderBy: { telegramMessageId: "desc" },
         select: {
           id: true,
           text: true,
