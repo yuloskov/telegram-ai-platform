@@ -256,6 +256,33 @@ export const messages = {
       noScrapeHistory: "No update history yet",
     },
 
+    // Generate Page
+    generatePage: {
+      title: "Generate Posts",
+      channelContext: "Your Channel Context",
+      channelContextCount: "{count} recent posts will be used for style reference",
+      channelContextEmpty: "No published posts yet for style reference",
+      inspirationSources: "Inspiration Sources",
+      selectSources: "Select Sources",
+      postsSelected: "{selected} of {total} posts selected",
+      noPostsAvailable: "No posts available",
+      noSources: "No sources added",
+      noSourcesDescription: "Add inspiration sources to generate content based on trending posts from similar channels.",
+      noScrapedContent: "No scraped content",
+      noScrapedContentDescription: "Update your sources to scrape content from similar channels first.",
+      goToSources: "Go to Sources",
+      customGuidanceSection: "Custom Guidance",
+      customGuidance: "Additional Instructions (optional)",
+      customGuidancePlaceholder: "e.g., Focus on practical tips for beginners, include a call to action...",
+      customGuidanceHint: "Give the AI specific guidance on what kind of content you want",
+      generatePosts: "Generate {count} Posts",
+      generatedPosts: "Generated Posts",
+      postNumber: "Post #{number}",
+      generateMore: "Generate More",
+      saveAllAsDrafts: "Save All as Drafts",
+      saved: "Saved",
+    },
+
     // Channel Settings
     channelSettings: {
       title: "Channel Settings",
@@ -537,6 +564,33 @@ export const messages = {
       scheduleWeekly: "Еженедельно",
       scrapeHistory: "История обновлений",
       noScrapeHistory: "История обновлений пуста",
+    },
+
+    // Generate Page
+    generatePage: {
+      title: "Генерация постов",
+      channelContext: "Контекст канала",
+      channelContextCount: "{count} недавних постов будут использованы для определения стиля",
+      channelContextEmpty: "Пока нет опубликованных постов для определения стиля",
+      inspirationSources: "Источники вдохновения",
+      selectSources: "Выберите источники",
+      postsSelected: "{selected} из {total} постов выбрано",
+      noPostsAvailable: "Нет доступных постов",
+      noSources: "Источники не добавлены",
+      noSourcesDescription: "Добавьте источники вдохновения для генерации контента на основе популярных постов похожих каналов.",
+      noScrapedContent: "Нет загруженного контента",
+      noScrapedContentDescription: "Сначала обновите источники, чтобы загрузить контент из похожих каналов.",
+      goToSources: "Перейти к источникам",
+      customGuidanceSection: "Дополнительные указания",
+      customGuidance: "Дополнительные инструкции (необязательно)",
+      customGuidancePlaceholder: "напр., Фокус на практических советах для новичков, добавить призыв к действию...",
+      customGuidanceHint: "Дайте AI конкретные указания о том, какой контент вы хотите",
+      generatePosts: "Сгенерировать {count} поста",
+      generatedPosts: "Сгенерированные посты",
+      postNumber: "Пост #{number}",
+      generateMore: "Сгенерировать ещё",
+      saveAllAsDrafts: "Сохранить все как черновики",
+      saved: "Сохранено",
     },
 
     // Channel Settings

@@ -283,3 +283,102 @@ Respond with ONLY a concise image generation prompt (1-2 sentences) that would c
 - Be visually striking but not too complex
 - Avoid text in the image`;
 }
+
+export function getGenerateMultiplePostsPrompt(
+  scrapedPosts: Array<{ text: string | null; views: number }>,
+  channelPreviousPosts: string[],
+  count: number,
+  customPrompt?: string,
+  language: string = "en"
+): string {
+  const filteredScraped = scrapedPosts.filter((p) => p.text);
+
+  if (language === "ru") {
+    const scrapedContext = filteredScraped
+      .map((p, i) => `Пост ${i + 1} (${p.views} просмотров):\n${p.text}`)
+      .join("\n\n---\n\n");
+
+    const previousContext =
+      channelPreviousPosts.length > 0
+        ? `\n\nТвои предыдущие посты (для понимания стиля):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+        : "";
+
+    let prompt = `На основе этих популярных постов из похожих каналов, создай ${count} РАЗНЫХ оригинальных постов:
+
+ВДОХНОВЕНИЕ (популярные посты):
+${scrapedContext}${previousContext}
+
+ВАЖНО:
+- Создай ровно ${count} уникальных постов
+- Каждый пост должен иметь ДРУГОЙ угол/подход к теме
+- НЕ копируй и не пересказывай близко посты-источники
+- Сохраняй единый стиль канала во всех постах
+- Каждый пост должен быть готов к публикации`;
+
+    if (customPrompt) {
+      prompt += `\n\nДОПОЛНИТЕЛЬНЫЕ ИНСТРУКЦИИ:\n${customPrompt}`;
+    }
+
+    prompt += `\n\nОтветь в JSON формате:
+{
+  "posts": [
+    {
+      "content": "текст поста 1",
+      "angle": "краткое описание подхода на русском"
+    },
+    {
+      "content": "текст поста 2",
+      "angle": "краткое описание подхода на русском"
+    }
+  ]
+}
+
+Ответь ТОЛЬКО валидным JSON без дополнительного текста.`;
+
+    return prompt;
+  }
+
+  // English (default)
+  const scrapedContext = filteredScraped
+    .map((p, i) => `Post ${i + 1} (${p.views} views):\n${p.text}`)
+    .join("\n\n---\n\n");
+
+  const previousContext =
+    channelPreviousPosts.length > 0
+      ? `\n\nYour previous posts (for style reference):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+      : "";
+
+  let prompt = `Based on these trending posts from similar channels, create ${count} DIFFERENT original posts:
+
+INSPIRATION (trending posts):
+${scrapedContext}${previousContext}
+
+IMPORTANT:
+- Create exactly ${count} unique posts
+- Each post should have a DIFFERENT angle/approach to the topic
+- Do NOT copy or closely paraphrase the source posts
+- Maintain consistent channel voice across all posts
+- Each post should be ready to publish`;
+
+  if (customPrompt) {
+    prompt += `\n\nADDITIONAL INSTRUCTIONS:\n${customPrompt}`;
+  }
+
+  prompt += `\n\nRespond in JSON format:
+{
+  "posts": [
+    {
+      "content": "post text 1",
+      "angle": "brief description of approach"
+    },
+    {
+      "content": "post text 2",
+      "angle": "brief description of approach"
+    }
+  ]
+}
+
+Respond with ONLY valid JSON, no additional text.`;
+
+  return prompt;
+}

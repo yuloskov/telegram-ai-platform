@@ -7,7 +7,6 @@ import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
-import { GenerateModal } from "~/components/posts/generate-modal";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostList } from "~/components/posts/post-list";
 import { Sparkles, Plus, Settings, Lightbulb, ArrowRight } from "lucide-react";
@@ -43,9 +42,6 @@ export default function ChannelDetailPage() {
   const { user, logout } = useAuth();
   const { t } = useI18n();
 
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [generatedContent, setGeneratedContent] = useState("");
   const [showPostEditor, setShowPostEditor] = useState(false);
   const [postContent, setPostContent] = useState("");
 
@@ -69,25 +65,6 @@ export default function ChannelDetailPage() {
     enabled: !!id && !authLoading,
   });
 
-  const generateMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      const res = await fetch("/api/generate/prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channelId: id, prompt }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      return data.data;
-    },
-    onSuccess: (data) => {
-      setGeneratedContent(data.content);
-      setPostContent(data.content);
-      setShowGenerator(false);
-      setShowPostEditor(true);
-    },
-  });
-
   const createPostMutation = useMutation({
     mutationFn: async (content: string) => {
       const res = await fetch("/api/posts", {
@@ -103,7 +80,6 @@ export default function ChannelDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["posts", id] });
       setShowPostEditor(false);
       setPostContent("");
-      setGeneratedContent("");
     },
   });
 
@@ -128,7 +104,6 @@ export default function ChannelDetailPage() {
   const handleCancelEditor = () => {
     setShowPostEditor(false);
     setPostContent("");
-    setGeneratedContent("");
   };
 
   return (
@@ -145,7 +120,7 @@ export default function ChannelDetailPage() {
           ]}
           actions={
             <div className="flex items-center gap-2">
-              <Button onClick={() => setShowGenerator(true)}>
+              <Button onClick={() => router.push(`/channels/${id}/generate`)}>
                 <Sparkles className="h-4 w-4" />
                 {t("channels.generate")}
               </Button>
@@ -153,7 +128,6 @@ export default function ChannelDetailPage() {
                 variant="secondary"
                 onClick={() => {
                   setPostContent("");
-                  setGeneratedContent("");
                   setShowPostEditor(true);
                 }}
               >
@@ -195,15 +169,6 @@ export default function ChannelDetailPage() {
           </Link>
         </Card>
 
-        <GenerateModal
-          open={showGenerator}
-          onOpenChange={setShowGenerator}
-          prompt={prompt}
-          onPromptChange={setPrompt}
-          onGenerate={() => generateMutation.mutate(prompt)}
-          isGenerating={generateMutation.isPending}
-        />
-
         <PostEditorModal
           open={showPostEditor}
           onOpenChange={setShowPostEditor}
@@ -213,7 +178,7 @@ export default function ChannelDetailPage() {
           onCancel={handleCancelEditor}
           isSaving={createPostMutation.isPending}
           channelName={channel.title}
-          isGenerated={!!generatedContent}
+          isGenerated={false}
         />
 
         {/* Posts List */}
@@ -222,7 +187,7 @@ export default function ChannelDetailPage() {
             posts={posts}
             isLoading={postsLoading}
             channelId={id as string}
-            onOpenGenerator={() => setShowGenerator(true)}
+            onOpenGenerator={() => router.push(`/channels/${id}/generate`)}
           />
         </PageSection>
       </div>

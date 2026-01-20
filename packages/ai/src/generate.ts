@@ -4,6 +4,7 @@ import {
   getGenerateFromPromptPrompt,
   getGenerateFromScrapedPrompt,
   getSuggestImagePromptPrompt,
+  getGenerateMultiplePostsPrompt,
   type ChannelContext,
 } from "./prompts";
 
@@ -108,4 +109,76 @@ export async function suggestImagePrompt(postContent: string): Promise<string> {
 
   const result = await chat(messages, { maxTokens: 200 });
   return result.trim();
+}
+
+export interface MultiGenerationPost {
+  content: string;
+  angle: string;
+}
+
+export interface MultiGenerationResult {
+  posts: MultiGenerationPost[];
+}
+
+export async function generateMultiplePosts(
+  channel: ChannelContext,
+  scrapedPosts: Array<{ text: string | null; views: number }>,
+  channelPreviousPosts: string[],
+  customPrompt?: string,
+  count: number = 3
+): Promise<MultiGenerationResult> {
+  const systemPrompt = getSystemPrompt(channel);
+  const userPrompt = getGenerateMultiplePostsPrompt(
+    scrapedPosts,
+    channelPreviousPosts,
+    count,
+    customPrompt,
+    channel.language
+  );
+
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ];
+
+  const response = await chat(messages, { maxTokens: 4000 });
+
+  // Parse JSON response
+  try {
+    // Try to extract JSON from the response (handle potential markdown code blocks)
+    let jsonStr = response.trim();
+    if (jsonStr.startsWith("```json")) {
+      jsonStr = jsonStr.slice(7);
+    } else if (jsonStr.startsWith("```")) {
+      jsonStr = jsonStr.slice(3);
+    }
+    if (jsonStr.endsWith("```")) {
+      jsonStr = jsonStr.slice(0, -3);
+    }
+    jsonStr = jsonStr.trim();
+
+    const parsed = JSON.parse(jsonStr);
+
+    if (!parsed.posts || !Array.isArray(parsed.posts)) {
+      throw new Error("Invalid response format: missing posts array");
+    }
+
+    return {
+      posts: parsed.posts.map((post: { content?: string; angle?: string }) => ({
+        content: (post.content || "").trim(),
+        angle: (post.angle || "").trim(),
+      })),
+    };
+  } catch (error) {
+    // If JSON parsing fails, try to salvage the response as a single post
+    console.error("Failed to parse multi-post response:", error);
+    return {
+      posts: [
+        {
+          content: response.trim(),
+          angle: "Generated content",
+        },
+      ],
+    };
+  }
 }
