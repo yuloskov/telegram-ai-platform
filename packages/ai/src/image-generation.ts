@@ -1,6 +1,7 @@
 import { getAIClient } from "./client";
 
-const IMAGE_GENERATION_MODEL = "google/gemini-2.0-flash-exp:free";
+const IMAGE_GENERATION_MODEL =
+  process.env.IMAGE_GENERATION_MODEL ?? "google/gemini-2.0-flash-exp:free";
 
 export interface GeneratedImage {
   url: string;

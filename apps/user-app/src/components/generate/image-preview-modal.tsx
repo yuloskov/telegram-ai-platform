@@ -102,7 +102,7 @@ export function ImagePreviewModal({
       {/* Image container */}
       <div
         className="relative max-w-[90vw] max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <img
           src={currentImage.url}

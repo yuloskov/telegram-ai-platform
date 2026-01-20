@@ -4,7 +4,7 @@ import {
   generateImage,
   type ImageAnalysisResult,
 } from "@repo/ai";
-import { uploadFile } from "@repo/shared/storage";
+import { uploadFile, storagePathToBase64 } from "@repo/shared/storage";
 
 export interface ProcessedImage {
   url: string;
@@ -19,15 +19,6 @@ interface ImageToProcess {
   url: string;
   storagePath: string;
   sourceId: string;
-}
-
-/**
- * Convert a media API path to an absolute URL for AI analysis
- */
-function toAbsoluteUrl(mediaPath: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_USER_APP_URL ?? "http://localhost:3000";
-  // mediaPath is like /api/media/telegram-platform/scraped/channel/123.jpg
-  return `${baseUrl}${mediaPath}`;
 }
 
 /**
@@ -59,10 +50,11 @@ export async function processPostImages(
 
   // Analyze all images
   for (const image of images) {
-    const absoluteUrl = toAbsoluteUrl(image.url);
-
     try {
-      const analysisResult = await analyzeImage(absoluteUrl);
+      // Convert storage path to base64 data URL for AI analysis
+      // This avoids the localhost URL issue with external AI APIs
+      const base64DataUrl = await storagePathToBase64(image.storagePath);
+      const analysisResult = await analyzeImage(base64DataUrl);
 
       // Add original image with analysis result
       originalImages.push({

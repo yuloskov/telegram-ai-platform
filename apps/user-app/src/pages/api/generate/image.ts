@@ -2,8 +2,8 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateImage, analyzeImage, hasIssues } from "@repo/ai";
-import { uploadFile } from "@repo/shared/storage";
+import { generateImage, analyzeImage } from "@repo/ai";
+import { uploadFile, storagePathToBase64 } from "@repo/shared/storage";
 
 interface RegenerateImageResponse {
   url: string;
@@ -53,28 +53,19 @@ async function handler(
     }
 
     // If still no prompt and we have an original URL, try to analyze it
-    // Note: This won't work for localhost URLs when using external AI APIs
     if (!imagePrompt && originalImageUrl) {
-      const baseUrl = process.env.NEXT_PUBLIC_USER_APP_URL ?? "http://localhost:3000";
-      const isLocalhost = baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
+      try {
+        // Convert media URL to storage path and then to base64
+        // originalImageUrl is like "/api/media/telegram-platform/scraped/channel/123.jpg"
+        const storagePath = originalImageUrl.replace(/^\/api\/media\//, "");
+        const base64DataUrl = await storagePathToBase64(storagePath);
 
-      if (isLocalhost) {
-        // Can't analyze localhost images with external API
-        // Use a default prompt based on the context
-        imagePrompt = "Create a clean, professional, visually appealing image suitable for a social media post. The image should be high quality, without any text, watermarks, or logos.";
-      } else {
-        const absoluteUrl = originalImageUrl.startsWith("http")
-          ? originalImageUrl
-          : `${baseUrl}${originalImageUrl}`;
-
-        try {
-          const analysis = await analyzeImage(absoluteUrl);
-          if (analysis.suggestedPrompt) {
-            imagePrompt = analysis.suggestedPrompt;
-          }
-        } catch (analysisError) {
-          console.error("Image analysis failed, using default prompt:", analysisError);
+        const analysis = await analyzeImage(base64DataUrl);
+        if (analysis.suggestedPrompt) {
+          imagePrompt = analysis.suggestedPrompt;
         }
+      } catch (analysisError) {
+        console.error("Image analysis failed, using default prompt:", analysisError);
       }
 
       // Fallback if analysis didn't provide a prompt
