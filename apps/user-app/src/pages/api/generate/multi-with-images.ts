@@ -9,6 +9,13 @@ interface SourceMedia {
   type: string;
 }
 
+// Convert storage path to API media URL
+function toMediaUrl(storagePath: string): string {
+  // storagePath is like "telegram-platform/scraped/channel/123.jpg"
+  // We need "/api/media/telegram-platform/scraped/channel/123.jpg"
+  return `/api/media/${storagePath}`;
+}
+
 interface SourceContent {
   id: string;
   text: string | null;
@@ -79,7 +86,7 @@ async function handler(
       views: true,
       telegramMessageId: true,
       source: { select: { telegramUsername: true } },
-      mediaFiles: { select: { url: true, type: true } },
+      mediaUrls: true,
     },
   });
 
@@ -102,13 +109,17 @@ async function handler(
         language: channel.language,
         hashtags: channel.hashtags,
       },
-      scrapedContent.map((c) => ({
-        id: c.id,
-        text: c.text,
-        views: c.views,
-        hasImages: c.mediaFiles.some((m) => m.type.startsWith("image")),
-        imageCount: c.mediaFiles.filter((m) => m.type.startsWith("image")).length,
-      })),
+      scrapedContent.map((c) => {
+        // Filter out video/document placeholders - only count real image URLs
+        const imageUrls = c.mediaUrls.filter((url) => !url.startsWith("skipped:"));
+        return {
+          id: c.id,
+          text: c.text,
+          views: c.views,
+          hasImages: imageUrls.length > 0,
+          imageCount: imageUrls.length,
+        };
+      }),
       recentPosts.map((p) => p.content),
       customPrompt,
       postCount
@@ -130,10 +141,11 @@ async function handler(
       for (const sourceId of sourceIdsToUse) {
         const source = sourceMap.get(sourceId);
         if (source) {
-          const sourceImages = source.mediaFiles
-            .filter((m) => m.type.startsWith("image"))
-            .map((m) => ({
-              url: m.url,
+          // Filter out video/document placeholders - only use real image URLs
+          const sourceImages = source.mediaUrls
+            .filter((path) => !path.startsWith("skipped:"))
+            .map((path) => ({
+              url: toMediaUrl(path),
               isGenerated: false,
               sourceId,
             }));
@@ -164,7 +176,9 @@ async function handler(
           id: c.id,
           text: c.text,
           telegramLink: `https://t.me/${c.source.telegramUsername}/${c.telegramMessageId}`,
-          media: c.mediaFiles.map((m) => ({ url: m.url, type: m.type })),
+          media: c.mediaUrls
+            .filter((path) => !path.startsWith("skipped:"))
+            .map((path) => ({ url: toMediaUrl(path), type: "image" })),
         })),
       },
     });
