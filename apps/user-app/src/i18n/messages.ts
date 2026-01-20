@@ -224,6 +224,8 @@ export const messages = {
       postDetail: "Post",
       openInTelegram: "Open in Telegram",
       mediaOnly: "Media only",
+      videoOnly: "Video only",
+      hasVideo: "Video",
       // Filtering
       search: "Search posts...",
       sortBy: "Sort by",
@@ -505,6 +507,8 @@ export const messages = {
       postDetail: "Пост",
       openInTelegram: "Открыть в Telegram",
       mediaOnly: "Только медиа",
+      videoOnly: "Только видео",
+      hasVideo: "Видео",
       // Filtering
       search: "Поиск постов...",
       sortBy: "Сортировка",

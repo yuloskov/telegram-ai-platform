@@ -1,11 +1,16 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Video } from "lucide-react";
 import { ContentList } from "~/components/content/content-list";
 import { ContentListItem, type ChipProps } from "~/components/content/content-list-item";
 import { EngagementMetrics } from "~/components/content/content-metrics";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
+
+// Check if media contains video content
+function hasVideoContent(mediaUrls: string[]): boolean {
+  return mediaUrls.some((url) => url.startsWith("skipped:video_or_document"));
+}
 
 interface ScrapedContent {
   id: string;
@@ -68,6 +73,13 @@ export function ScrapedContentList({
             variant: "info",
           });
         }
+        if (hasVideoContent(item.mediaUrls)) {
+          chips.push({
+            label: t("sources.hasVideo"),
+            icon: <Video className="h-3 w-3" />,
+            variant: "default",
+          });
+        }
 
         // Count valid images (not skipped)
         const validImageUrls = item.mediaUrls.filter(
@@ -95,6 +107,7 @@ export function ScrapedContentList({
             selectionEnabled={selectionEnabled}
             onSelect={toggleSelection}
             onClick={handleClick}
+            mediaUrls={item.mediaUrls}
           />
         );
       })}

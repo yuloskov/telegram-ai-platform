@@ -22,6 +22,7 @@ interface ContentListItemProps {
   selectionEnabled?: boolean;
   onSelect?: (id: string) => void;
   onClick?: (id: string) => void;
+  mediaUrls?: string[];
 }
 
 const chipVariantStyles: Record<NonNullable<ChipProps["variant"]>, string> = {
@@ -43,6 +44,17 @@ export function Chip({ label, icon, variant = "default" }: ChipProps) {
   );
 }
 
+// Helper to detect if a post contains only video content
+function isVideoOnly(
+  text: string | null,
+  mediaUrls: string[] = []
+): boolean {
+  if (text) return false;
+  if (mediaUrls.length === 0) return false;
+  // Check if all media are skipped videos/documents
+  return mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
+}
+
 export function ContentListItem({
   id,
   text,
@@ -55,6 +67,7 @@ export function ContentListItem({
   selectionEnabled = false,
   onSelect,
   onClick,
+  mediaUrls = [],
 }: ContentListItemProps) {
   const { t } = useI18n();
 
@@ -121,7 +134,9 @@ export function ContentListItem({
             <p className="text-sm text-[var(--text-primary)] line-clamp-3">
               {text || (
                 <span className="italic text-[var(--text-tertiary)]">
-                  {t("sources.mediaOnly")}
+                  {isVideoOnly(text, mediaUrls)
+                    ? t("sources.videoOnly")
+                    : t("sources.mediaOnly")}
                 </span>
               )}
             </p>

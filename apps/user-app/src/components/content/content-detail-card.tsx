@@ -3,6 +3,16 @@ import { Card } from "~/components/ui/card";
 import { Chip, type ChipProps } from "~/components/content/content-list-item";
 import { useI18n } from "~/i18n";
 
+// Helper to detect if a post contains only video content
+function isVideoOnly(
+  text: string | null,
+  mediaUrls: string[] = []
+): boolean {
+  if (text) return false;
+  if (mediaUrls.length === 0) return false;
+  return mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
+}
+
 interface ContentDetailCardProps {
   text: string | null;
   mediaUrls?: string[];
@@ -65,7 +75,9 @@ export function ContentDetailCard({
               </p>
             ) : (
               <p className="text-[var(--text-tertiary)] italic">
-                {t("sources.mediaOnly")}
+                {isVideoOnly(text, mediaUrls)
+                  ? t("sources.videoOnly")
+                  : t("sources.mediaOnly")}
               </p>
             )}
           </div>

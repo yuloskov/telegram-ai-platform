@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, CheckCircle } from "lucide-react";
+import { ExternalLink, CheckCircle, Video } from "lucide-react";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout } from "~/components/layout/page-layout";
@@ -96,6 +96,15 @@ export default function ContentDetailPage() {
       label: t("sources.usedBadge"),
       icon: <CheckCircle className="h-3 w-3" />,
       variant: "info",
+    });
+  }
+  // Check if post contains video
+  const hasVideo = content.mediaUrls.some((url) => url.startsWith("skipped:video_or_document"));
+  if (hasVideo) {
+    chips.push({
+      label: t("sources.hasVideo"),
+      icon: <Video className="h-3 w-3" />,
+      variant: "default",
     });
   }
 

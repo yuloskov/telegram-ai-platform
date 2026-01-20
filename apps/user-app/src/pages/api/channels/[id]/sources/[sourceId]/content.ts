@@ -105,11 +105,12 @@ async function handler(
     }
 
     // Build orderBy clause
-    type OrderByField = "scrapedAt" | "views" | "forwards";
+    // Use telegramMessageId for date sorting since IDs are sequential (newer = higher)
+    type OrderByField = "telegramMessageId" | "views" | "forwards";
     const sortField: OrderByField =
       sortBy === "views" ? "views" :
       sortBy === "forwards" ? "forwards" :
-      "scrapedAt";
+      "telegramMessageId";
     const sortDirection = sortOrder === "asc" ? "asc" : "desc";
     const orderBy = { [sortField]: sortDirection };
 
