@@ -117,10 +117,11 @@ export default function Home() {
               <Spinner />
             </Card>
           ) : hasChannels ? (
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               {channels.slice(0, 3).map((channel) => (
-                <Link key={channel.id} href={`/channels/${channel.id}`}>
-                  <Card interactive className="p-4">
+                <div key={channel.id}>
+                  <Link href={`/channels/${channel.id}`}>
+                    <Card interactive className="p-4">
                     <div className="flex items-center gap-3">
                       <ChannelAvatar title={channel.title} />
                       <div className="flex-1 min-w-0">
@@ -137,8 +138,9 @@ export default function Home() {
                         {channel._count?.posts || 0} {t("dashboard.posts")}
                       </span>
                     </div>
-                  </Card>
-                </Link>
+                    </Card>
+                  </Link>
+                </div>
               ))}
             </div>
           ) : (

@@ -74,12 +74,13 @@ export default function ChannelsPage() {
             </Button>
           }
         />
-
         {channels.length === 0 ? (
           <PageSection>
             <Card>
               <EmptyState
-                icon={<MessageCircle className="h-8 w-8 text-[var(--text-tertiary)]" />}
+                icon={
+                  <MessageCircle className="h-8 w-8 text-[var(--text-tertiary)]" />
+                }
                 title={t("channels.noChannels")}
                 description={t("channels.noChannelsDescription")}
                 action={
@@ -97,46 +98,49 @@ export default function ChannelsPage() {
           <PageSection>
             <div className="space-y-3">
               {channels.map((channel) => (
-                <Link key={channel.id} href={`/channels/${channel.id}`}>
-                  <Card interactive className="p-4">
-                    <div className="flex items-start gap-4">
-                      <ChannelAvatar title={channel.title} size="lg" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-[var(--text-primary)] truncate">
-                            {channel.title}
-                          </h3>
-                          {channel.isActive && (
-                            <span className="h-2 w-2 rounded-full bg-[var(--status-online)]" />
+                <div key={channel.id}>
+                  <Link key={channel.id} href={`/channels/${channel.id}`}>
+                    <Card interactive className="p-4">
+                      <div className="flex items-start gap-4">
+                        <ChannelAvatar title={channel.title} size="lg" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-[var(--text-primary)] truncate">
+                              {channel.title}
+                            </h3>
+                            {channel.isActive && (
+                              <span className="h-2 w-2 rounded-full bg-[var(--status-online)]" />
+                            )}
+                          </div>
+                          {channel.username && (
+                            <p className="text-sm text-[var(--text-secondary)]">
+                              @{channel.username}
+                            </p>
                           )}
-                        </div>
-                        {channel.username && (
-                          <p className="text-sm text-[var(--text-secondary)]">
-                            @{channel.username}
-                          </p>
-                        )}
 
-                        <div className="flex items-center gap-4 mt-2 text-sm text-[var(--text-tertiary)]">
-                          <span className="flex items-center gap-1">
-                            <FileText className="h-3.5 w-3.5" />
-                            {channel._count?.posts || 0} {t("channels.posts")}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Radio className="h-3.5 w-3.5" />
-                            {channel._count?.contentSources || 0} {t("channels.sources")}
-                          </span>
-                        </div>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-[var(--text-tertiary)]">
+                            <span className="flex items-center gap-1">
+                              <FileText className="h-3.5 w-3.5" />
+                              {channel._count?.posts || 0} {t("channels.posts")}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Radio className="h-3.5 w-3.5" />
+                              {channel._count?.contentSources || 0}{" "}
+                              {t("channels.sources")}
+                            </span>
+                          </div>
 
-                        <div className="flex items-center gap-2 mt-3">
-                          <Badge>{channel.tone}</Badge>
-                          {channel.niche && (
-                            <Badge variant="primary">{channel.niche}</Badge>
-                          )}
+                          <div className="flex items-center gap-2 mt-3">
+                            <Badge>{channel.tone}</Badge>
+                            {channel.niche && (
+                              <Badge variant="primary">{channel.niche}</Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                </Link>
+                    </Card>
+                  </Link>
+                </div>
               ))}
             </div>
           </PageSection>
