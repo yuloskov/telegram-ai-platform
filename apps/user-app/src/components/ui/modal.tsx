@@ -26,10 +26,16 @@ const ModalOverlay = React.forwardRef<
 ));
 ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+interface ModalContentProps
+  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  /** Prevent closing when this is true (e.g., when a nested modal is open) */
+  preventClose?: boolean;
+}
+
 const ModalContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  ModalContentProps
+>(({ className, children, preventClose, onPointerDownOutside, onEscapeKeyDown, ...props }, ref) => (
   <ModalPortal>
     <ModalOverlay />
     <DialogPrimitive.Content
@@ -39,6 +45,18 @@ const ModalContent = React.forwardRef<
         "focus:outline-none",
         className
       )}
+      onPointerDownOutside={(e) => {
+        if (preventClose) {
+          e.preventDefault();
+        }
+        onPointerDownOutside?.(e);
+      }}
+      onEscapeKeyDown={(e) => {
+        if (preventClose) {
+          e.preventDefault();
+        }
+        onEscapeKeyDown?.(e);
+      }}
       {...props}
     >
       {children}

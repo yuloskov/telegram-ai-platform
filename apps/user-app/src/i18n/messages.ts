@@ -291,6 +291,19 @@ export const messages = {
       useOriginalImages: "Use original images",
       noImagesSelected: "No images selected",
       availableFromSources: "Available from sources",
+      imageAnalysis: {
+        watermark: "Watermark",
+        linkDetected: "Link detected",
+        logoDetected: "Logo detected",
+        aiGenerated: "AI Generated",
+        issueDetected: "Issue detected",
+        originalImages: "Original images",
+        generatedAlternatives: "Generated alternatives",
+      },
+      imageActions: {
+        preview: "View full size",
+        regenerate: "Regenerate image",
+      },
     },
 
     // Channel Settings
@@ -611,6 +624,19 @@ export const messages = {
       useOriginalImages: "Использовать оригинальные",
       noImagesSelected: "Изображения не выбраны",
       availableFromSources: "Доступные из источников",
+      imageAnalysis: {
+        watermark: "Водяной знак",
+        linkDetected: "Обнаружена ссылка",
+        logoDetected: "Обнаружен логотип",
+        aiGenerated: "AI генерация",
+        issueDetected: "Обнаружена проблема",
+        originalImages: "Оригинальные изображения",
+        generatedAlternatives: "Сгенерированные альтернативы",
+      },
+      imageActions: {
+        preview: "Открыть в полном размере",
+        regenerate: "Сгенерировать заново",
+      },
     },
 
     // Channel Settings

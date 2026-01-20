@@ -3,10 +3,19 @@ import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 import { generateMultiplePostsWithImages, type ImageDecision } from "@repo/ai";
+import { processPostImages, type ProcessedImage } from "~/lib/image-processing";
 
 interface SourceMedia {
   url: string;
   type: string;
+}
+
+interface ImageAnalysisResult {
+  hasWatermark: boolean;
+  hasLink: boolean;
+  hasLogo: boolean;
+  reasoning: string;
+  suggestedPrompt?: string;
 }
 
 // Convert storage path to API media URL
@@ -28,6 +37,8 @@ interface PostImage {
   isGenerated: boolean;
   sourceId?: string;
   prompt?: string;
+  analysisResult?: ImageAnalysisResult;
+  originalUrl?: string;
 }
 
 interface GeneratedPost {
@@ -128,39 +139,59 @@ async function handler(
     // Build source lookup map
     const sourceMap = new Map(scrapedContent.map((c) => [c.id, c]));
 
-    // Process posts and attach images
-    const postsWithImages: GeneratedPost[] = result.posts.map((post) => {
-      const images: PostImage[] = [];
+    // Process posts and attach images with analysis
+    const postsWithImages: GeneratedPost[] = [];
 
-      // Always get images from source posts based on sourceIds
-      // This ensures images are available regardless of AI's strategy recommendation
-      const sourceIdsToUse = post.imageDecision.strategy === "use_original" && post.imageDecision.originalImageSourceIds
-        ? post.imageDecision.originalImageSourceIds
-        : post.sourceIds;
+    for (const post of result.posts) {
+      // Collect images from source posts
+      const sourceIdsToUse =
+        post.imageDecision.strategy === "use_original" &&
+        post.imageDecision.originalImageSourceIds
+          ? post.imageDecision.originalImageSourceIds
+          : post.sourceIds;
+
+      const imagesToProcess: Array<{
+        url: string;
+        storagePath: string;
+        sourceId: string;
+      }> = [];
 
       for (const sourceId of sourceIdsToUse) {
         const source = sourceMap.get(sourceId);
         if (source) {
-          // Filter out video/document placeholders - only use real image URLs
-          const sourceImages = source.mediaUrls
-            .filter((path) => !path.startsWith("skipped:"))
-            .map((path) => ({
+          const validPaths = source.mediaUrls.filter(
+            (path) => !path.startsWith("skipped:")
+          );
+          for (const path of validPaths) {
+            imagesToProcess.push({
               url: toMediaUrl(path),
-              isGenerated: false,
+              storagePath: path,
               sourceId,
-            }));
-          images.push(...sourceImages);
+            });
+          }
         }
       }
 
-      return {
+      // Analyze images and generate replacements for those with issues
+      const { originalImages, generatedImages } = await processPostImages(
+        imagesToProcess,
+        channelId
+      );
+
+      // Combine original and generated images
+      const allImages: PostImage[] = [
+        ...originalImages,
+        ...generatedImages,
+      ];
+
+      postsWithImages.push({
         content: post.content,
         angle: post.angle,
         sourceIds: post.sourceIds,
         imageDecision: post.imageDecision,
-        images,
-      };
-    });
+        images: allImages,
+      });
+    }
 
     // Mark scraped content as used
     await prisma.scrapedContent.updateMany({

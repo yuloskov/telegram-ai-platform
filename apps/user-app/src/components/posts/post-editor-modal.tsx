@@ -37,10 +37,15 @@ interface PostEditorModalProps {
   onCancel: () => void;
   isSaving: boolean;
   channelName: string;
+  channelId?: string;
   isGenerated: boolean;
   sources?: SourceContent[];
+  /** Images attached to this post (from generation API) */
+  postImages?: PostImage[];
   selectedImages?: PostImage[];
   onImagesChange?: (images: PostImage[]) => void;
+  /** Callback when an image is regenerated */
+  onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
 }
 
 export function PostEditorModal({
@@ -52,20 +57,24 @@ export function PostEditorModal({
   onCancel,
   isSaving,
   channelName,
+  channelId,
   isGenerated,
   sources,
+  postImages,
   selectedImages,
   onImagesChange,
+  onImageRegenerated,
 }: PostEditorModalProps) {
   const { t } = useI18n();
   const [showSources, setShowSources] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
-  const hasImageSources = validSources.some((s) => s.media.some((m) => m.type.startsWith("image")));
+  const hasImages = (postImages?.length ?? 0) > 0;
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <ModalContent className="max-w-3xl max-h-[90vh] overflow-y-auto" preventClose={isPreviewOpen}>
         <ModalHeader>
           <ModalTitle>
             {isGenerated ? t("postEditor.titleReview") : t("postEditor.titleCreate")}
@@ -100,12 +109,15 @@ export function PostEditorModal({
         </div>
 
         {/* Image selector */}
-        {isGenerated && hasImageSources && onImagesChange && (
+        {isGenerated && hasImages && onImagesChange && (
           <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
             <PostImageSelector
+              postImages={postImages ?? []}
               selectedImages={selectedImages ?? []}
               onImagesChange={onImagesChange}
-              sources={validSources}
+              channelId={channelId}
+              onImageRegenerated={onImageRegenerated}
+              onPreviewStateChange={setIsPreviewOpen}
             />
           </div>
         )}

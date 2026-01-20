@@ -36,6 +36,14 @@ The image should be:
 
     // Extract image from response
     const content = response.choices[0]?.message?.content;
+
+    console.log("Image generation response type:", typeof content);
+    console.log("Image generation response preview:",
+      typeof content === "string"
+        ? content.substring(0, 200)
+        : JSON.stringify(content)?.substring(0, 200)
+    );
+
     if (typeof content === "string" && content.startsWith("data:image")) {
       return content;
     }
@@ -47,14 +55,23 @@ The image should be:
         if (typeof part === "object" && "image_url" in part) {
           return (part as { image_url: { url: string } }).image_url.url;
         }
+        // Also check for inline_data format (Gemini native format)
+        if (typeof part === "object" && "inline_data" in part) {
+          const inlineData = part as { inline_data: { mime_type: string; data: string } };
+          return `data:${inlineData.inline_data.mime_type};base64,${inlineData.inline_data.data}`;
+        }
       }
     }
 
-    console.error("No image in response:", response);
+    console.error("No image in response. Full response:", JSON.stringify(response, null, 2));
     return null;
   } catch (error) {
     console.error("Image generation error:", error);
-    return null;
+    // Re-throw with more context for rate limit errors
+    if (error instanceof Error && error.message.includes("429")) {
+      throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+    }
+    throw error;
   }
 }
 

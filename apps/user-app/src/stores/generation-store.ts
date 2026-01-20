@@ -27,11 +27,21 @@ export interface ImageDecision {
   reasoning?: string;
 }
 
+export interface ImageAnalysisResult {
+  hasWatermark: boolean;
+  hasLink: boolean;
+  hasLogo: boolean;
+  reasoning: string;
+  suggestedPrompt?: string;
+}
+
 export interface PostImage {
   url: string;
   isGenerated: boolean;
   sourceId?: string;
   prompt?: string;
+  analysisResult?: ImageAnalysisResult;
+  originalUrl?: string; // Link to original if this is a generated replacement
 }
 
 interface GeneratedPost {

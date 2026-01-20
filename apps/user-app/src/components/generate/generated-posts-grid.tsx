@@ -49,6 +49,7 @@ export function GeneratedPostsGrid({
 
   const [editingPost, setEditingPost] = useState<GeneratedPost | null>(null);
   const [editingSources, setEditingSources] = useState<SourceContent[]>([]);
+  const [editPostImages, setEditPostImages] = useState<PostImage[]>([]);
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState<PostImage[]>([]);
   const [savingPostIndex, setSavingPostIndex] = useState<number | null>(null);
@@ -93,15 +94,33 @@ export function GeneratedPostsGrid({
     const postSources = sources.filter((s) => post.sourceIds.includes(s.id));
     setEditingPost(post);
     setEditingSources(postSources);
+    setEditPostImages(post.images ?? []);
     setEditContent(post.content);
-    setEditImages(post.images ?? []);
+    // Default to selecting generated images if available, otherwise all images
+    const generatedImages = (post.images ?? []).filter((img) => img.isGenerated);
+    setEditImages(generatedImages.length > 0 ? generatedImages : post.images ?? []);
   };
 
   const handleSaveFromEditor = async () => {
     await saveMutation.mutateAsync({ content: editContent, images: editImages.length > 0 ? editImages : undefined });
     setEditingPost(null);
     setEditContent("");
+    setEditPostImages([]);
     setEditImages([]);
+  };
+
+  const handleImageRegenerated = (oldUrl: string, newImage: PostImage) => {
+    // Update post images - add new image to the list
+    setEditPostImages((prev) => [...prev, newImage]);
+    // Update selected images - replace old with new if it was selected
+    setEditImages((prev) => {
+      const wasSelected = prev.some((img) => img.url === oldUrl);
+      if (wasSelected) {
+        return [...prev.filter((img) => img.url !== oldUrl), newImage];
+      }
+      // Auto-select the new image
+      return [...prev, newImage];
+    });
   };
 
   if (posts.length === 0) {
@@ -168,10 +187,13 @@ export function GeneratedPostsGrid({
         onCancel={() => setEditingPost(null)}
         isSaving={saveMutation.isPending}
         channelName={channelName}
+        channelId={channelId}
         isGenerated={true}
         sources={editingSources}
+        postImages={editPostImages}
         selectedImages={editImages}
         onImagesChange={setEditImages}
+        onImageRegenerated={handleImageRegenerated}
       />
     </div>
   );
