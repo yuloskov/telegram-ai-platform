@@ -32,7 +32,7 @@ export async function generateFromPrompt(
 
   // Generate image prompt suggestion
   const imagePromptMessages: ChatMessage[] = [
-    { role: "user", content: getSuggestImagePromptPrompt(content) },
+    { role: "user", content: getSuggestImagePromptPrompt(content, channel.language) },
   ];
   const suggestedImagePrompt = await chat(imagePromptMessages, {
     maxTokens: 200,
@@ -65,7 +65,7 @@ export async function generateFromScrapedContent(
 
   // Generate image prompt suggestion
   const imagePromptMessages: ChatMessage[] = [
-    { role: "user", content: getSuggestImagePromptPrompt(content) },
+    { role: "user", content: getSuggestImagePromptPrompt(content, channel.language) },
   ];
   const suggestedImagePrompt = await chat(imagePromptMessages, {
     maxTokens: 200,
@@ -104,9 +104,12 @@ Respond with ONLY the new post content.`,
   };
 }
 
-export async function suggestImagePrompt(postContent: string): Promise<string> {
+export async function suggestImagePrompt(
+  postContent: string,
+  language: string = "en"
+): Promise<string> {
   const messages: ChatMessage[] = [
-    { role: "user", content: getSuggestImagePromptPrompt(postContent) },
+    { role: "user", content: getSuggestImagePromptPrompt(postContent, language) },
   ];
 
   const result = await chat(messages, { maxTokens: 200 });

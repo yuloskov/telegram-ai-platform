@@ -33,10 +33,14 @@ function base64ToBuffer(base64Data: string): Buffer {
 /**
  * Analyze and process images for a post
  * Returns both original images (with analysis) and generated replacements
+ * @param images - Images to process
+ * @param channelId - Channel ID for storing generated images
+ * @param language - Language for image prompts (default: "en")
  */
 export async function processPostImages(
   images: ImageToProcess[],
-  channelId: string
+  channelId: string,
+  language: string = "en"
 ): Promise<{
   originalImages: ProcessedImage[];
   generatedImages: ProcessedImage[];
@@ -54,7 +58,7 @@ export async function processPostImages(
       // Convert storage path to base64 data URL for AI analysis
       // This avoids the localhost URL issue with external AI APIs
       const base64DataUrl = await storagePathToBase64(image.storagePath);
-      const analysisResult = await analyzeImage(base64DataUrl);
+      const analysisResult = await analyzeImage(base64DataUrl, language);
 
       // Add original image with analysis result
       originalImages.push({

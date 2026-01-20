@@ -175,7 +175,8 @@ async function handler(
       // Analyze images and generate replacements for those with issues
       const { originalImages, generatedImages } = await processPostImages(
         imagesToProcess,
-        channelId
+        channelId,
+        channel.language
       );
 
       // Combine original and generated images

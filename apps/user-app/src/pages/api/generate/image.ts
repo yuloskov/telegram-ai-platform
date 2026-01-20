@@ -60,7 +60,7 @@ async function handler(
         const storagePath = originalImageUrl.replace(/^\/api\/media\//, "");
         const base64DataUrl = await storagePathToBase64(storagePath);
 
-        const analysis = await analyzeImage(base64DataUrl);
+        const analysis = await analyzeImage(base64DataUrl, channel.language);
         if (analysis.suggestedPrompt) {
           imagePrompt = analysis.suggestedPrompt;
         }
@@ -70,7 +70,10 @@ async function handler(
 
       // Fallback if analysis didn't provide a prompt
       if (!imagePrompt) {
-        imagePrompt = "Create a clean, professional, visually appealing image suitable for a social media post. The image should be high quality, without any text, watermarks, or logos.";
+        imagePrompt =
+          channel.language === "ru"
+            ? "Создай чистое, профессиональное, визуально привлекательное изображение, подходящее для поста в социальной сети. Изображение должно быть высокого качества, без текста, водяных знаков или логотипов."
+            : "Create a clean, professional, visually appealing image suitable for a social media post. The image should be high quality, without any text, watermarks, or logos.";
       }
     }
 

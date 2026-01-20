@@ -12,9 +12,19 @@ export interface ImageAnalysisResult {
 
 /**
  * Analyze an image for watermarks, links, logos using vision AI
+ * @param imageUrl - URL or base64 data URL of the image to analyze
+ * @param language - Language for suggested replacement prompts (default: "en")
  */
-export async function analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
+export async function analyzeImage(
+  imageUrl: string,
+  language: string = "en"
+): Promise<ImageAnalysisResult> {
   const client = getAIClient();
+
+  const languageInstruction =
+    language === "ru"
+      ? "Если найдены проблемы, предложи промпт на РУССКОМ языке для генерации похожего, но чистого изображения"
+      : "If issues found, suggest a prompt in English to generate a similar but clean replacement image";
 
   try {
     const response = await client.chat.completions.create({
@@ -37,7 +47,7 @@ Respond in JSON format:
   "hasLink": boolean,
   "hasLogo": boolean,
   "reasoning": "Brief explanation of what was found",
-  "suggestedPrompt": "If issues found, suggest a prompt to generate a similar but clean replacement image (or null if image is clean)"
+  "suggestedPrompt": "${languageInstruction} (or null if image is clean)"
 }
 
 Be strict - if you see ANY overlaid text, watermark, channel name, or URL, mark it as having issues.`,

@@ -271,13 +271,29 @@ Respond with ONLY the post content, ready to be published.`;
   return prompt;
 }
 
-export function getSuggestImagePromptPrompt(postContent: string): string {
+export function getSuggestImagePromptPrompt(
+  postContent: string,
+  language: string = "en"
+): string {
+  if (language === "ru") {
+    return `На основе этого поста для Telegram, предложи промпт для генерации релевантного, привлекательного изображения:
+
+Пост:
+"${postContent}"
+
+Ответь ТОЛЬКО кратким промптом для генерации изображения (1-2 предложения на русском языке), который создаст визуально привлекательное изображение к этому посту. Изображение должно:
+- Соответствовать теме поста
+- Хорошо смотреться как изображение к посту в Telegram
+- Быть визуально ярким, но не слишком сложным
+- Не содержать текста`;
+  }
+
   return `Based on this Telegram post, suggest a prompt for generating a relevant, eye-catching image:
 
 Post:
 "${postContent}"
 
-Respond with ONLY a concise image generation prompt (1-2 sentences) that would create a visually appealing image to accompany this post. The image should:
+Respond with ONLY a concise image generation prompt (1-2 sentences in English) that would create a visually appealing image to accompany this post. The image should:
 - Be relevant to the post's topic
 - Work well as a Telegram post image
 - Be visually striking but not too complex
@@ -485,7 +501,7 @@ ${scrapedContext}${previousContext}
 
 ВАЖНО:
 - originalImageSourceIds - только если strategy = "use_original"
-- imagePrompts - только если strategy = "generate_new" (1-2 предложения на английском для генерации)
+- imagePrompts - только если strategy = "generate_new" (1-2 предложения на РУССКОМ языке для генерации)
 - Ответь ТОЛЬКО валидным JSON без дополнительного текста.`;
 
     return prompt;
@@ -549,7 +565,7 @@ Criteria:
 
 IMPORTANT:
 - originalImageSourceIds - only if strategy = "use_original"
-- imagePrompts - only if strategy = "generate_new" (1-2 sentences in English for generation)
+- imagePrompts - only if strategy = "generate_new" (1-2 sentences in English for generation, matching the channel language)
 - Respond with ONLY valid JSON, no additional text.`;
 
   return prompt;
