@@ -284,18 +284,31 @@ Respond with ONLY a concise image generation prompt (1-2 sentences) that would c
 - Avoid text in the image`;
 }
 
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = result[i]!;
+    result[i] = result[j]!;
+    result[j] = temp;
+  }
+  return result;
+}
+
 export function getGenerateMultiplePostsPrompt(
-  scrapedPosts: Array<{ text: string | null; views: number }>,
+  scrapedPosts: Array<{ id: string; text: string | null; views: number }>,
   channelPreviousPosts: string[],
   count: number,
   customPrompt?: string,
   language: string = "en"
 ): string {
-  const filteredScraped = scrapedPosts.filter((p) => p.text);
+  // Shuffle and filter sources for diversity
+  const filteredScraped = shuffleArray(scrapedPosts.filter((p) => p.text));
 
   if (language === "ru") {
     const scrapedContext = filteredScraped
-      .map((p, i) => `Пост ${i + 1} (${p.views} просмотров):\n${p.text}`)
+      .map((p) => `[ID: ${p.id}] (${p.views} просмотров):\n${p.text}`)
       .join("\n\n---\n\n");
 
     const previousContext =
@@ -308,12 +321,18 @@ export function getGenerateMultiplePostsPrompt(
 ВДОХНОВЕНИЕ (популярные посты):
 ${scrapedContext}${previousContext}
 
-ВАЖНО:
-- Создай ровно ${count} уникальных постов
-- Каждый пост должен иметь ДРУГОЙ угол/подход к теме
+КРИТИЧЕСКИ ВАЖНО - РАЗНООБРАЗИЕ:
+- Создай ровно ${count} уникальных постов на РАЗНЫЕ ТЕМЫ
+- Каждый пост ДОЛЖЕН быть о ДРУГОЙ теме/новости из источников
+- ЗАПРЕЩЕНО использовать одни и те же источники для разных постов
+- Каждый пост должен использовать 1-2 РАЗНЫХ источника
+- Если все источники на одну тему, найди разные углы: факты, мнение, практические советы, вопрос аудитории
+
+ДРУГИЕ ТРЕБОВАНИЯ:
 - НЕ копируй и не пересказывай близко посты-источники
 - Сохраняй единый стиль канала во всех постах
-- Каждый пост должен быть готов к публикации`;
+- Каждый пост должен быть готов к публикации
+- Для каждого поста укажи ID источников, которые ты использовал`;
 
     if (customPrompt) {
       prompt += `\n\nДОПОЛНИТЕЛЬНЫЕ ИНСТРУКЦИИ:\n${customPrompt}`;
@@ -324,11 +343,13 @@ ${scrapedContext}${previousContext}
   "posts": [
     {
       "content": "текст поста 1",
-      "angle": "краткое описание подхода на русском"
+      "angle": "краткое описание темы/подхода",
+      "sourceIds": ["id1"]
     },
     {
-      "content": "текст поста 2",
-      "angle": "краткое описание подхода на русском"
+      "content": "текст поста 2 (ДРУГАЯ тема!)",
+      "angle": "краткое описание темы/подхода",
+      "sourceIds": ["id2"]
     }
   ]
 }
@@ -340,7 +361,7 @@ ${scrapedContext}${previousContext}
 
   // English (default)
   const scrapedContext = filteredScraped
-    .map((p, i) => `Post ${i + 1} (${p.views} views):\n${p.text}`)
+    .map((p) => `[ID: ${p.id}] (${p.views} views):\n${p.text}`)
     .join("\n\n---\n\n");
 
   const previousContext =
@@ -353,12 +374,18 @@ ${scrapedContext}${previousContext}
 INSPIRATION (trending posts):
 ${scrapedContext}${previousContext}
 
-IMPORTANT:
-- Create exactly ${count} unique posts
-- Each post should have a DIFFERENT angle/approach to the topic
+CRITICAL - DIVERSITY REQUIREMENT:
+- Create exactly ${count} unique posts about DIFFERENT topics
+- Each post MUST be about a DIFFERENT topic/news item from the sources
+- DO NOT reuse the same sources across different posts
+- Each post should use 1-2 DIFFERENT source posts
+- If all sources are about the same topic, find different angles: facts, opinion, practical tips, audience question
+
+OTHER REQUIREMENTS:
 - Do NOT copy or closely paraphrase the source posts
 - Maintain consistent channel voice across all posts
-- Each post should be ready to publish`;
+- Each post should be ready to publish
+- Include the source IDs you used for each post`;
 
   if (customPrompt) {
     prompt += `\n\nADDITIONAL INSTRUCTIONS:\n${customPrompt}`;
@@ -369,11 +396,13 @@ IMPORTANT:
   "posts": [
     {
       "content": "post text 1",
-      "angle": "brief description of approach"
+      "angle": "brief topic/approach description",
+      "sourceIds": ["id1"]
     },
     {
-      "content": "post text 2",
-      "angle": "brief description of approach"
+      "content": "post text 2 (DIFFERENT topic!)",
+      "angle": "brief topic/approach description",
+      "sourceIds": ["id2"]
     }
   ]
 }

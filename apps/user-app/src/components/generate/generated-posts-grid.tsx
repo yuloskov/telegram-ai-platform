@@ -9,10 +9,24 @@ import { RefreshCw, Save } from "lucide-react";
 interface GeneratedPost {
   content: string;
   angle: string;
+  sourceIds: string[];
+}
+
+interface SourceMedia {
+  url: string;
+  type: string;
+}
+
+interface SourceContent {
+  id: string;
+  text: string | null;
+  telegramLink: string;
+  media: SourceMedia[];
 }
 
 interface GeneratedPostsGridProps {
   posts: GeneratedPost[];
+  sources: SourceContent[];
   channelId: string;
   channelName: string;
   onGenerateMore: () => void;
@@ -21,6 +35,7 @@ interface GeneratedPostsGridProps {
 
 export function GeneratedPostsGrid({
   posts,
+  sources,
   channelId,
   channelName,
   onGenerateMore,
@@ -30,6 +45,7 @@ export function GeneratedPostsGrid({
   const queryClient = useQueryClient();
 
   const [editingPost, setEditingPost] = useState<GeneratedPost | null>(null);
+  const [editingSources, setEditingSources] = useState<SourceContent[]>([]);
   const [editContent, setEditContent] = useState("");
   const [savingPostIndex, setSavingPostIndex] = useState<number | null>(null);
 
@@ -70,7 +86,9 @@ export function GeneratedPostsGrid({
   };
 
   const handleEditPost = (post: GeneratedPost) => {
+    const postSources = sources.filter((s) => post.sourceIds.includes(s.id));
     setEditingPost(post);
+    setEditingSources(postSources);
     setEditContent(post.content);
   };
 
@@ -115,17 +133,21 @@ export function GeneratedPostsGrid({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map((post, index) => (
-          <GeneratedPostCard
-            key={index}
-            content={post.content}
-            angle={post.angle}
-            index={index}
-            onEdit={() => handleEditPost(post)}
-            onSave={() => handleSavePost(index, post.content)}
-            isSaving={savingPostIndex === index}
-          />
-        ))}
+        {posts.map((post, index) => {
+          const postSources = sources.filter((s) => post.sourceIds.includes(s.id));
+          return (
+            <GeneratedPostCard
+              key={index}
+              content={post.content}
+              angle={post.angle}
+              index={index}
+              sources={postSources}
+              onEdit={() => handleEditPost(post)}
+              onSave={() => handleSavePost(index, post.content)}
+              isSaving={savingPostIndex === index}
+            />
+          );
+        })}
       </div>
 
       {/* Editor Modal */}
@@ -139,6 +161,7 @@ export function GeneratedPostsGrid({
         isSaving={saveMutation.isPending}
         channelName={channelName}
         isGenerated={true}
+        sources={editingSources}
       />
     </div>
   );

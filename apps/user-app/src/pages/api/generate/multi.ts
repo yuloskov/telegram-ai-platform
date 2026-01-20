@@ -4,13 +4,27 @@ import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 import { generateMultiplePosts } from "@repo/ai";
 
+interface SourceMedia {
+  url: string;
+  type: string;
+}
+
+interface SourceContent {
+  id: string;
+  text: string | null;
+  telegramLink: string;
+  media: SourceMedia[];
+}
+
 interface GeneratedPost {
   content: string;
   angle: string;
+  sourceIds: string[];
 }
 
 interface MultiGenerateResponse {
   posts: GeneratedPost[];
+  sources: SourceContent[];
 }
 
 async function handler(
@@ -46,7 +60,7 @@ async function handler(
     return res.status(404).json({ success: false, error: "Channel not found" });
   }
 
-  // Fetch scraped content
+  // Fetch scraped content with source and media
   const scrapedContent = await prisma.scrapedContent.findMany({
     where: {
       id: { in: scrapedContentIds },
@@ -56,6 +70,18 @@ async function handler(
       id: true,
       text: true,
       views: true,
+      telegramMessageId: true,
+      source: {
+        select: {
+          telegramUsername: true,
+        },
+      },
+      mediaFiles: {
+        select: {
+          url: true,
+          type: true,
+        },
+      },
     },
   });
 
@@ -82,7 +108,7 @@ async function handler(
         language: channel.language,
         hashtags: channel.hashtags,
       },
-      scrapedContent.map((c) => ({ text: c.text, views: c.views })),
+      scrapedContent.map((c) => ({ id: c.id, text: c.text, views: c.views })),
       recentPosts.map((p) => p.content),
       customPrompt,
       postCount
@@ -98,6 +124,12 @@ async function handler(
       success: true,
       data: {
         posts: result.posts,
+        sources: scrapedContent.map((c) => ({
+          id: c.id,
+          text: c.text,
+          telegramLink: `https://t.me/${c.source.telegramUsername}/${c.telegramMessageId}`,
+          media: c.mediaFiles.map((m) => ({ url: m.url, type: m.type })),
+        })),
       },
     });
   } catch (error) {

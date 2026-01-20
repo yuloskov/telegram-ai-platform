@@ -1,12 +1,26 @@
-import { Edit2, Save, Check } from "lucide-react";
+import { Edit2, Save, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
 import { useState } from "react";
+import { SourcePostCard } from "./source-post-card";
+
+interface SourceMedia {
+  url: string;
+  type: string;
+}
+
+interface SourceContent {
+  id: string;
+  text: string | null;
+  telegramLink: string;
+  media: SourceMedia[];
+}
 
 interface GeneratedPostCardProps {
   content: string;
   angle: string;
   index: number;
+  sources: SourceContent[];
   onEdit: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -15,32 +29,67 @@ interface GeneratedPostCardProps {
 export function GeneratedPostCard({
   content,
   angle,
-  index,
+  sources,
   onEdit,
   onSave,
   isSaving,
 }: GeneratedPostCardProps) {
   const { t } = useI18n();
   const [saved, setSaved] = useState(false);
+  const [showSources, setShowSources] = useState(false);
 
   const handleSave = async () => {
     await onSave();
     setSaved(true);
   };
 
+  const validSources = sources.filter((s) => s.text || s.media.length > 0);
+
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--border-secondary)] bg-[var(--bg-primary)] flex flex-col h-full">
       {/* Content */}
       <div className="p-4 flex-1">
         {angle && (
-          <span className="inline-block text-xs px-2 py-0.5 mb-3 rounded-full bg-[var(--accent-primary-subtle)] text-[var(--accent-primary)]">
-            {angle}
-          </span>
+          <div className="mb-3 pb-3 border-b border-[var(--border-secondary)]">
+            <span className="text-sm font-medium text-[var(--accent-primary)]">
+              {angle}
+            </span>
+          </div>
         )}
         <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
           {content}
         </p>
       </div>
+
+      {/* Sources toggle */}
+      {validSources.length > 0 && (
+        <div className="border-t border-[var(--border-secondary)]">
+          <button
+            onClick={() => setShowSources(!showSources)}
+            className="w-full px-4 py-2 flex items-center gap-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+          >
+            {showSources ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
+            {t("generatePage.sourcesUsed", { count: validSources.length })}
+          </button>
+
+          {showSources && (
+            <div className="px-4 pb-3 space-y-3 max-h-80 overflow-y-auto">
+              {validSources.map((source) => (
+                <SourcePostCard
+                  key={source.id}
+                  text={source.text}
+                  telegramLink={source.telegramLink}
+                  media={source.media}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="px-4 py-3 border-t border-[var(--border-secondary)] flex items-center justify-end gap-2">

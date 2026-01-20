@@ -281,6 +281,8 @@ export const messages = {
       generateMore: "Generate More",
       saveAllAsDrafts: "Save All as Drafts",
       saved: "Saved",
+      sourcesUsed: "{count} sources used",
+      viewOriginal: "View original post",
     },
 
     // Channel Settings
@@ -591,6 +593,8 @@ export const messages = {
       generateMore: "Сгенерировать ещё",
       saveAllAsDrafts: "Сохранить все как черновики",
       saved: "Сохранено",
+      sourcesUsed: "{count} источников использовано",
+      viewOriginal: "Открыть оригинал",
     },
 
     // Channel Settings

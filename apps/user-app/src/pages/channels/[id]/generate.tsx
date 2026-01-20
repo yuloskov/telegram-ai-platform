@@ -52,7 +52,8 @@ export default function GeneratePage() {
     customPrompt,
     setCustomPrompt,
     generatedPosts,
-    setGeneratedPosts,
+    generatedSources,
+    setGenerationResult,
     initializeSources,
     getSelectedPostIds,
     reset,
@@ -122,7 +123,7 @@ export default function GeneratePage() {
       return data.data;
     },
     onSuccess: (data) => {
-      setGeneratedPosts(data.posts);
+      setGenerationResult(data);
     },
   });
 
@@ -210,6 +211,7 @@ export default function GeneratePage() {
             <PageSection title="">
               <GeneratedPostsGrid
                 posts={generatedPosts}
+                sources={generatedSources}
                 channelId={id as string}
                 channelName={channel.title}
                 onGenerateMore={() => generateMutation.mutate()}

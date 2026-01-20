@@ -114,6 +114,7 @@ export async function suggestImagePrompt(postContent: string): Promise<string> {
 export interface MultiGenerationPost {
   content: string;
   angle: string;
+  sourceIds: string[];
 }
 
 export interface MultiGenerationResult {
@@ -122,7 +123,7 @@ export interface MultiGenerationResult {
 
 export async function generateMultiplePosts(
   channel: ChannelContext,
-  scrapedPosts: Array<{ text: string | null; views: number }>,
+  scrapedPosts: Array<{ id: string; text: string | null; views: number }>,
   channelPreviousPosts: string[],
   customPrompt?: string,
   count: number = 3
@@ -164,9 +165,10 @@ export async function generateMultiplePosts(
     }
 
     return {
-      posts: parsed.posts.map((post: { content?: string; angle?: string }) => ({
+      posts: parsed.posts.map((post: { content?: string; angle?: string; sourceIds?: string[] }) => ({
         content: (post.content || "").trim(),
         angle: (post.angle || "").trim(),
+        sourceIds: Array.isArray(post.sourceIds) ? post.sourceIds : [],
       })),
     };
   } catch (error) {
@@ -177,6 +179,7 @@ export async function generateMultiplePosts(
         {
           content: response.trim(),
           angle: "Generated content",
+          sourceIds: [],
         },
       ],
     };

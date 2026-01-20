@@ -6,9 +6,27 @@ interface SourceSelection {
   selectedPostIds: Set<string>;
 }
 
+interface SourceMedia {
+  url: string;
+  type: string;
+}
+
+interface SourceContent {
+  id: string;
+  text: string | null;
+  telegramLink: string;
+  media: SourceMedia[];
+}
+
 interface GeneratedPost {
   content: string;
   angle: string;
+  sourceIds: string[];
+}
+
+interface GenerationResult {
+  posts: GeneratedPost[];
+  sources: SourceContent[];
 }
 
 interface Source {
@@ -37,7 +55,8 @@ interface GenerationStore {
 
   // Results
   generatedPosts: GeneratedPost[];
-  setGeneratedPosts: (posts: GeneratedPost[]) => void;
+  generatedSources: SourceContent[];
+  setGenerationResult: (result: GenerationResult) => void;
 
   // Reset
   reset: () => void;
@@ -49,6 +68,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   sourceSelections: new Map(),
   customPrompt: "",
   generatedPosts: [],
+  generatedSources: [],
 
   initializeSources: (sources: Source[]) => {
     const selections = new Map<string, SourceSelection>();
@@ -140,8 +160,8 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     set({ customPrompt: prompt });
   },
 
-  setGeneratedPosts: (posts: GeneratedPost[]) => {
-    set({ generatedPosts: posts });
+  setGenerationResult: (result: GenerationResult) => {
+    set({ generatedPosts: result.posts, generatedSources: result.sources });
   },
 
   reset: () => {
@@ -149,6 +169,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       sourceSelections: new Map(),
       customPrompt: "",
       generatedPosts: [],
+      generatedSources: [],
     });
   },
 }));

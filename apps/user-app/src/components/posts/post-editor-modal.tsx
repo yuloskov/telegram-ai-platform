@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Spinner } from "~/components/ui/spinner";
@@ -9,7 +11,20 @@ import {
   ModalFooter,
 } from "~/components/ui/modal";
 import { MessagePreview } from "~/components/telegram/message-bubble";
+import { SourcePostCard } from "~/components/generate/source-post-card";
 import { useI18n } from "~/i18n";
+
+interface SourceMedia {
+  url: string;
+  type: string;
+}
+
+interface SourceContent {
+  id: string;
+  text: string | null;
+  telegramLink: string;
+  media: SourceMedia[];
+}
 
 interface PostEditorModalProps {
   open: boolean;
@@ -21,6 +36,7 @@ interface PostEditorModalProps {
   isSaving: boolean;
   channelName: string;
   isGenerated: boolean;
+  sources?: SourceContent[];
 }
 
 export function PostEditorModal({
@@ -33,12 +49,16 @@ export function PostEditorModal({
   isSaving,
   channelName,
   isGenerated,
+  sources,
 }: PostEditorModalProps) {
   const { t } = useI18n();
+  const [showSources, setShowSources] = useState(false);
+
+  const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-2xl">
+      <ModalContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <ModalHeader>
           <ModalTitle>
             {isGenerated ? t("postEditor.titleReview") : t("postEditor.titleCreate")}
@@ -71,6 +91,36 @@ export function PostEditorModal({
             )}
           </div>
         </div>
+
+        {/* Sources section */}
+        {validSources.length > 0 && (
+          <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
+            <button
+              onClick={() => setShowSources(!showSources)}
+              className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              {showSources ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              {t("generatePage.sourcesUsed", { count: validSources.length })}
+            </button>
+
+            {showSources && (
+              <div className="mt-3 space-y-3 max-h-64 overflow-y-auto">
+                {validSources.map((source) => (
+                  <SourcePostCard
+                    key={source.id}
+                    text={source.text}
+                    telegramLink={source.telegramLink}
+                    media={source.media}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <ModalFooter>
           <Button variant="ghost" onClick={onCancel}>

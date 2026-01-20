@@ -49,10 +49,19 @@ export function SourceItem({
           : "border-[var(--border-secondary)] bg-[var(--bg-secondary)] opacity-60"
       )}
     >
-      <div className="flex items-center gap-3 p-4">
+      <div
+        className={cn(
+          "flex items-center gap-3 p-4",
+          hasContent && "cursor-pointer"
+        )}
+        onClick={() => hasContent && setIsExpanded(!isExpanded)}
+      >
         {/* Toggle */}
         <button
-          onClick={onToggleSource}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSource();
+          }}
           disabled={!hasContent}
           className={cn(
             "shrink-0 w-10 h-6 rounded-full transition-colors relative",
@@ -80,18 +89,15 @@ export function SourceItem({
           </p>
         </div>
 
-        {/* Expand button */}
+        {/* Expand indicator */}
         {hasContent && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-secondary)] transition-colors"
-          >
+          <div className="p-2">
             {isExpanded ? (
               <ChevronDown className="h-5 w-5 text-[var(--text-tertiary)]" />
             ) : (
               <ChevronRight className="h-5 w-5 text-[var(--text-tertiary)]" />
             )}
-          </button>
+          </div>
         )}
       </div>
 
