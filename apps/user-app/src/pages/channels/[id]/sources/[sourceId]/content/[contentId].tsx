@@ -1,13 +1,14 @@
 import { useRouter } from "next/router";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, CheckCircle } from "lucide-react";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout } from "~/components/layout/page-layout";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/ui/spinner";
-import { EngagementMetrics } from "~/components/sources/engagement-metrics";
+import { ContentDetailCard } from "~/components/content/content-detail-card";
+import { EngagementMetrics } from "~/components/content/content-metrics";
+import { type ChipProps } from "~/components/content/content-list-item";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -30,9 +31,6 @@ interface ScrapedContent {
   reactions: number;
   scrapedAt: string;
   usedForGeneration: boolean;
-  source: {
-    telegramUsername: string;
-  };
 }
 
 export default function ContentDetailPage() {
@@ -92,6 +90,15 @@ export default function ContentDetailPage() {
 
   const telegramUrl = `https://t.me/${source.telegramUsername.replace(/^@/, "")}/${content.telegramMessageId}`;
 
+  const chips: ChipProps[] = [];
+  if (content.usedForGeneration) {
+    chips.push({
+      label: t("sources.usedBadge"),
+      icon: <CheckCircle className="h-3 w-3" />,
+      variant: "info",
+    });
+  }
+
   return (
     <PageLayout title={`Post - @${source.telegramUsername}`}>
       <AppHeader user={user} onLogout={logout} />
@@ -115,48 +122,19 @@ export default function ContentDetailPage() {
           }
         />
 
-        <Card className="p-6">
-          {/* Media */}
-          {content.mediaUrls.length > 0 && (
-            <div className="mb-4 grid gap-2" style={{ gridTemplateColumns: content.mediaUrls.length === 1 ? "1fr" : "repeat(2, 1fr)" }}>
-              {content.mediaUrls
-                .filter((url) => !url.startsWith("skipped:") && !url.startsWith("failed:"))
-                .map((url, idx) => (
-                  <div key={idx} className="rounded-[var(--radius-md)] overflow-hidden bg-[var(--bg-secondary)]">
-                    <img
-                      src={`/api/media/${url}`}
-                      alt=""
-                      className="w-full h-auto max-h-96 object-contain"
-                      onError={(e) => {
-                        e.currentTarget.parentElement!.style.display = "none";
-                      }}
-                    />
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Text content */}
-          <div className="mb-4">
-            {content.text ? (
-              <p className="text-[var(--text-primary)] whitespace-pre-wrap">{content.text}</p>
-            ) : (
-              <p className="text-[var(--text-tertiary)] italic">{t("sources.mediaOnly")}</p>
-            )}
-          </div>
-
-          {/* Metrics and date */}
-          <div className="flex items-center justify-between pt-4 border-t border-[var(--border-secondary)]">
+        <ContentDetailCard
+          text={content.text}
+          mediaUrls={content.mediaUrls}
+          chips={chips}
+          metrics={
             <EngagementMetrics
               views={content.views}
               forwards={content.forwards}
               reactions={content.reactions}
             />
-            <span className="text-sm text-[var(--text-tertiary)]">
-              {new Date(content.scrapedAt).toLocaleString()}
-            </span>
-          </div>
-        </Card>
+          }
+          date={content.scrapedAt}
+        />
       </div>
     </PageLayout>
   );

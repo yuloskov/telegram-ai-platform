@@ -5,7 +5,18 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Phone, Key, Lock, CheckCircle, Download, Upload } from "lucide-react";
 import Link from "next/link";
 import { AdminLayout } from "~/components/layout";
-import { Card, CardContent, Button, Input, Spinner } from "~/components/ui";
+import {
+  Card,
+  CardContent,
+  Button,
+  Input,
+  Spinner,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui";
 
 type Step = "phone" | "code" | "password" | "success";
 
@@ -573,18 +584,22 @@ function AuthKeyFlow({
         <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
           Data Center (DC)
         </label>
-        <select
-          value={dcId}
-          onChange={(e) => onDcIdChange(parseInt(e.target.value, 10))}
+        <Select
+          value={String(dcId)}
+          onValueChange={(value) => onDcIdChange(parseInt(value, 10))}
           disabled={isLoading}
-          className="w-full rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
         >
-          <option value={1}>DC1 - Miami</option>
-          <option value={2}>DC2 - Amsterdam (default)</option>
-          <option value={3}>DC3 - Miami</option>
-          <option value={4}>DC4 - Amsterdam</option>
-          <option value={5}>DC5 - Singapore</option>
-        </select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select DC" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">DC1 - Miami</SelectItem>
+            <SelectItem value="2">DC2 - Amsterdam (default)</SelectItem>
+            <SelectItem value="3">DC3 - Miami</SelectItem>
+            <SelectItem value="4">DC4 - Amsterdam</SelectItem>
+            <SelectItem value="5">DC5 - Singapore</SelectItem>
+          </SelectContent>
+        </Select>
         <p className="text-xs text-[var(--text-tertiary)] mt-1">
           Select the data center where the account is registered (usually DC2)
         </p>

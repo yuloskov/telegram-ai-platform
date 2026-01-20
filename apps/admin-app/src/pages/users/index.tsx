@@ -4,7 +4,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { AdminLayout } from "~/components/layout";
-import { Card, CardContent, Input, Button, Badge, Spinner } from "~/components/ui";
+import {
+  Card,
+  CardContent,
+  Input,
+  Button,
+  Badge,
+  Spinner,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui";
 
 interface User {
   id: string;
@@ -111,18 +123,22 @@ export default function UsersPage() {
                   <Button type="submit">Search</Button>
                 </form>
 
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(value) => {
+                    setStatusFilter(value === "all" ? "" : value);
                     setPage(1);
                   }}
-                  className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] border-none"
                 >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {isLoading && (

@@ -15,3 +15,13 @@ export {
   ModalDescription,
 } from "./modal";
 export { Spinner } from "./spinner";
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+} from "./select";

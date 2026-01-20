@@ -14,6 +14,11 @@ import {
   ModalContent,
   ModalHeader,
   ModalTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "~/components/ui";
 
 interface Session {
@@ -147,18 +152,22 @@ export default function SessionsPage() {
           <Card>
             <CardContent className="pt-4">
               <div className="flex justify-end mb-6">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(value) => {
+                    setStatusFilter(value === "all" ? "" : value);
                     setPage(1);
                   }}
-                  className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] border-none"
                 >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {isLoading && (

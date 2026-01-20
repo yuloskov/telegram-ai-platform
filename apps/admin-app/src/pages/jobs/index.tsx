@@ -3,7 +3,18 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Loader, RefreshCw, Trash2, StopCircle } from "lucide-react";
 import { AdminLayout } from "~/components/layout";
-import { Card, CardContent, Button, Badge, Spinner } from "~/components/ui";
+import {
+  Card,
+  CardContent,
+  Button,
+  Badge,
+  Spinner,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui";
 
 type JobStatus = "pending" | "running" | "completed" | "failed" | "retrying";
 
@@ -147,38 +158,46 @@ export default function JobsPage() {
           <Card>
             <CardContent className="pt-4">
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                <Select
+                  value={statusFilter || "all"}
+                  onValueChange={(value) => {
+                    setStatusFilter(value === "all" ? "" : value);
                     setPage(1);
                   }}
-                  className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] border-none"
                 >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="running">Running</option>
-                  <option value="completed">Completed</option>
-                  <option value="failed">Failed</option>
-                  <option value="retrying">Retrying</option>
-                </select>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="running">Running</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="retrying">Retrying</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 {data?.jobTypes && data.jobTypes.length > 0 && (
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => {
-                      setTypeFilter(e.target.value);
+                  <Select
+                    value={typeFilter || "all"}
+                    onValueChange={(value) => {
+                      setTypeFilter(value === "all" ? "" : value);
                       setPage(1);
                     }}
-                    className="h-10 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] px-4 text-sm text-[var(--text-primary)] border-none"
                   >
-                    <option value="">All Types</option>
-                    {data.jobTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {data.jobTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
 

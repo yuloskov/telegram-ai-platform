@@ -107,20 +107,6 @@ export default function ChannelDetailPage() {
     },
   });
 
-  const publishMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      const res = await fetch(`/api/posts/${postId}/publish`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts", id] });
-    },
-  });
-
   if (authLoading || channelLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
@@ -236,8 +222,6 @@ export default function ChannelDetailPage() {
             posts={posts}
             isLoading={postsLoading}
             channelId={id as string}
-            onPublish={(postId) => publishMutation.mutate(postId)}
-            isPublishing={publishMutation.isPending}
             onOpenGenerator={() => setShowGenerator(true)}
           />
         </PageSection>

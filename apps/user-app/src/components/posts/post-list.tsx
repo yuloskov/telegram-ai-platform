@@ -1,10 +1,10 @@
 import { useRouter } from "next/router";
-import { FileText, Send, RotateCcw, Sparkles } from "lucide-react";
-import { Card } from "~/components/ui/card";
+import { Sparkles, Calendar, Send, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Spinner } from "~/components/ui/spinner";
-import { EmptyState } from "~/components/telegram/empty-state";
-import { StatusBadge } from "~/components/telegram/status-badge";
+import { ContentList } from "~/components/content/content-list";
+import { ContentListItem, type ChipProps } from "~/components/content/content-list-item";
+import { PostMetrics } from "~/components/content/content-metrics";
+import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
 
 interface Post {
@@ -12,121 +12,115 @@ interface Post {
   content: string;
   status: string;
   createdAt: string;
+  publishedAt?: string | null;
+  scheduledAt?: string | null;
 }
 
 interface PostListProps {
   posts: Post[];
   isLoading: boolean;
   channelId: string;
-  onPublish: (postId: string) => void;
-  isPublishing: boolean;
+  selectionEnabled?: boolean;
   onOpenGenerator: () => void;
 }
+
+type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed" | "pending_review";
+
+const statusConfig: Record<PostStatus, { variant: ChipProps["variant"]; icon: React.ReactNode }> = {
+  draft: { variant: "default", icon: null },
+  scheduled: { variant: "info", icon: <Clock className="h-3 w-3" /> },
+  publishing: { variant: "warning", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+  published: { variant: "success", icon: <CheckCircle className="h-3 w-3" /> },
+  failed: { variant: "error", icon: <AlertCircle className="h-3 w-3" /> },
+  pending_review: { variant: "info", icon: <Send className="h-3 w-3" /> },
+};
 
 export function PostList({
   posts,
   isLoading,
   channelId,
-  onPublish,
-  isPublishing,
+  selectionEnabled = true,
   onOpenGenerator,
 }: PostListProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const { selectedIds, toggleSelection, selectAll, isSelected } =
+    useContentSelectionStore();
 
-  const handleClick = (postId: string, e: React.MouseEvent) => {
-    // Don't navigate if clicking on buttons
-    if ((e.target as HTMLElement).closest("button")) {
-      return;
-    }
+  const handleClick = (postId: string) => {
     router.push(`/channels/${channelId}/posts/${postId}`);
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <div className="p-8 flex items-center justify-center">
-          <Spinner />
-        </div>
-      </Card>
-    );
-  }
+  const itemIds = posts.map((post) => post.id);
 
-  if (posts.length === 0) {
-    return (
-      <Card>
-        <EmptyState
-          icon={<FileText className="h-8 w-8 text-[var(--text-tertiary)]" />}
-          title={t("posts.noPostsTitle")}
-          description={t("posts.noPostsDescription")}
-          action={
-            <Button onClick={onOpenGenerator}>
-              <Sparkles className="h-4 w-4" />
-              {t("posts.generateWithAI")}
-            </Button>
-          }
-        />
-      </Card>
-    );
-  }
+  const getStatusLabel = (status: PostStatus): string => {
+    switch (status) {
+      case "draft":
+        return t("posts.status.draft");
+      case "scheduled":
+        return t("posts.status.scheduled");
+      case "publishing":
+        return t("posts.status.publishing");
+      case "published":
+        return t("posts.status.published");
+      case "failed":
+        return t("posts.status.failed");
+      case "pending_review":
+        return t("posts.status.pending_review");
+      default:
+        return t("posts.status.draft");
+    }
+  };
 
   return (
-    <div className="space-y-3">
-      {posts.map((post) => (
-        <Card
-          key={post.id}
-          interactive
-          className="p-4 cursor-pointer"
-          onClick={(e) => handleClick(post.id, e)}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-[var(--text-primary)] line-clamp-2">
-                {post.content}
-              </p>
-              <div className="flex items-center gap-3 mt-2">
-                <StatusBadge
-                  status={
-                    post.status as
-                      | "draft"
-                      | "scheduled"
-                      | "publishing"
-                      | "published"
-                      | "failed"
-                      | "pending_review"
-                  }
-                />
-                <span className="text-xs text-[var(--text-tertiary)]">
-                  {new Date(post.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {post.status === "draft" && (
-                <Button
-                  size="sm"
-                  onClick={() => onPublish(post.id)}
-                  disabled={isPublishing}
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  {t("posts.publish")}
-                </Button>
-              )}
-              {post.status === "failed" && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => onPublish(post.id)}
-                  disabled={isPublishing}
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  {t("common.retry")}
-                </Button>
-              )}
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+    <ContentList
+      itemIds={itemIds}
+      selectedIds={selectedIds}
+      isLoading={isLoading}
+      selectionEnabled={selectionEnabled}
+      emptyTitle={t("posts.noPostsTitle")}
+      emptyDescription={t("posts.noPostsDescription")}
+      emptyAction={
+        <Button onClick={onOpenGenerator}>
+          <Sparkles className="h-4 w-4" />
+          {t("posts.generateWithAI")}
+        </Button>
+      }
+      onSelectAll={selectAll}
+    >
+      {posts.map((post) => {
+        const status = post.status as PostStatus;
+        const config = statusConfig[status] || statusConfig.draft;
+
+        const chips: ChipProps[] = [
+          {
+            label: getStatusLabel(status),
+            icon: config.icon,
+            variant: config.variant,
+          },
+        ];
+
+        return (
+          <ContentListItem
+            key={post.id}
+            id={post.id}
+            text={post.content}
+            chips={chips}
+            metrics={
+              <PostMetrics
+                createdAt={post.createdAt}
+                publishedAt={post.publishedAt}
+                scheduledAt={post.scheduledAt}
+              />
+            }
+            date={post.createdAt}
+            selected={isSelected(post.id)}
+            selectionEnabled={selectionEnabled}
+            onSelect={toggleSelection}
+            onClick={handleClick}
+          />
+        );
+      })}
+    </ContentList>
   );
 }
