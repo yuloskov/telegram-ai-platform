@@ -3,14 +3,15 @@ import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 
-interface AutoScrapeConfig {
+interface ScrapeConfig {
+  maxScrapePosts: number;
   autoScrapeEnabled: boolean;
   scrapeInterval: string | null;
 }
 
 async function handler(
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiResponse<AutoScrapeConfig>>
+  res: NextApiResponse<ApiResponse<ScrapeConfig>>
 ) {
   const { user } = req;
   const { id: channelId, sourceId } = req.query;
@@ -42,6 +43,7 @@ async function handler(
     return res.status(200).json({
       success: true,
       data: {
+        maxScrapePosts: source.maxScrapePosts,
         autoScrapeEnabled: source.autoScrapeEnabled,
         scrapeInterval: source.scrapeInterval,
       },
@@ -50,7 +52,16 @@ async function handler(
 
   // PUT - Update config
   if (req.method === "PUT") {
-    const { autoScrapeEnabled, scrapeInterval } = req.body;
+    const { maxScrapePosts, autoScrapeEnabled, scrapeInterval } = req.body;
+
+    // Validate maxScrapePosts (1-50)
+    const parsedMaxPosts = parseInt(maxScrapePosts, 10);
+    if (maxScrapePosts !== undefined && (isNaN(parsedMaxPosts) || parsedMaxPosts < 1 || parsedMaxPosts > 50)) {
+      return res.status(400).json({
+        success: false,
+        error: "Max posts must be between 1 and 50.",
+      });
+    }
 
     // Validate interval
     const validIntervals = ["hourly", "daily", "weekly"];
@@ -64,6 +75,7 @@ async function handler(
     const updatedSource = await prisma.contentSource.update({
       where: { id: sourceId },
       data: {
+        ...(maxScrapePosts !== undefined && { maxScrapePosts: parsedMaxPosts }),
         autoScrapeEnabled: Boolean(autoScrapeEnabled),
         scrapeInterval: autoScrapeEnabled ? scrapeInterval : null,
       },
@@ -72,6 +84,7 @@ async function handler(
     return res.status(200).json({
       success: true,
       data: {
+        maxScrapePosts: updatedSource.maxScrapePosts,
         autoScrapeEnabled: updatedSource.autoScrapeEnabled,
         scrapeInterval: updatedSource.scrapeInterval,
       },

@@ -66,7 +66,8 @@ export async function scrapeChannelMessages(
   client: TelegramClient,
   channelUsername: string,
   limit = 10,
-  minId?: number
+  minId?: number,
+  offsetId?: number
 ): Promise<
   Array<{
     id: number;
@@ -83,6 +84,7 @@ export async function scrapeChannelMessages(
   const messages = await client.getMessages(entity, {
     limit,
     minId,
+    offsetId, // For pagination: get messages older than this ID
   });
 
   // Ensure bucket exists

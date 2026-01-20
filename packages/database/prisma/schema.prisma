@@ -93,6 +93,9 @@ model ContentSource {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Scrape settings
+  maxScrapePosts    Int      @default(10) // Max posts to scrape per update (1-50)
+
   // Auto-scrape settings
   autoScrapeEnabled Boolean  @default(false)
   scrapeInterval    String?  // "hourly", "daily", "weekly"

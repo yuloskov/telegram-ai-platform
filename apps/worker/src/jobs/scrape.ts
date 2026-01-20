@@ -2,6 +2,8 @@ import { prisma } from "@repo/database";
 import { getMTProtoClient, scrapeChannelMessages, disconnectClient } from "@repo/telegram-mtproto";
 import type { ScrapingJobPayload } from "@repo/shared/queues";
 
+const BATCH_SIZE = 10; // Max posts per Telegram API request
+
 export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
   const { sourceId, sessionId } = data;
 
@@ -14,7 +16,7 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
     },
   });
 
-  // Get the content source
+  // Get the content source with maxScrapePosts setting
   const source = await prisma.contentSource.findUnique({
     where: { id: sourceId },
     include: {
@@ -41,7 +43,6 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
       where: { id: sessionId },
     });
   } else {
-    // Get any active session
     session = await prisma.telegramSession.findFirst({
       where: { isActive: true },
     });
@@ -59,46 +60,78 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
   const client = await getMTProtoClient(session.sessionString);
 
   try {
-    // Get the last scraped message ID to only fetch new messages
-    const lastScraped = await prisma.scrapedContent.findFirst({
+    // Get existing message IDs for duplicate detection (single query)
+    const existingPosts = await prisma.scrapedContent.findMany({
       where: { sourceId },
+      select: { telegramMessageId: true },
       orderBy: { telegramMessageId: "desc" },
+      take: 100, // Get last 100 for efficient matching
     });
+    const existingIds = new Set(existingPosts.map((p) => p.telegramMessageId.toString()));
 
-    const minId = lastScraped ? Number(lastScraped.telegramMessageId) : undefined;
-
-    // Scrape messages (limit 10 to keep photo downloads manageable)
-    const messages = await scrapeChannelMessages(
-      client,
-      source.telegramUsername,
-      10,
-      minId
-    );
-
-    console.log(`Scraped ${messages.length} messages from ${source.telegramUsername}`);
-
-    // Save scraped content
+    const maxPosts = Math.min(Math.max(source.maxScrapePosts, 1), 50); // Clamp to 1-50
+    let totalFound = 0;
     let newCount = 0;
-    for (const message of messages) {
-      try {
-        await prisma.scrapedContent.create({
-          data: {
-            sourceId,
-            telegramMessageId: BigInt(message.id),
-            text: message.text,
-            mediaUrls: message.mediaUrls,
-            views: message.views,
-            forwards: message.forwards,
-            scrapedAt: new Date(),
-          },
-        });
-        newCount++;
-      } catch (error) {
-        // Skip duplicate messages
-        if ((error as { code?: string }).code === "P2002") {
-          continue;
+    let offsetId: number | undefined = undefined;
+    let foundDuplicate = false;
+
+    // Scrape in batches until we reach maxPosts or find a duplicate
+    while (totalFound < maxPosts && !foundDuplicate) {
+      const batchSize = Math.min(BATCH_SIZE, maxPosts - totalFound);
+
+      const messages = await scrapeChannelMessages(
+        client,
+        source.telegramUsername,
+        batchSize,
+        undefined, // Don't use minId - we want to detect duplicates
+        offsetId
+      );
+
+      if (messages.length === 0) break;
+
+      console.log(`Scraped batch of ${messages.length} messages from ${source.telegramUsername}`);
+
+      // Process messages in order (newest first)
+      for (const message of messages) {
+        totalFound++;
+
+        // Check for duplicate using pre-fetched IDs
+        if (existingIds.has(message.id.toString())) {
+          console.log(`Found duplicate message ${message.id}, stopping scrape`);
+          foundDuplicate = true;
+          break;
         }
-        throw error;
+
+        // Save new post
+        try {
+          await prisma.scrapedContent.create({
+            data: {
+              sourceId,
+              telegramMessageId: BigInt(message.id),
+              text: message.text,
+              mediaUrls: message.mediaUrls,
+              views: message.views,
+              forwards: message.forwards,
+              scrapedAt: new Date(),
+            },
+          });
+          newCount++;
+          // Add to existing set to catch duplicates within same batch
+          existingIds.add(message.id.toString());
+        } catch (error) {
+          // Handle race condition duplicates
+          if ((error as { code?: string }).code === "P2002") {
+            console.log(`Duplicate detected for message ${message.id}, stopping scrape`);
+            foundDuplicate = true;
+            break;
+          }
+          throw error;
+        }
+      }
+
+      // Set offset for next batch (use lowest ID from current batch)
+      if (messages.length > 0 && !foundDuplicate) {
+        offsetId = Math.min(...messages.map((m: { id: number }) => m.id));
       }
     }
 
@@ -119,15 +152,14 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
       where: { id: scrapeLog.id },
       data: {
         status: "completed",
-        postsFound: messages.length,
+        postsFound: totalFound,
         newPosts: newCount,
         completedAt: new Date(),
       },
     });
 
-    console.log(`Saved ${newCount} new messages from ${source.telegramUsername}`);
+    console.log(`Saved ${newCount} new messages from ${source.telegramUsername} (found duplicate: ${foundDuplicate})`);
   } catch (error) {
-    // Update scrape log with failure
     await prisma.scrapeLog.update({
       where: { id: scrapeLog.id },
       data: {

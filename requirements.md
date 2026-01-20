@@ -70,11 +70,25 @@ A unified platform that:
 - Media (images) from scraped posts is downloaded and stored
 - Rate limiting to avoid Telegram API restrictions
 
+**Scraping Configuration:**
+- User can configure maximum posts to scrape per update (1-50, default: 10)
+- Scraping uses batching of maximum 10 posts per request
+- For updates: only scrape posts not already in the database
+- Stop scraping immediately when encountering an existing post
+- Previously scraped posts are preserved (not deleted on subsequent updates)
+
+**Efficient Duplicate Detection:**
+- Before scraping, fetch existing post IDs from database (single query)
+- Match scraped posts against existing IDs using O(1) lookup
+- Stop scraping batch when duplicate is encountered
+
 **Acceptance Criteria:**
 - [ ] User can add a source channel by username
+- [ ] User can configure max posts to scrape (1-50) per source
 - [ ] System scrapes new posts automatically on schedule
 - [ ] Scraped posts are displayed in the UI with engagement metrics
-- [ ] User can manually trigger a scrape
+- [ ] User can manually trigger an update (scrapes only new posts)
+- [ ] Scraping stops when encountering already-scraped posts
 - [ ] Images from posts are preserved
 - [ ] System tracks which content has been used for generation
 
