@@ -36,7 +36,6 @@ export default function SourcesPage() {
   const { t } = useI18n();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [scrapingSourceId, setScrapingSourceId] = useState<string | null>(null);
 
   const { data: channel, isLoading: channelLoading } = useQuery({
     queryKey: ["channel", channelId],
@@ -72,21 +71,6 @@ export default function SourcesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sources", channelId] });
       setShowAddModal(false);
-    },
-  });
-
-  const scrapeMutation = useMutation({
-    mutationFn: async (sourceId: string) => {
-      setScrapingSourceId(sourceId);
-      const res = await fetch(`/api/channels/${channelId}/sources/${sourceId}/scrape`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      return data;
-    },
-    onSettled: () => {
-      setScrapingSourceId(null);
     },
   });
 
@@ -159,8 +143,6 @@ export default function SourcesPage() {
             sources={sources}
             channelId={channelId as string}
             isLoading={sourcesLoading}
-            scrapingSourceId={scrapingSourceId}
-            onTriggerScrape={(sourceId) => scrapeMutation.mutate(sourceId)}
             onDelete={(sourceId) => deleteMutation.mutate(sourceId)}
             onOpenAddModal={() => setShowAddModal(true)}
           />

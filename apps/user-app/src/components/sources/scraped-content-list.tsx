@@ -69,12 +69,19 @@ export function ScrapedContentList({
           });
         }
 
+        // Count valid images (not skipped)
+        const validImageUrls = item.mediaUrls.filter(
+          (url) => !url.startsWith("skipped:") && !url.startsWith("failed:")
+        );
+        const firstValidImage = validImageUrls[0] ?? item.mediaUrls[0];
+
         return (
           <ContentListItem
             key={item.id}
             id={item.id}
             text={item.text}
-            thumbnailUrl={item.mediaUrls[0]}
+            thumbnailUrl={firstValidImage}
+            imageCount={validImageUrls.length}
             chips={chips}
             metrics={
               <EngagementMetrics

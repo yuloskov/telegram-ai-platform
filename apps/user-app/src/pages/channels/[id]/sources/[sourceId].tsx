@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
+import { useScrapeStatus } from "~/hooks/useScrapeStatus";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Button } from "~/components/ui/button";
@@ -62,7 +63,6 @@ export default function SourceDetailPage() {
   const { user, logout } = useAuth();
   const { t } = useI18n();
 
-  const [isScraping, setIsScraping] = useState(false);
   const [page, setPage] = useState(1);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -73,6 +73,24 @@ export default function SourceDetailPage() {
 
   // Generation modal state
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
+
+  // Track scrape job status
+  const { isRunning: isScraping, latestLog } = useScrapeStatus(
+    channelId as string,
+    sourceId as string
+  );
+  const [prevIsRunning, setPrevIsRunning] = useState(false);
+
+  // Refresh data when scrape job completes
+  useEffect(() => {
+    if (prevIsRunning && !isScraping) {
+      // Job just completed, refresh data
+      queryClient.invalidateQueries({ queryKey: ["scrape-logs", channelId, sourceId] });
+      queryClient.invalidateQueries({ queryKey: ["source-content", channelId, sourceId] });
+      queryClient.invalidateQueries({ queryKey: ["source", channelId, sourceId] });
+    }
+    setPrevIsRunning(isScraping);
+  }, [isScraping, prevIsRunning, queryClient, channelId, sourceId]);
 
   const { data: channel, isLoading: channelLoading } = useQuery({
     queryKey: ["channel", channelId],
@@ -131,7 +149,6 @@ export default function SourceDetailPage() {
 
   const scrapeMutation = useMutation({
     mutationFn: async () => {
-      setIsScraping(true);
       const res = await fetch(`/api/channels/${channelId}/sources/${sourceId}/scrape`, {
         method: "POST",
       });
@@ -139,8 +156,9 @@ export default function SourceDetailPage() {
       if (!data.success) throw new Error(data.error);
       return data;
     },
-    onSettled: () => {
-      setIsScraping(false);
+    onSuccess: () => {
+      // Invalidate scrape status to start polling
+      queryClient.invalidateQueries({ queryKey: ["scrape-status", channelId, sourceId] });
     },
   });
 
@@ -197,11 +215,11 @@ export default function SourceDetailPage() {
               <Button
                 variant="secondary"
                 onClick={() => scrapeMutation.mutate()}
-                disabled={isScraping}
+                disabled={isScraping || scrapeMutation.isPending}
               >
-                {isScraping ? (
+                {isScraping || scrapeMutation.isPending ? (
                   <>
-                    <Spinner size="sm" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     {t("sources.scraping")}
                   </>
                 ) : (

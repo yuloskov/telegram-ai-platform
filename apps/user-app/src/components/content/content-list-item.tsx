@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Images } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { useI18n } from "~/i18n";
@@ -13,6 +14,7 @@ interface ContentListItemProps {
   id: string;
   text: string | null;
   thumbnailUrl?: string | null;
+  imageCount?: number;
   chips?: ChipProps[];
   metrics?: ReactNode;
   date: string;
@@ -45,6 +47,7 @@ export function ContentListItem({
   id,
   text,
   thumbnailUrl,
+  imageCount = 0,
   chips = [],
   metrics,
   date,
@@ -93,7 +96,7 @@ export function ContentListItem({
 
         {/* Image Thumbnail */}
         {validThumbnail && (
-          <div className="shrink-0 w-16 h-16 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
+          <div className="relative shrink-0 w-16 h-16 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
             <img
               src={`/api/media/${thumbnailUrl}`}
               alt=""
@@ -102,6 +105,13 @@ export function ContentListItem({
                 e.currentTarget.style.display = "none";
               }}
             />
+            {/* Multiple images indicator */}
+            {imageCount > 1 && (
+              <div className="absolute bottom-1 right-1 flex items-center gap-0.5 px-1.5 py-0.5 bg-black/60 rounded text-white text-[10px] font-medium">
+                <Images className="h-3 w-3" />
+                {imageCount}
+              </div>
+            )}
           </div>
         )}
 

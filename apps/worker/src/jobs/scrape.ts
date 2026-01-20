@@ -108,6 +108,7 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
             data: {
               sourceId,
               telegramMessageId: BigInt(message.id),
+              telegramGroupedId: message.groupedId ?? null,
               text: message.text,
               mediaUrls: message.mediaUrls,
               views: message.views,

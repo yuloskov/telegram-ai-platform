@@ -114,6 +114,7 @@ model ScrapedContent {
   sourceId          String
   source            ContentSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   telegramMessageId BigInt
+  telegramGroupedId String?  // For media albums (multiple images in one post)
   text              String?
   mediaUrls         String[] @default([])
   views             Int      @default(0)

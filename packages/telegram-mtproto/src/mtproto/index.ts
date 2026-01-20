@@ -62,22 +62,23 @@ function isPhotoMedia(media: Api.TypeMessageMedia): boolean {
   return "photo" in media && media.photo !== null;
 }
 
+interface ScrapedMessage {
+  id: number;
+  text: string | null;
+  date: Date;
+  views: number;
+  forwards: number;
+  mediaUrls: string[];
+  groupedId?: string;
+}
+
 export async function scrapeChannelMessages(
   client: TelegramClient,
   channelUsername: string,
   limit = 10,
   minId?: number,
   offsetId?: number
-): Promise<
-  Array<{
-    id: number;
-    text: string | null;
-    date: Date;
-    views: number;
-    forwards: number;
-    mediaUrls: string[];
-  }>
-> {
+): Promise<Array<ScrapedMessage>> {
   const channel = await resolveUsername(client, channelUsername);
   const entity = await client.getEntity(channel);
 
@@ -94,14 +95,124 @@ export async function scrapeChannelMessages(
     console.log("MinIO bucket setup failed:", err);
   }
 
-  const results = [];
+  // Group messages by groupedId (for media albums)
+  // In Telegram, media groups have the same groupedId (BigInteger from big-integer library)
+  const groupedMessages = new Map<string, typeof messages>();
+  const standaloneMessages: typeof messages = [];
+
+  // Debug: log message structure for the first message
+  if (messages.length > 0) {
+    const firstMsg = messages[0];
+    const allKeys = Object.keys(firstMsg);
+    const protoKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(firstMsg));
+    console.log(`[Scrape] First message keys: ${allKeys.join(', ')}`);
+    console.log(`[Scrape] First message prototype keys: ${protoKeys.slice(0, 20).join(', ')}...`);
+    console.log(`[Scrape] First message.groupedId direct access: ${(firstMsg as any).groupedId}`);
+    console.log(`[Scrape] First message className: ${(firstMsg as any).className || firstMsg.constructor?.name}`);
+  }
 
   for (const message of messages) {
     if (!message.message && !message.media) continue;
 
+    // Get the raw groupedId - it's a BigInteger from big-integer library
+    const rawGroupedId = (message as any).groupedId;
+    let groupedId: string | null = null;
+
+    // Debug: try to understand the structure of the message
+    if (rawGroupedId !== undefined && rawGroupedId !== null) {
+      // BigInteger from big-integer library has .value property or can be converted with .toString()
+      let strId: string;
+      if (typeof rawGroupedId === 'object') {
+        // Try different methods to extract the value
+        if (typeof rawGroupedId.toString === 'function') {
+          strId = rawGroupedId.toString();
+        } else if ('value' in rawGroupedId) {
+          strId = String(rawGroupedId.value);
+        } else {
+          strId = JSON.stringify(rawGroupedId);
+        }
+      } else if (typeof rawGroupedId === 'bigint') {
+        strId = rawGroupedId.toString();
+      } else {
+        strId = String(rawGroupedId);
+      }
+
+      if (strId && strId !== "0" && strId !== "undefined" && strId !== "null" && strId !== "{}") {
+        groupedId = strId;
+      }
+    }
+
+    // Detailed debug logging
+    const debugInfo = {
+      id: message.id,
+      rawGroupedId,
+      rawType: typeof rawGroupedId,
+      hasValue: rawGroupedId && typeof rawGroupedId === 'object' ? 'value' in rawGroupedId : 'N/A',
+      groupedId: groupedId ?? 'none',
+      hasMedia: !!message.media,
+      hasText: !!message.message,
+    };
+    console.log(`[Scrape] Message debug:`, JSON.stringify(debugInfo, (_, v) => typeof v === 'bigint' ? v.toString() : v));
+
+    if (groupedId) {
+      const group = groupedMessages.get(groupedId) || [];
+      group.push(message);
+      groupedMessages.set(groupedId, group);
+    } else {
+      standaloneMessages.push(message);
+    }
+  }
+
+  console.log(`[Scrape] Found ${groupedMessages.size} media groups and ${standaloneMessages.length} standalone messages`);
+
+  const results: ScrapedMessage[] = [];
+
+  // Process grouped messages (media albums)
+  for (const [groupedId, groupMessages] of groupedMessages) {
+    // Sort by ID to get consistent ordering (lowest ID first = first message in group)
+    groupMessages.sort((a, b) => a.id - b.id);
+
+    const firstMessage = groupMessages[0];
     const mediaUrls: string[] = [];
 
-    // Only download photos (skip videos, documents, etc.)
+    // Get text from the first message that has text (caption)
+    const text = groupMessages.find(m => m.message)?.message ?? null;
+
+    // Download all photos in the group
+    for (const msg of groupMessages) {
+      if (msg.media && isPhotoMedia(msg.media)) {
+        try {
+          const buffer = await client.downloadMedia(msg.media, {});
+          if (buffer && Buffer.isBuffer(buffer)) {
+            const objectName = `scraped/${channelUsername}/${msg.id}.jpg`;
+            const url = await uploadFile(MEDIA_BUCKET, objectName, buffer, "image/jpeg");
+            mediaUrls.push(url);
+            console.log(`Uploaded photo: ${objectName} (${buffer.length} bytes)`);
+          }
+        } catch (err) {
+          console.log(`Failed to download photo for message ${msg.id}:`, err);
+        }
+      } else if (msg.media) {
+        mediaUrls.push(`skipped:video_or_document:${msg.id}`);
+      }
+    }
+
+    // Use the first message ID as the post ID (represents the whole group)
+    results.push({
+      id: firstMessage.id,
+      text,
+      date: new Date(firstMessage.date * 1000),
+      views: firstMessage.views ?? 0,
+      forwards: firstMessage.forwards ?? 0,
+      mediaUrls,
+      groupedId,
+    });
+  }
+
+  // Process standalone messages (not part of a group)
+  for (const message of standaloneMessages) {
+    const mediaUrls: string[] = [];
+
     if (message.media && isPhotoMedia(message.media)) {
       try {
         const buffer = await client.downloadMedia(message.media, {});
@@ -115,7 +226,6 @@ export async function scrapeChannelMessages(
         console.log(`Failed to download photo for message ${message.id}:`, err);
       }
     } else if (message.media) {
-      // Mark non-photo media as skipped
       mediaUrls.push(`skipped:video_or_document:${message.id}`);
     }
 
@@ -128,6 +238,9 @@ export async function scrapeChannelMessages(
       mediaUrls,
     });
   }
+
+  // Sort results by ID descending (newest first)
+  results.sort((a, b) => b.id - a.id);
 
   return results;
 }
