@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Image, X, Expand, RefreshCw } from "lucide-react";
+import { Check, Image, X, Expand, RefreshCw, Sparkles } from "lucide-react";
 import { useI18n } from "~/i18n";
 import type { PostImage } from "~/stores/generation-store";
 import { ImageAnalysisBadge } from "./image-analysis-badge";
@@ -30,6 +30,7 @@ export function PostImageSelector({
   const { t } = useI18n();
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [regeneratingUrl, setRegeneratingUrl] = useState<string | null>(null);
+  const [cleaningUrl, setCleaningUrl] = useState<string | null>(null);
 
   const openPreview = (index: number) => {
     setPreviewIndex(index);
@@ -101,6 +102,42 @@ export function PostImageSelector({
     }
   };
 
+  const handleClean = async (image: PostImage) => {
+    if (!channelId || !onImageRegenerated) return;
+
+    setCleaningUrl(image.url);
+    try {
+      // Call the API with mode: "clean" to edit the source image and remove watermarks
+      const response = await fetch("/api/generate/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channelId,
+          originalImageUrl: image.url,
+          mode: "clean",
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        const newImage: PostImage = {
+          url: data.data.url,
+          isGenerated: true,
+          prompt: data.data.prompt,
+          originalUrl: image.url,
+        };
+        onImageRegenerated(image.url, newImage);
+      } else {
+        alert(data.error || "Failed to clean image");
+      }
+    } catch (error) {
+      console.error("Failed to clean image:", error);
+      alert("Failed to clean image. Please try again.");
+    } finally {
+      setCleaningUrl(null);
+    }
+  };
+
   if (postImages.length === 0) {
     return null;
   }
@@ -154,6 +191,7 @@ export function PostImageSelector({
             onPreview={(index) => handlePreview(getFullIndex(generatedImages, index, true))}
             onRegenerate={channelId && onImageRegenerated ? handleRegenerate : undefined}
             regeneratingUrl={regeneratingUrl}
+            cleaningUrl={cleaningUrl}
           />
         </div>
       )}
@@ -170,7 +208,9 @@ export function PostImageSelector({
             onToggle={toggleImage}
             onPreview={(index) => handlePreview(getFullIndex(originalImages, index, false))}
             onRegenerate={channelId && onImageRegenerated ? handleRegenerate : undefined}
+            onClean={channelId && onImageRegenerated ? handleClean : undefined}
             regeneratingUrl={regeneratingUrl}
+            cleaningUrl={cleaningUrl}
           />
         </div>
       )}
@@ -194,7 +234,9 @@ interface ImageGridProps {
   onToggle: (image: PostImage) => void;
   onPreview: (index: number) => void;
   onRegenerate?: (image: PostImage) => void;
+  onClean?: (image: PostImage) => void;
   regeneratingUrl: string | null;
+  cleaningUrl: string | null;
 }
 
 function ImageGrid({
@@ -203,7 +245,9 @@ function ImageGrid({
   onToggle,
   onPreview,
   onRegenerate,
+  onClean,
   regeneratingUrl,
+  cleaningUrl,
 }: ImageGridProps) {
   const { t } = useI18n();
 
@@ -212,18 +256,20 @@ function ImageGrid({
       {images.map((image, index) => {
         const selected = isSelected(image.url);
         const isRegenerating = regeneratingUrl === image.url;
+        const isCleaning = cleaningUrl === image.url;
+        const isProcessing = isRegenerating || isCleaning;
 
         return (
           <div key={index} className="relative group">
             <button
               type="button"
               onClick={() => onToggle(image)}
-              disabled={isRegenerating}
+              disabled={isProcessing}
               className={`relative aspect-square rounded-[var(--radius-sm)] overflow-hidden border-2 transition-all w-full ${
                 selected
                   ? "border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/20"
                   : "border-transparent hover:border-[var(--border-primary)]"
-              } ${isRegenerating ? "opacity-50" : ""}`}
+              } ${isProcessing ? "opacity-50" : ""}`}
             >
               <img
                 src={image.url}
@@ -242,9 +288,13 @@ function ImageGrid({
                   </div>
                 </div>
               )}
-              {isRegenerating && (
+              {isProcessing && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <RefreshCw className="h-5 w-5 text-white animate-spin" />
+                  {isCleaning ? (
+                    <Sparkles className="h-5 w-5 text-white animate-pulse" />
+                  ) : (
+                    <RefreshCw className="h-5 w-5 text-white animate-spin" />
+                  )}
                 </div>
               )}
             </button>
@@ -264,6 +314,22 @@ function ImageGrid({
                 <Expand className="h-3 w-3" />
               </button>
 
+              {/* Clean button - removes watermarks/links */}
+              {onClean && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClean(image);
+                  }}
+                  disabled={isProcessing}
+                  className="p-1 rounded bg-black/60 text-white hover:bg-black/80 transition-colors disabled:opacity-50"
+                  title={t("generatePage.imageActions.clean")}
+                >
+                  <Sparkles className={`h-3 w-3 ${isCleaning ? "animate-pulse" : ""}`} />
+                </button>
+              )}
+
               {/* Regenerate button */}
               {onRegenerate && (
                 <button
@@ -272,7 +338,7 @@ function ImageGrid({
                     e.stopPropagation();
                     onRegenerate(image);
                   }}
-                  disabled={isRegenerating}
+                  disabled={isProcessing}
                   className="p-1 rounded bg-black/60 text-white hover:bg-black/80 transition-colors disabled:opacity-50"
                   title={t("generatePage.imageActions.regenerate")}
                 >

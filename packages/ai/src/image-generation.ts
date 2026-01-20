@@ -3,6 +3,10 @@ import { getAIClient } from "./client";
 const IMAGE_GENERATION_MODEL =
   process.env.IMAGE_GENERATION_MODEL ?? "google/gemini-2.0-flash-exp:free";
 
+// Model for image editing (requires multimodal input/output support)
+const IMAGE_EDITING_MODEL =
+  process.env.IMAGE_EDITING_MODEL ?? "google/gemini-2.5-flash-image";
+
 export interface GeneratedImage {
   url: string;
   prompt: string;
@@ -114,4 +118,112 @@ export async function generateImages(prompts: string[]): Promise<GeneratedImage[
   }
 
   return results;
+}
+
+/**
+ * Clean an image by recreating it without watermarks
+ * Asks the AI to create a very similar image based on the source
+ * Uses Gemini 2.5 Flash Image model which supports image generation
+ * @param sourceImageUrl - Base64 data URL of the source image
+ * @returns Base64 data URL of the recreated image, or null if failed
+ */
+export async function cleanImage(sourceImageUrl: string): Promise<string | null> {
+  const client = getAIClient();
+
+  try {
+    const response = await client.chat.completions.create({
+      model: IMAGE_EDITING_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: sourceImageUrl },
+            },
+            {
+              type: "text",
+              text: `Look at this reference image and create a very similar new image with the same subject, composition, colors, and style. Focus only on the main visual content - do NOT include any logos, watermarks, text overlays, channel names, URLs, or @usernames that may be visible in the reference. The new image should be clean and free of any branding or attribution marks. Generate the image now.`,
+            },
+          ],
+        },
+      ],
+      // @ts-expect-error - OpenRouter-specific parameter for image output
+      modalities: ["text", "image"],
+    });
+
+    // Extract image from response
+    const message = response.choices[0]?.message;
+    const messageObj = message as unknown as Record<string, unknown>;
+
+    // Debug logging
+    console.log("Clean image response keys:", Object.keys(messageObj || {}));
+
+    // Check message.images array (OpenRouter Gemini format - base64 data URLs)
+    if (messageObj?.images && Array.isArray(messageObj.images)) {
+      console.log("Found images array with", messageObj.images.length, "items");
+      const firstImage = messageObj.images[0];
+      if (typeof firstImage === "string" && firstImage.startsWith("data:image")) {
+        return firstImage;
+      }
+      // Handle object format
+      if (firstImage && typeof firstImage === "object") {
+        const imgObj = firstImage as Record<string, unknown>;
+        if (imgObj.type === "image_url" && imgObj.image_url) {
+          const imageUrl = imgObj.image_url as { url?: string };
+          if (imageUrl.url && typeof imageUrl.url === "string") {
+            return imageUrl.url;
+          }
+        }
+        // Direct url property
+        if (typeof imgObj.url === "string") {
+          return imgObj.url;
+        }
+      }
+    }
+
+    // Handle string content (direct base64)
+    const content = message?.content;
+    if (typeof content === "string") {
+      console.log("Content is string, length:", content.length, "starts with:", content.slice(0, 50));
+      if (content.startsWith("data:image")) {
+        return content;
+      }
+    }
+
+    // Handle array content (multimodal responses)
+    const contentArray = content as unknown;
+    if (contentArray && Array.isArray(contentArray)) {
+      console.log("Content is array with", contentArray.length, "items");
+      for (const part of contentArray) {
+        if (part && typeof part === "object") {
+          const partObj = part as Record<string, unknown>;
+          console.log("Part type:", partObj.type);
+
+          if (partObj.type === "image_url" && partObj.image_url) {
+            const imageUrl = partObj.image_url as { url?: string };
+            if (imageUrl.url && typeof imageUrl.url === "string") {
+              return imageUrl.url;
+            }
+          }
+
+          if (partObj.inline_data) {
+            const inlineData = partObj.inline_data as { mime_type?: string; data?: string };
+            if (inlineData.mime_type && inlineData.data) {
+              return `data:${inlineData.mime_type};base64,${inlineData.data}`;
+            }
+          }
+        }
+      }
+    }
+
+    console.error("No image found in clean response. Full message:", JSON.stringify(message, null, 2));
+    return null;
+  } catch (error) {
+    console.error("Image cleaning error:", error);
+    if (error instanceof Error && error.message.includes("429")) {
+      throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+    }
+    throw error;
+  }
 }

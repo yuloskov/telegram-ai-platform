@@ -2,7 +2,7 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateImage, analyzeImage } from "@repo/ai";
+import { generateImage, analyzeImage, cleanImage } from "@repo/ai";
 import { uploadFile, storagePathToBase64 } from "@repo/shared/storage";
 
 interface RegenerateImageResponse {
@@ -27,7 +27,7 @@ async function handler(
   }
 
   const { user } = req;
-  const { channelId, prompt, originalImageUrl } = req.body;
+  const { channelId, prompt, originalImageUrl, mode } = req.body;
 
   if (!channelId) {
     return res.status(400).json({ success: false, error: "Channel ID is required" });
@@ -45,6 +45,51 @@ async function handler(
   const { suggestedPrompt } = req.body; // From original image's analysis result
 
   try {
+    // Mode: "clean" - edit the source image to remove watermarks
+    if (mode === "clean") {
+      if (!originalImageUrl) {
+        return res.status(400).json({
+          success: false,
+          error: "originalImageUrl is required for clean mode",
+        });
+      }
+
+      // Convert media URL to storage path and then to base64
+      const storagePath = originalImageUrl.replace(/^\/api\/media\//, "");
+      const base64DataUrl = await storagePathToBase64(storagePath);
+
+      console.log("Cleaning image:", originalImageUrl);
+      const imageData = await cleanImage(base64DataUrl);
+
+      if (!imageData) {
+        return res.status(500).json({
+          success: false,
+          error: "Image cleaning failed - the AI model did not return an image. Please try again.",
+        });
+      }
+
+      // Upload to MinIO
+      const buffer = base64ToBuffer(imageData);
+      const timestamp = Date.now();
+      const objectName = `cleaned/${channelId}/${timestamp}.jpg`;
+
+      const uploadedPath = await uploadFile(
+        "telegram-platform",
+        objectName,
+        buffer,
+        "image/jpeg"
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          url: `/api/media/${uploadedPath}`,
+          prompt: "Cleaned image (watermarks removed)",
+        },
+      });
+    }
+
+    // Mode: "generate" (default) - generate new image from prompt
     let imagePrompt = prompt;
 
     // Priority: 1) explicit prompt, 2) suggestedPrompt from analysis, 3) analyze image

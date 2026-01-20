@@ -303,6 +303,7 @@ export const messages = {
       imageActions: {
         preview: "View full size",
         regenerate: "Regenerate image",
+        clean: "Remove watermarks",
       },
     },
 
@@ -636,6 +637,7 @@ export const messages = {
       imageActions: {
         preview: "Открыть в полном размере",
         regenerate: "Сгенерировать заново",
+        clean: "Убрать водяные знаки",
       },
     },
 
