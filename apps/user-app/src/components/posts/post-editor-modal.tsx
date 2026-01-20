@@ -29,13 +29,10 @@ interface PostEditorModalProps {
   channelId?: string;
   isGenerated: boolean;
   sources?: SourceContent[];
-  /** Images attached to this post (from generation API) */
   postImages?: PostImage[];
   selectedImages?: PostImage[];
   onImagesChange?: (images: PostImage[]) => void;
-  /** Callback when an image is regenerated */
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
-  /** Existing media files attached to this post (for editing existing posts) */
   existingMedia?: MediaFile[];
 }
 
@@ -64,12 +61,9 @@ export function PostEditorModal({
   const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
   const hasImages = (postImages?.length ?? 0) > 0;
 
-  // Filter valid existing media URLs using shared utility
   const existingUrls = existingMedia?.map((mf) => mf.url) ?? [];
   const validExistingUrls = getValidMediaUrls(existingUrls);
-  const validExistingMedia = existingMedia?.filter((mf) =>
-    validExistingUrls.includes(mf.url)
-  ) ?? [];
+  const validExistingMedia = existingMedia?.filter((mf) => validExistingUrls.includes(mf.url)) ?? [];
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>

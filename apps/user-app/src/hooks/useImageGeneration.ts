@@ -108,3 +108,52 @@ export function useCleanImage(
     },
   });
 }
+
+interface UseImageGenerationOptions {
+  channelId?: string;
+  onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
+}
+
+/**
+ * Combined hook for image regeneration and cleaning.
+ * Provides a simpler interface for components.
+ */
+export function useImageGeneration({
+  channelId,
+  onImageRegenerated,
+}: UseImageGenerationOptions) {
+  const regenerateMutation = useRegenerateImage(onImageRegenerated);
+  const cleanMutation = useCleanImage(onImageRegenerated);
+
+  const regenerateImage = (image: PostImage) => {
+    if (!channelId) return;
+    regenerateMutation.mutate({
+      params: {
+        channelId,
+        prompt: image.prompt,
+        suggestedPrompt: image.analysisResult?.suggestedPrompt,
+        originalImageUrl: image.isGenerated ? image.originalUrl : image.url,
+      },
+      originalImage: image,
+    });
+  };
+
+  const cleanImage = (image: PostImage) => {
+    if (!channelId) return;
+    cleanMutation.mutate({
+      params: { channelId, originalImageUrl: image.url },
+      originalImage: image,
+    });
+  };
+
+  return {
+    regeneratingUrl: regenerateMutation.isPending
+      ? regenerateMutation.variables?.originalImage.url ?? null
+      : null,
+    cleaningUrl: cleanMutation.isPending
+      ? cleanMutation.variables?.originalImage.url ?? null
+      : null,
+    regenerateImage,
+    cleanImage,
+  };
+}

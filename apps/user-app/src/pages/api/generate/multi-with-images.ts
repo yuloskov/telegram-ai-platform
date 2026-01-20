@@ -2,52 +2,13 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateMultiplePostsWithImages, type ImageDecision } from "@repo/ai";
-import { processPostImages, type ProcessedImage } from "~/lib/image-processing";
-
-interface SourceMedia {
-  url: string;
-  type: string;
-}
-
-interface ImageAnalysisResult {
-  hasWatermark: boolean;
-  hasLink: boolean;
-  hasLogo: boolean;
-  reasoning: string;
-  suggestedPrompt?: string;
-}
-
-// Convert storage path to API media URL
-function toMediaUrl(storagePath: string): string {
-  // storagePath is like "telegram-platform/scraped/channel/123.jpg"
-  // We need "/api/media/telegram-platform/scraped/channel/123.jpg"
-  return `/api/media/${storagePath}`;
-}
-
-interface SourceContent {
-  id: string;
-  text: string | null;
-  telegramLink: string;
-  media: SourceMedia[];
-}
-
-interface PostImage {
-  url: string;
-  isGenerated: boolean;
-  sourceId?: string;
-  prompt?: string;
-  analysisResult?: ImageAnalysisResult;
-  originalUrl?: string;
-}
-
-interface GeneratedPost {
-  content: string;
-  angle: string;
-  sourceIds: string[];
-  imageDecision: ImageDecision;
-  images: PostImage[];
-}
+import { generateMultiplePostsWithImages } from "@repo/ai";
+import {
+  processGeneratedPost,
+  transformToSourceContent,
+  type GeneratedPost,
+  type SourceContent,
+} from "~/lib/generation-helpers";
 
 interface MultiGenerateResponse {
   posts: GeneratedPost[];
@@ -63,7 +24,13 @@ async function handler(
   }
 
   const { user } = req;
-  const { channelId, scrapedContentIds, customPrompt, count = 3, autoRegenerate = false } = req.body;
+  const {
+    channelId,
+    scrapedContentIds,
+    customPrompt,
+    count = 3,
+    autoRegenerate = false,
+  } = req.body;
 
   if (!channelId) {
     return res.status(400).json({ success: false, error: "Channel ID is required" });
@@ -121,7 +88,6 @@ async function handler(
         hashtags: channel.hashtags,
       },
       scrapedContent.map((c) => {
-        // Filter out video/document placeholders - only count real image URLs
         const imageUrls = c.mediaUrls.filter((url) => !url.startsWith("skipped:"));
         return {
           id: c.id,
@@ -136,66 +102,20 @@ async function handler(
       postCount
     );
 
-    // Build source lookup map
     const sourceMap = new Map(scrapedContent.map((c) => [c.id, c]));
 
-    // Process posts and attach images with analysis
     const postsWithImages: GeneratedPost[] = [];
-
     for (const post of result.posts) {
-      // Collect images from source posts
-      const sourceIdsToUse =
-        post.imageDecision.strategy === "use_original" &&
-        post.imageDecision.originalImageSourceIds
-          ? post.imageDecision.originalImageSourceIds
-          : post.sourceIds;
-
-      const imagesToProcess: Array<{
-        url: string;
-        storagePath: string;
-        sourceId: string;
-      }> = [];
-
-      for (const sourceId of sourceIdsToUse) {
-        const source = sourceMap.get(sourceId);
-        if (source) {
-          const validPaths = source.mediaUrls.filter(
-            (path) => !path.startsWith("skipped:")
-          );
-          for (const path of validPaths) {
-            imagesToProcess.push({
-              url: toMediaUrl(path),
-              storagePath: path,
-              sourceId,
-            });
-          }
-        }
-      }
-
-      // Analyze images and generate replacements for those with issues (if enabled)
-      const { originalImages, generatedImages } = await processPostImages(
-        imagesToProcess,
+      const processedPost = await processGeneratedPost(
+        post,
+        sourceMap,
         channelId,
         channel.language,
         autoRegenerate
       );
-
-      // Combine original and generated images
-      const allImages: PostImage[] = [
-        ...originalImages,
-        ...generatedImages,
-      ];
-
-      postsWithImages.push({
-        content: post.content,
-        angle: post.angle,
-        sourceIds: post.sourceIds,
-        imageDecision: post.imageDecision,
-        images: allImages,
-      });
+      postsWithImages.push(processedPost);
     }
 
-    // Mark scraped content as used
     await prisma.scrapedContent.updateMany({
       where: { id: { in: scrapedContent.map((c) => c.id) } },
       data: { usedForGeneration: true },
@@ -205,14 +125,7 @@ async function handler(
       success: true,
       data: {
         posts: postsWithImages,
-        sources: scrapedContent.map((c) => ({
-          id: c.id,
-          text: c.text,
-          telegramLink: `https://t.me/${c.source.telegramUsername}/${c.telegramMessageId}`,
-          media: c.mediaUrls
-            .filter((path) => !path.startsWith("skipped:"))
-            .map((path) => ({ url: toMediaUrl(path), type: "image" })),
-        })),
+        sources: scrapedContent.map(transformToSourceContent),
       },
     });
   } catch (error) {

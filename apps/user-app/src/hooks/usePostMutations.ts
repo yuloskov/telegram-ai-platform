@@ -1,7 +1,8 @@
 // Shared hooks for post mutations - eliminates duplication in post pages
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiMutate } from "~/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiMutate, apiFetch } from "~/lib/api";
+import type { Post } from "~/types";
 
 interface UsePostMutationsOptions {
   postId: string | string[] | undefined;
@@ -87,5 +88,26 @@ export function useCreatePost({ channelId, onSuccess }: UseCreatePostOptions) {
       queryClient.invalidateQueries({ queryKey: ["posts", chId] });
       onSuccess?.();
     },
+  });
+}
+
+interface UsePostOptions {
+  enabled?: boolean;
+}
+
+/**
+ * Hook for fetching a single post.
+ */
+export function usePost(
+  postId: string | string[] | undefined,
+  options: UsePostOptions = {}
+) {
+  const { enabled = true } = options;
+  const id = Array.isArray(postId) ? postId[0] : postId;
+
+  return useQuery({
+    queryKey: ["post", id],
+    queryFn: () => apiFetch<Post>(`/api/posts/${id}`),
+    enabled: !!id && enabled,
   });
 }

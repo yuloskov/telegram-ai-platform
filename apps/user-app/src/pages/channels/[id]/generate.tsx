@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
+import { useChannel } from "~/hooks/useChannel";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
-import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { useI18n } from "~/i18n";
 import { useGenerationStore } from "~/stores/generation-store";
@@ -15,30 +14,16 @@ import {
   SourceSelectionPanel,
   GeneratedPostsGrid,
 } from "~/components/generate";
-
-interface Channel {
-  id: string;
-  title: string;
-}
+import { GenerationOptions } from "~/components/generate/generation-options";
 
 interface Source {
   id: string;
   telegramUsername: string;
   isActive: boolean;
-  scrapedContent: Array<{
-    id: string;
-    text: string | null;
-    views: number;
-    scrapedAt: string;
-    mediaUrls: string[];
-  }>;
+  scrapedContent: Array<{ id: string; text: string | null; views: number; scrapedAt: string; mediaUrls: string[] }>;
 }
 
-interface RecentPost {
-  id: string;
-  content: string;
-  publishedAt: string;
-}
+interface RecentPost { id: string; content: string; publishedAt: string; }
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -61,23 +46,14 @@ export default function GeneratePage() {
   const [postCount, setPostCount] = useState(3);
   const [autoRegenerate, setAutoRegenerate] = useState(false);
 
-  // Reset store when leaving page
   useEffect(() => {
     return () => reset();
   }, [reset]);
 
-  // Fetch channel
-  const { data: channel, isLoading: channelLoading } = useQuery({
-    queryKey: ["channel", id],
-    queryFn: async () => {
-      const res = await fetch(`/api/channels/${id}`);
-      const json = await res.json();
-      return json.data as Channel;
-    },
-    enabled: !!id && !authLoading,
+  const { data: channel, isLoading: channelLoading } = useChannel(id, {
+    enabled: !authLoading,
   });
 
-  // Fetch sources with content
   const { data: sources, isLoading: sourcesLoading } = useQuery({
     queryKey: ["sources-all-content", id],
     queryFn: async () => {
@@ -88,7 +64,6 @@ export default function GeneratePage() {
     enabled: !!id && !authLoading,
   });
 
-  // Fetch recent posts for context
   const { data: recentPosts, isLoading: recentPostsLoading } = useQuery({
     queryKey: ["recent-posts", id],
     queryFn: async () => {
@@ -99,14 +74,12 @@ export default function GeneratePage() {
     enabled: !!id && !authLoading,
   });
 
-  // Initialize sources when loaded
   useEffect(() => {
     if (sources) {
       initializeSources(sources);
     }
   }, [sources, initializeSources]);
 
-  // Generate mutation - using new API with images
   const generateMutation = useMutation({
     mutationFn: async () => {
       const selectedIds = getSelectedPostIds();
@@ -165,13 +138,11 @@ export default function GeneratePage() {
         />
 
         <div className="space-y-6">
-          {/* Auto-context preview */}
           <AutoContextPreview
             posts={recentPosts || []}
             isLoading={recentPostsLoading}
           />
 
-          {/* Source selection */}
           <PageSection title={t("generatePage.inspirationSources")}>
             <SourceSelectionPanel
               sources={sources || []}
@@ -180,7 +151,6 @@ export default function GeneratePage() {
             />
           </PageSection>
 
-          {/* Custom prompt */}
           <PageSection title={t("generatePage.customGuidanceSection")}>
             <GenerationPromptInput
               value={customPrompt}
@@ -188,66 +158,22 @@ export default function GeneratePage() {
             />
           </PageSection>
 
-          {/* Generation options and button */}
-          <div className="flex flex-col items-center gap-4 pt-2">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
-              {/* Post count selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-[var(--text-secondary)] whitespace-nowrap">
-                  {t("generatePage.postCount")}
-                </span>
-                <div className="flex rounded-[var(--radius-md)] border border-[var(--border-primary)] overflow-hidden">
-                  {[1, 2, 3, 4, 5].map((count) => (
-                    <button
-                      key={count}
-                      type="button"
-                      onClick={() => setPostCount(count)}
-                      className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                        postCount === count
-                          ? "bg-[var(--accent-primary)] text-white"
-                          : "bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-                      } ${count > 1 ? "border-l border-[var(--border-primary)]" : ""}`}
-                    >
-                      {count}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <GenerationOptions
+            postCount={postCount}
+            onPostCountChange={setPostCount}
+            autoRegenerate={autoRegenerate}
+            onAutoRegenerateChange={setAutoRegenerate}
+            onGenerate={() => generateMutation.mutate()}
+            isGenerating={generateMutation.isPending}
+            canGenerate={canGenerate}
+          />
 
-              {/* Auto-regenerate checkbox */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoRegenerate}
-                  onChange={(e) => setAutoRegenerate(e.target.checked)}
-                  className="h-4 w-4 rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
-                />
-                <span className="text-sm text-[var(--text-secondary)]">
-                  {t("generatePage.autoRegenerate")}
-                </span>
-              </label>
-            </div>
-
-            <Button
-              size="lg"
-              onClick={() => generateMutation.mutate()}
-              disabled={!canGenerate || generateMutation.isPending}
-            >
-              <Sparkles className={`h-5 w-5 ${generateMutation.isPending ? "animate-pulse" : ""}`} />
-              {generateMutation.isPending
-                ? t("generate.generating")
-                : t("generatePage.generatePosts", { count: postCount })}
-            </Button>
-          </div>
-
-          {/* Error message */}
           {generateMutation.isError && (
             <div className="p-4 rounded-[var(--radius-md)] bg-[var(--status-error-subtle)] text-[var(--status-error)] text-sm text-center">
               {generateMutation.error?.message || t("common.error")}
             </div>
           )}
 
-          {/* Generated posts */}
           {generatedPosts.length > 0 && (
             <PageSection title="">
               <GeneratedPostsGrid

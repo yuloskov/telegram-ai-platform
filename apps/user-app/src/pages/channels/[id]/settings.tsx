@@ -8,16 +8,9 @@ import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout } from "~/components/layout/page-layout";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Spinner } from "~/components/ui/spinner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { ArrowLeft, Save, AlertCircle, Check } from "lucide-react";
+import { ChannelSettingsForm, type ChannelSettings } from "~/components/channels/channel-settings-form";
+import { ArrowLeft } from "lucide-react";
 import { useI18n } from "~/i18n";
 
 export default function ChannelSettingsPage() {
@@ -28,7 +21,7 @@ export default function ChannelSettingsPage() {
   const { user, logout } = useAuth();
   const { t } = useI18n();
 
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<ChannelSettings>({
     niche: "",
     tone: "professional",
     language: "en",
@@ -36,7 +29,6 @@ export default function ChannelSettingsPage() {
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Use shared channel hook
   const { data: channel, isLoading: channelLoading } = useChannel(id, {
     enabled: !authLoading,
   });
@@ -53,7 +45,7 @@ export default function ChannelSettingsPage() {
   }, [channel]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: typeof settings) => {
+    mutationFn: async (data: ChannelSettings) => {
       const res = await fetch(`/api/channels/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -78,7 +70,6 @@ export default function ChannelSettingsPage() {
     },
   });
 
-  // Handle loading state
   if (authLoading || channelLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
@@ -87,7 +78,6 @@ export default function ChannelSettingsPage() {
     );
   }
 
-  // Handle not found
   if (!channel) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
@@ -126,140 +116,15 @@ export default function ChannelSettingsPage() {
         )}
 
         <Card className="p-6">
-          <div className="space-y-6">
-            {/* Niche */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-                {t("channelSettings.nicheLabel")}
-              </label>
-              <Input
-                value={settings.niche}
-                onChange={(e) =>
-                  setSettings({ ...settings, niche: e.target.value })
-                }
-                placeholder={t("channelSettings.nichePlaceholder")}
-              />
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                {t("channelSettings.nicheHint")}
-              </p>
-            </div>
-
-            {/* Tone */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-                {t("channelSettings.toneLabel")}
-              </label>
-              <Select
-                value={settings.tone}
-                onValueChange={(value) =>
-                  setSettings({ ...settings, tone: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="professional">
-                    {t("channelSettings.toneProfessional")}
-                  </SelectItem>
-                  <SelectItem value="casual">
-                    {t("channelSettings.toneCasual")}
-                  </SelectItem>
-                  <SelectItem value="humorous">
-                    {t("channelSettings.toneHumorous")}
-                  </SelectItem>
-                  <SelectItem value="informative">
-                    {t("channelSettings.toneInformative")}
-                  </SelectItem>
-                  <SelectItem value="inspirational">
-                    {t("channelSettings.toneInspirational")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Content Language */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-                {t("channelSettings.contentLanguageLabel")}
-              </label>
-              <Select
-                value={settings.language}
-                onValueChange={(value) =>
-                  setSettings({ ...settings, language: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">
-                    {t("channelSettings.contentLanguageEnglish")}
-                  </SelectItem>
-                  <SelectItem value="ru">
-                    {t("channelSettings.contentLanguageRussian")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                {t("channelSettings.contentLanguageHint")}
-              </p>
-            </div>
-
-            {/* Hashtags */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
-                {t("channelSettings.hashtagsLabel")}
-              </label>
-              <Input
-                value={settings.hashtags}
-                onChange={(e) =>
-                  setSettings({ ...settings, hashtags: e.target.value })
-                }
-                placeholder={t("channelSettings.hashtagsPlaceholder")}
-              />
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                {t("channelSettings.hashtagsHint")}
-              </p>
-            </div>
-
-            {/* Error */}
-            {updateMutation.isError && (
-              <div className="flex items-start gap-3 bg-[#f8d7da] text-[#721c24] p-4 rounded-[var(--radius-md)]">
-                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                <p className="text-sm">
-                  {updateMutation.error?.message || t("channelSettings.saveError")}
-                </p>
-              </div>
-            )}
-
-            {/* Success */}
-            {showSuccess && (
-              <div className="flex items-center gap-3 bg-[#d4edda] text-[#155724] p-4 rounded-[var(--radius-md)]">
-                <Check className="h-5 w-5" />
-                <p className="text-sm">{t("channelSettings.saveSuccess")}</p>
-              </div>
-            )}
-
-            {/* Save Button */}
-            <Button
-              onClick={() => updateMutation.mutate(settings)}
-              disabled={updateMutation.isPending}
-              className="w-full"
-            >
-              {updateMutation.isPending ? (
-                <>
-                  <Spinner size="sm" />
-                  {t("channelSettings.saving")}
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  {t("channelSettings.save")}
-                </>
-              )}
-            </Button>
-          </div>
+          <ChannelSettingsForm
+            settings={settings}
+            onSettingsChange={setSettings}
+            onSave={() => updateMutation.mutate(settings)}
+            isSaving={updateMutation.isPending}
+            isError={updateMutation.isError}
+            errorMessage={updateMutation.error?.message}
+            showSuccess={showSuccess}
+          />
         </Card>
       </div>
     </PageLayout>
