@@ -35,36 +35,59 @@ The image should be:
       modalities: ["text", "image"],
     });
 
-    // Extract image from response
-    const content = response.choices[0]?.message?.content;
-
-    console.log("Image generation response type:", typeof content);
-    console.log("Image generation response preview:",
-      typeof content === "string"
-        ? content.substring(0, 200)
-        : JSON.stringify(content)?.substring(0, 200)
-    );
-
-    if (typeof content === "string" && content.startsWith("data:image")) {
-      return content;
-    }
-
-    // Check for image in multimodal response
+    // Extract image from response - handle multiple formats
     const message = response.choices[0]?.message;
-    if (message && Array.isArray(message.content)) {
-      for (const part of message.content) {
-        if (typeof part === "object" && "image_url" in part) {
-          return (part as { image_url: { url: string } }).image_url.url;
-        }
-        // Also check for inline_data format (Gemini native format)
-        if (typeof part === "object" && "inline_data" in part) {
-          const inlineData = part as { inline_data: { mime_type: string; data: string } };
-          return `data:${inlineData.inline_data.mime_type};base64,${inlineData.inline_data.data}`;
+    const messageObj = message as unknown as Record<string, unknown>;
+
+    // Check message.images array (Gemini via OpenRouter format)
+    if (messageObj?.images && Array.isArray(messageObj.images)) {
+      for (const img of messageObj.images) {
+        if (img && typeof img === "object") {
+          const imgObj = img as Record<string, unknown>;
+          if (imgObj.type === "image_url" && imgObj.image_url) {
+            const imageUrl = imgObj.image_url as { url?: string };
+            if (imageUrl.url && typeof imageUrl.url === "string") {
+              console.log("Found image in message.images array");
+              return imageUrl.url;
+            }
+          }
         }
       }
     }
 
-    console.error("No image in response. Full response:", JSON.stringify(response, null, 2));
+    // Handle string content (direct base64)
+    const content = message?.content;
+    if (typeof content === "string" && content.startsWith("data:image")) {
+      return content;
+    }
+
+    // Handle array content (multimodal responses)
+    const contentArray = content as unknown;
+    if (contentArray && Array.isArray(contentArray)) {
+      for (const part of contentArray) {
+        if (part && typeof part === "object") {
+          const partObj = part as Record<string, unknown>;
+
+          // Format: { type: "image_url", image_url: { url: "data:..." } }
+          if (partObj.type === "image_url" && partObj.image_url) {
+            const imageUrl = partObj.image_url as { url?: string };
+            if (imageUrl.url && typeof imageUrl.url === "string") {
+              return imageUrl.url;
+            }
+          }
+
+          // Format: { inline_data: { mime_type: "...", data: "..." } } (Gemini native)
+          if (partObj.inline_data) {
+            const inlineData = partObj.inline_data as { mime_type?: string; data?: string };
+            if (inlineData.mime_type && inlineData.data) {
+              return `data:${inlineData.mime_type};base64,${inlineData.data}`;
+            }
+          }
+        }
+      }
+    }
+
+    console.error("No image found in response");
     return null;
   } catch (error) {
     console.error("Image generation error:", error);
