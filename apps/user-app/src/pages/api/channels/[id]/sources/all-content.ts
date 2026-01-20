@@ -3,6 +3,11 @@ import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 
+interface MediaFileResponse {
+  type: string;
+  url: string;
+}
+
 interface ScrapedPostResponse {
   id: string;
   text: string | null;
@@ -10,6 +15,8 @@ interface ScrapedPostResponse {
   forwards: number;
   reactions: number;
   usedForGeneration: boolean;
+  scrapedAt: string;
+  mediaFiles: MediaFileResponse[];
 }
 
 interface SourceWithContentResponse {
@@ -43,12 +50,12 @@ async function handler(
     return res.status(404).json({ success: false, error: "Channel not found" });
   }
 
-  // Fetch all sources with their scraped content, ordered by views
+  // Fetch all sources with their scraped content, ordered by scrapedAt (most recent first)
   const sources = await prisma.contentSource.findMany({
     where: { channelId },
     include: {
       scrapedContent: {
-        orderBy: { views: "desc" },
+        orderBy: { scrapedAt: "desc" },
         select: {
           id: true,
           text: true,
@@ -56,6 +63,13 @@ async function handler(
           forwards: true,
           reactions: true,
           usedForGeneration: true,
+          scrapedAt: true,
+          mediaFiles: {
+            select: {
+              type: true,
+              url: true,
+            },
+          },
         },
       },
     },
@@ -75,6 +89,11 @@ async function handler(
         forwards: content.forwards,
         reactions: content.reactions,
         usedForGeneration: content.usedForGeneration,
+        scrapedAt: content.scrapedAt.toISOString(),
+        mediaFiles: content.mediaFiles.map((mf) => ({
+          type: mf.type,
+          url: mf.url,
+        })),
       })),
     })),
   });

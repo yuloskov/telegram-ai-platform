@@ -6,3 +6,6 @@ export { SourcePostSelector } from "./source-post-selector";
 export { SourcePostCard } from "./source-post-card";
 export { GeneratedPostCard } from "./generated-post-card";
 export { GeneratedPostsGrid } from "./generated-posts-grid";
+export { PostImageGallery } from "./post-image-gallery";
+export { ImageStrategyBadge } from "./image-strategy-badge";
+export { PostImageSelector } from "./post-image-selector";

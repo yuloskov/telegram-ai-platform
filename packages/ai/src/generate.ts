@@ -5,7 +5,9 @@ import {
   getGenerateFromScrapedPrompt,
   getSuggestImagePromptPrompt,
   getGenerateMultiplePostsPrompt,
+  getGenerateMultiplePostsWithImagesPrompt,
   type ChannelContext,
+  type ScrapedPostWithMedia,
 } from "./prompts";
 
 export interface GenerationResult {
@@ -180,6 +182,105 @@ export async function generateMultiplePosts(
           content: response.trim(),
           angle: "Generated content",
           sourceIds: [],
+        },
+      ],
+    };
+  }
+}
+
+export type ImageStrategy = "none" | "use_original" | "generate_new";
+
+export interface ImageDecision {
+  strategy: ImageStrategy;
+  originalImageSourceIds?: string[];
+  imagePrompts?: string[];
+  reasoning?: string;
+}
+
+export interface MultiGenerationPostWithImages {
+  content: string;
+  angle: string;
+  sourceIds: string[];
+  imageDecision: ImageDecision;
+}
+
+export interface MultiGenerationResultWithImages {
+  posts: MultiGenerationPostWithImages[];
+}
+
+export async function generateMultiplePostsWithImages(
+  channel: ChannelContext,
+  scrapedPosts: ScrapedPostWithMedia[],
+  channelPreviousPosts: string[],
+  customPrompt?: string,
+  count: number = 3
+): Promise<MultiGenerationResultWithImages> {
+  const systemPrompt = getSystemPrompt(channel);
+  const userPrompt = getGenerateMultiplePostsWithImagesPrompt(
+    scrapedPosts,
+    channelPreviousPosts,
+    count,
+    customPrompt,
+    channel.language
+  );
+
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ];
+
+  const response = await chat(messages, { maxTokens: 4000 });
+
+  try {
+    let jsonStr = response.trim();
+    if (jsonStr.startsWith("```json")) {
+      jsonStr = jsonStr.slice(7);
+    } else if (jsonStr.startsWith("```")) {
+      jsonStr = jsonStr.slice(3);
+    }
+    if (jsonStr.endsWith("```")) {
+      jsonStr = jsonStr.slice(0, -3);
+    }
+    jsonStr = jsonStr.trim();
+
+    const parsed = JSON.parse(jsonStr);
+
+    if (!parsed.posts || !Array.isArray(parsed.posts)) {
+      throw new Error("Invalid response format: missing posts array");
+    }
+
+    return {
+      posts: parsed.posts.map((post: {
+        content?: string;
+        angle?: string;
+        sourceIds?: string[];
+        imageDecision?: {
+          strategy?: string;
+          originalImageSourceIds?: string[];
+          imagePrompts?: string[];
+          reasoning?: string;
+        };
+      }) => ({
+        content: (post.content || "").trim(),
+        angle: (post.angle || "").trim(),
+        sourceIds: Array.isArray(post.sourceIds) ? post.sourceIds : [],
+        imageDecision: {
+          strategy: (post.imageDecision?.strategy as ImageStrategy) || "none",
+          originalImageSourceIds: post.imageDecision?.originalImageSourceIds,
+          imagePrompts: post.imageDecision?.imagePrompts,
+          reasoning: post.imageDecision?.reasoning,
+        },
+      })),
+    };
+  } catch (error) {
+    console.error("Failed to parse multi-post with images response:", error);
+    return {
+      posts: [
+        {
+          content: response.trim(),
+          angle: "Generated content",
+          sourceIds: [],
+          imageDecision: { strategy: "none" },
         },
       ],
     };

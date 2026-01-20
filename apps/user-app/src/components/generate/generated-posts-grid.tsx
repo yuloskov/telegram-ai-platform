@@ -5,11 +5,14 @@ import { Button } from "~/components/ui/button";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { GeneratedPostCard } from "./generated-post-card";
 import { RefreshCw, Save } from "lucide-react";
+import type { ImageDecision, PostImage } from "~/stores/generation-store";
 
 interface GeneratedPost {
   content: string;
   angle: string;
   sourceIds: string[];
+  imageDecision?: ImageDecision;
+  images?: PostImage[];
 }
 
 interface SourceMedia {
@@ -47,14 +50,15 @@ export function GeneratedPostsGrid({
   const [editingPost, setEditingPost] = useState<GeneratedPost | null>(null);
   const [editingSources, setEditingSources] = useState<SourceContent[]>([]);
   const [editContent, setEditContent] = useState("");
+  const [editImages, setEditImages] = useState<PostImage[]>([]);
   const [savingPostIndex, setSavingPostIndex] = useState<number | null>(null);
 
   const saveMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, images }: { content: string; images?: PostImage[] }) => {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channelId, content }),
+        body: JSON.stringify({ channelId, content, images }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -68,7 +72,7 @@ export function GeneratedPostsGrid({
   const saveAllMutation = useMutation({
     mutationFn: async () => {
       for (const post of posts) {
-        await saveMutation.mutateAsync(post.content);
+        await saveMutation.mutateAsync({ content: post.content, images: post.images });
       }
     },
     onSuccess: () => {
@@ -76,10 +80,10 @@ export function GeneratedPostsGrid({
     },
   });
 
-  const handleSavePost = async (index: number, content: string) => {
+  const handleSavePost = async (index: number, content: string, images?: PostImage[]) => {
     setSavingPostIndex(index);
     try {
-      await saveMutation.mutateAsync(content);
+      await saveMutation.mutateAsync({ content, images });
     } finally {
       setSavingPostIndex(null);
     }
@@ -90,12 +94,14 @@ export function GeneratedPostsGrid({
     setEditingPost(post);
     setEditingSources(postSources);
     setEditContent(post.content);
+    setEditImages(post.images ?? []);
   };
 
   const handleSaveFromEditor = async () => {
-    await saveMutation.mutateAsync(editContent);
+    await saveMutation.mutateAsync({ content: editContent, images: editImages.length > 0 ? editImages : undefined });
     setEditingPost(null);
     setEditContent("");
+    setEditImages([]);
   };
 
   if (posts.length === 0) {
@@ -142,8 +148,10 @@ export function GeneratedPostsGrid({
               angle={post.angle}
               index={index}
               sources={postSources}
+              imageDecision={post.imageDecision}
+              images={post.images}
               onEdit={() => handleEditPost(post)}
-              onSave={() => handleSavePost(index, post.content)}
+              onSave={() => handleSavePost(index, post.content, post.images)}
               isSaving={savingPostIndex === index}
             />
           );
@@ -162,6 +170,8 @@ export function GeneratedPostsGrid({
         channelName={channelName}
         isGenerated={true}
         sources={editingSources}
+        selectedImages={editImages}
+        onImagesChange={setEditImages}
       />
     </div>
   );

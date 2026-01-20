@@ -18,15 +18,38 @@ interface SourceContent {
   media: SourceMedia[];
 }
 
+export type ImageStrategy = "none" | "use_original" | "generate_new";
+
+export interface ImageDecision {
+  strategy: ImageStrategy;
+  originalImageSourceIds?: string[];
+  imagePrompts?: string[];
+  reasoning?: string;
+}
+
+export interface PostImage {
+  url: string;
+  isGenerated: boolean;
+  sourceId?: string;
+  prompt?: string;
+}
+
 interface GeneratedPost {
   content: string;
   angle: string;
   sourceIds: string[];
+  imageDecision?: ImageDecision;
+  images?: PostImage[];
 }
 
 interface GenerationResult {
   posts: GeneratedPost[];
   sources: SourceContent[];
+}
+
+interface MediaFile {
+  type: string;
+  url: string;
 }
 
 interface Source {
@@ -37,7 +60,17 @@ interface Source {
     id: string;
     text: string | null;
     views: number;
+    scrapedAt: string;
+    mediaFiles: MediaFile[];
   }>;
+}
+
+// Helper to check if a post is video-only (has video but no text and no images)
+function isVideoOnly(post: { text: string | null; mediaFiles: MediaFile[] }): boolean {
+  const hasText = post.text && post.text.trim().length > 0;
+  const hasVideo = post.mediaFiles.some((m) => m.type === "video");
+  const hasImage = post.mediaFiles.some((m) => m.type === "image" || m.type === "photo");
+  return !hasText && hasVideo && !hasImage;
 }
 
 interface GenerationStore {
@@ -74,13 +107,12 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     const selections = new Map<string, SourceSelection>();
 
     sources.forEach((source) => {
-      // Auto-select top posts by views (up to DEFAULT_POST_COUNT)
-      const topPostIds = source.scrapedContent
-        .slice(0, DEFAULT_POST_COUNT)
-        .map((p) => p.id);
+      // Filter out video-only posts, then select first 5 (most recent, already sorted by API)
+      const selectablePosts = source.scrapedContent.filter((p) => !isVideoOnly(p));
+      const topPostIds = selectablePosts.slice(0, DEFAULT_POST_COUNT).map((p) => p.id);
 
       selections.set(source.id, {
-        enabled: source.scrapedContent.length > 0,
+        enabled: selectablePosts.length > 0,
         postCount: DEFAULT_POST_COUNT,
         selectedPostIds: new Set(topPostIds),
       });

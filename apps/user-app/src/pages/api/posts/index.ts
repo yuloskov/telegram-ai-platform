@@ -85,7 +85,7 @@ async function handler(
   }
 
   if (req.method === "POST") {
-    const { channelId, content, scheduledAt } = req.body;
+    const { channelId, content, scheduledAt, images } = req.body;
 
     if (!channelId || !content) {
       return res.status(400).json({
@@ -103,6 +103,17 @@ async function handler(
       return res.status(404).json({ success: false, error: "Channel not found" });
     }
 
+    // Prepare media files data if images provided
+    type ImageInput = { url: string; isGenerated?: boolean; sourceId?: string; prompt?: string };
+    const mediaFilesData = Array.isArray(images)
+      ? images.map((img: ImageInput, index: number) => ({
+          url: img.url,
+          type: "image",
+          filename: `image_${index}.jpg`,
+          isGenerated: img.isGenerated ?? false,
+        }))
+      : undefined;
+
     const post = await prisma.post.create({
       data: {
         channelId,
@@ -110,6 +121,14 @@ async function handler(
         status: scheduledAt ? "scheduled" : "draft",
         generationType: "manual",
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        ...(mediaFilesData && {
+          mediaFiles: {
+            create: mediaFilesData,
+          },
+        }),
+      },
+      include: {
+        mediaFiles: true,
       },
     });
 

@@ -12,7 +12,9 @@ import {
 } from "~/components/ui/modal";
 import { MessagePreview } from "~/components/telegram/message-bubble";
 import { SourcePostCard } from "~/components/generate/source-post-card";
+import { PostImageSelector } from "~/components/generate/post-image-selector";
 import { useI18n } from "~/i18n";
+import type { PostImage } from "~/stores/generation-store";
 
 interface SourceMedia {
   url: string;
@@ -37,6 +39,8 @@ interface PostEditorModalProps {
   channelName: string;
   isGenerated: boolean;
   sources?: SourceContent[];
+  selectedImages?: PostImage[];
+  onImagesChange?: (images: PostImage[]) => void;
 }
 
 export function PostEditorModal({
@@ -50,11 +54,14 @@ export function PostEditorModal({
   channelName,
   isGenerated,
   sources,
+  selectedImages,
+  onImagesChange,
 }: PostEditorModalProps) {
   const { t } = useI18n();
   const [showSources, setShowSources] = useState(false);
 
   const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
+  const hasImageSources = validSources.some((s) => s.media.some((m) => m.type.startsWith("image")));
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
@@ -91,6 +98,17 @@ export function PostEditorModal({
             )}
           </div>
         </div>
+
+        {/* Image selector */}
+        {isGenerated && hasImageSources && onImagesChange && (
+          <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
+            <PostImageSelector
+              selectedImages={selectedImages ?? []}
+              onImagesChange={onImagesChange}
+              sources={validSources}
+            />
+          </div>
+        )}
 
         {/* Sources section */}
         {validSources.length > 0 && (

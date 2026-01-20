@@ -43,10 +43,10 @@ interface JobsResponse {
   };
 }
 
-async function fetchJobs(page: number, status: string, jobType: string): Promise<JobsResponse> {
+async function fetchJobs(page: number, limit: number, status: string, jobType: string): Promise<JobsResponse> {
   const params = new URLSearchParams({
     page: String(page),
-    limit: "20",
+    limit: String(limit),
     ...(status && { status }),
     ...(jobType && { jobType }),
   });
@@ -92,15 +92,32 @@ function getStatusVariant(status: JobStatus): "success" | "error" | "warning" | 
   }
 }
 
+function getPageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  if (current <= 3) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+
+  if (current >= total - 2) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+
+  return [1, "...", current - 1, current, current + 1, "...", total];
+}
+
 export default function JobsPage() {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["admin", "jobs", page, statusFilter, typeFilter],
-    queryFn: () => fetchJobs(page, statusFilter, typeFilter),
+    queryKey: ["admin", "jobs", page, limit, statusFilter, typeFilter],
+    queryFn: () => fetchJobs(page, limit, statusFilter, typeFilter),
     refetchInterval: 10000,
   });
 
@@ -312,13 +329,43 @@ export default function JobsPage() {
                     </div>
                   )}
 
-                  {data.pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--border-secondary)]">
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-[var(--border-secondary)]">
+                    <div className="flex items-center gap-4">
                       <div className="text-sm text-[var(--text-secondary)]">
-                        Showing {(page - 1) * 20 + 1} to{" "}
-                        {Math.min(page * 20, data.pagination.total)} of {data.pagination.total}
+                        Showing {data.pagination.total === 0 ? 0 : (page - 1) * limit + 1} to{" "}
+                        {Math.min(page * limit, data.pagination.total)} of {data.pagination.total}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-[var(--text-secondary)]">Per page:</span>
+                        <Select
+                          value={String(limit)}
+                          onValueChange={(value) => {
+                            setLimit(Number(value));
+                            setPage(1);
+                          }}
+                        >
+                          <SelectTrigger className="w-[80px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {data.pagination.totalPages > 1 && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setPage(1)}
+                          disabled={page === 1}
+                        >
+                          First
+                        </Button>
                         <Button
                           variant="secondary"
                           size="sm"
@@ -327,6 +374,22 @@ export default function JobsPage() {
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
+                        {getPageNumbers(page, data.pagination.totalPages).map((pageNum, idx) =>
+                          pageNum === "..." ? (
+                            <span key={`ellipsis-${idx}`} className="px-2 text-[var(--text-tertiary)]">
+                              ...
+                            </span>
+                          ) : (
+                            <Button
+                              key={pageNum}
+                              variant={page === pageNum ? "default" : "secondary"}
+                              size="sm"
+                              onClick={() => setPage(pageNum as number)}
+                            >
+                              {pageNum}
+                            </Button>
+                          )
+                        )}
                         <Button
                           variant="secondary"
                           size="sm"
@@ -335,9 +398,17 @@ export default function JobsPage() {
                         >
                           <ChevronRight className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setPage(data.pagination.totalPages)}
+                          disabled={page === data.pagination.totalPages}
+                        >
+                          Last
+                        </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </>
               )}
             </CardContent>

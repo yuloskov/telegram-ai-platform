@@ -283,6 +283,14 @@ export const messages = {
       saved: "Saved",
       sourcesUsed: "{count} sources used",
       viewOriginal: "View original post",
+      noImages: "No images",
+      originalImages: "{count} original images",
+      aiGeneratedImages: "AI generated",
+      imageSuggested: "Image suggested",
+      selectImages: "Select Images",
+      useOriginalImages: "Use original images",
+      noImagesSelected: "No images selected",
+      availableFromSources: "Available from sources",
     },
 
     // Channel Settings
@@ -595,6 +603,14 @@ export const messages = {
       saved: "Сохранено",
       sourcesUsed: "{count} источников использовано",
       viewOriginal: "Открыть оригинал",
+      noImages: "Без изображений",
+      originalImages: "{count} оригинальных изображений",
+      aiGeneratedImages: "AI сгенерировано",
+      imageSuggested: "Изображение предложено",
+      selectImages: "Выбрать изображения",
+      useOriginalImages: "Использовать оригинальные",
+      noImagesSelected: "Изображения не выбраны",
+      availableFromSources: "Доступные из источников",
     },
 
     // Channel Settings

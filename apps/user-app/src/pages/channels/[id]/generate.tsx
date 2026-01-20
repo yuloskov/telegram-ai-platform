@@ -21,6 +21,11 @@ interface Channel {
   title: string;
 }
 
+interface MediaFile {
+  type: string;
+  url: string;
+}
+
 interface Source {
   id: string;
   telegramUsername: string;
@@ -32,6 +37,8 @@ interface Source {
     forwards: number;
     reactions: number;
     usedForGeneration: boolean;
+    scrapedAt: string;
+    mediaFiles: MediaFile[];
   }>;
 }
 
@@ -104,11 +111,11 @@ export default function GeneratePage() {
     }
   }, [sources, initializeSources]);
 
-  // Generate mutation
+  // Generate mutation - using new API with images
   const generateMutation = useMutation({
     mutationFn: async () => {
       const selectedIds = getSelectedPostIds();
-      const res = await fetch("/api/generate/multi", {
+      const res = await fetch("/api/generate/multi-with-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

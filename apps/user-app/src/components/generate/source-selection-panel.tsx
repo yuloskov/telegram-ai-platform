@@ -5,6 +5,11 @@ import { useGenerationStore } from "~/stores/generation-store";
 import { SourceItem } from "./source-item";
 import { Button } from "~/components/ui/button";
 
+interface MediaFile {
+  type: string;
+  url: string;
+}
+
 interface ScrapedPost {
   id: string;
   text: string | null;
@@ -12,6 +17,7 @@ interface ScrapedPost {
   forwards: number;
   reactions: number;
   usedForGeneration: boolean;
+  mediaFiles: MediaFile[];
 }
 
 interface Source {

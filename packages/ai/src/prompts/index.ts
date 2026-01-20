@@ -411,3 +411,148 @@ Respond with ONLY valid JSON, no additional text.`;
 
   return prompt;
 }
+
+export interface ScrapedPostWithMedia {
+  id: string;
+  text: string | null;
+  views: number;
+  hasImages: boolean;
+  imageCount: number;
+}
+
+export function getGenerateMultiplePostsWithImagesPrompt(
+  scrapedPosts: ScrapedPostWithMedia[],
+  channelPreviousPosts: string[],
+  count: number,
+  customPrompt?: string,
+  language: string = "en"
+): string {
+  const filteredScraped = shuffleArray(scrapedPosts.filter((p) => p.text));
+
+  if (language === "ru") {
+    const scrapedContext = filteredScraped
+      .map((p) => {
+        const mediaInfo = p.hasImages ? `, ${p.imageCount} изобр.` : "";
+        return `[ID: ${p.id}] (${p.views} просмотров${mediaInfo}):\n${p.text}`;
+      })
+      .join("\n\n---\n\n");
+
+    const previousContext =
+      channelPreviousPosts.length > 0
+        ? `\n\nТвои предыдущие посты (для понимания стиля):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+        : "";
+
+    let prompt = `На основе этих популярных постов из похожих каналов, создай ${count} РАЗНЫХ оригинальных постов с решением по изображениям для каждого:
+
+ВДОХНОВЕНИЕ (популярные посты):
+${scrapedContext}${previousContext}
+
+КРИТИЧЕСКИ ВАЖНО - РАЗНООБРАЗИЕ:
+- Создай ровно ${count} уникальных постов на РАЗНЫЕ ТЕМЫ
+- Каждый пост ДОЛЖЕН быть о ДРУГОЙ теме/новости из источников
+- ЗАПРЕЩЕНО использовать одни и те же источники для разных постов
+
+РЕШЕНИЯ ПО ИЗОБРАЖЕНИЯМ:
+Для каждого поста реши, нужны ли изображения:
+- "none": Краткие мысли, цитаты, простые текстовые посты - не нужны изображения
+- "use_original": Если источник имеет хорошие релевантные изображения - используй их
+- "generate_new": Если нужна уникальная визуализация (инфографика, иллюстрация) - сгенерируй
+
+Критерии:
+- Новости/информация → часто нужны изображения
+- Короткие мысли/мнения → обычно без изображений
+- Если у источника есть хорошие изображения → используй оригинал
+- Если нужна уникальная визуализация → генерируй новое`;
+
+    if (customPrompt) {
+      prompt += `\n\nДОПОЛНИТЕЛЬНЫЕ ИНСТРУКЦИИ:\n${customPrompt}`;
+    }
+
+    prompt += `\n\nОтветь в JSON формате:
+{
+  "posts": [
+    {
+      "content": "текст поста",
+      "angle": "краткое описание темы/подхода",
+      "sourceIds": ["id1"],
+      "imageDecision": {
+        "strategy": "none" | "use_original" | "generate_new",
+        "originalImageSourceIds": ["id1"],
+        "imagePrompts": ["описание для генерации изображения"],
+        "reasoning": "почему выбрана эта стратегия"
+      }
+    }
+  ]
+}
+
+ВАЖНО:
+- originalImageSourceIds - только если strategy = "use_original"
+- imagePrompts - только если strategy = "generate_new" (1-2 предложения на английском для генерации)
+- Ответь ТОЛЬКО валидным JSON без дополнительного текста.`;
+
+    return prompt;
+  }
+
+  // English (default)
+  const scrapedContext = filteredScraped
+    .map((p) => {
+      const mediaInfo = p.hasImages ? `, ${p.imageCount} images` : "";
+      return `[ID: ${p.id}] (${p.views} views${mediaInfo}):\n${p.text}`;
+    })
+    .join("\n\n---\n\n");
+
+  const previousContext =
+    channelPreviousPosts.length > 0
+      ? `\n\nYour previous posts (for style reference):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+      : "";
+
+  let prompt = `Based on these trending posts from similar channels, create ${count} DIFFERENT original posts with image decisions for each:
+
+INSPIRATION (trending posts):
+${scrapedContext}${previousContext}
+
+CRITICAL - DIVERSITY REQUIREMENT:
+- Create exactly ${count} unique posts about DIFFERENT topics
+- Each post MUST be about a DIFFERENT topic/news item from the sources
+- DO NOT reuse the same sources across different posts
+
+IMAGE DECISIONS:
+For each post, decide if images are needed:
+- "none": Short thoughts, quotes, simple text posts - no images needed
+- "use_original": If source has good relevant images - use them
+- "generate_new": If unique visualization needed (infographic, illustration) - generate new
+
+Criteria:
+- News/informational content → often needs images
+- Short thoughts/opinions → usually no images
+- If source has good images → use original
+- If unique visualization needed → generate new`;
+
+  if (customPrompt) {
+    prompt += `\n\nADDITIONAL INSTRUCTIONS:\n${customPrompt}`;
+  }
+
+  prompt += `\n\nRespond in JSON format:
+{
+  "posts": [
+    {
+      "content": "post text",
+      "angle": "brief topic/approach description",
+      "sourceIds": ["id1"],
+      "imageDecision": {
+        "strategy": "none" | "use_original" | "generate_new",
+        "originalImageSourceIds": ["id1"],
+        "imagePrompts": ["image generation prompt"],
+        "reasoning": "why this strategy was chosen"
+      }
+    }
+  ]
+}
+
+IMPORTANT:
+- originalImageSourceIds - only if strategy = "use_original"
+- imagePrompts - only if strategy = "generate_new" (1-2 sentences in English for generation)
+- Respond with ONLY valid JSON, no additional text.`;
+
+  return prompt;
+}

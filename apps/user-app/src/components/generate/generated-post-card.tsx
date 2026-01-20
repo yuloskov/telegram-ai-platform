@@ -3,6 +3,9 @@ import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
 import { useState } from "react";
 import { SourcePostCard } from "./source-post-card";
+import { PostImageGallery } from "./post-image-gallery";
+import { ImageStrategyBadge } from "./image-strategy-badge";
+import type { ImageDecision, PostImage } from "~/stores/generation-store";
 
 interface SourceMedia {
   url: string;
@@ -21,6 +24,8 @@ interface GeneratedPostCardProps {
   angle: string;
   index: number;
   sources: SourceContent[];
+  imageDecision?: ImageDecision;
+  images?: PostImage[];
   onEdit: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -30,6 +35,8 @@ export function GeneratedPostCard({
   content,
   angle,
   sources,
+  imageDecision,
+  images,
   onEdit,
   onSave,
   isSaving,
@@ -44,9 +51,27 @@ export function GeneratedPostCard({
   };
 
   const validSources = sources.filter((s) => s.text || s.media.length > 0);
+  const hasImages = images && images.length > 0;
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--border-secondary)] bg-[var(--bg-primary)] flex flex-col h-full">
+      {/* Image gallery */}
+      {hasImages && (
+        <div className="p-3 pb-0">
+          <PostImageGallery images={images} />
+        </div>
+      )}
+
+      {/* Image strategy badge */}
+      {imageDecision && (
+        <div className="px-4 pt-2">
+          <ImageStrategyBadge
+            strategy={imageDecision.strategy}
+            imageCount={images?.length ?? 0}
+          />
+        </div>
+      )}
+
       {/* Content */}
       <div className="p-4 flex-1">
         {angle && (
