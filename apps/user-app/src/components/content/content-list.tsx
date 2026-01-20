@@ -73,8 +73,7 @@ export function ContentList({
       {selectionEnabled && itemIds.length > 0 && (
         <div className="flex items-center gap-3 px-1 py-2">
           <Checkbox
-            checked={allSelected}
-            data-state={someSelected && !allSelected ? "indeterminate" : undefined}
+            checked={allSelected ? true : someSelected ? "indeterminate" : false}
             onCheckedChange={handleSelectAll}
             data-checkbox
           />
