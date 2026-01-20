@@ -5,6 +5,7 @@ import { prisma } from "@repo/database";
 import { handlePublishJob } from "./jobs/publish.js";
 import { handleScrapeJob } from "./jobs/scrape.js";
 import { handleNotificationJob } from "./jobs/notify.js";
+import { getAutoScrapeScheduler } from "./services/auto-scrape-scheduler.js";
 
 // Helper to update job status in database
 async function updateJobStatus(
@@ -136,6 +137,12 @@ scheduledPostsWorker.on("failed", (job, err) => {
 console.log("Worker started successfully!");
 console.log(`Listening on queues: ${Object.values(QUEUE_NAMES).join(", ")}`);
 
+// Initialize auto-scrape scheduler
+const autoScrapeScheduler = getAutoScrapeScheduler(REDIS_URL);
+autoScrapeScheduler.initialize().catch((err) => {
+  console.error("Failed to initialize auto-scrape scheduler:", err);
+});
+
 // Graceful shutdown
 const shutdown = async () => {
   console.log("Shutting down workers...");
@@ -144,6 +151,7 @@ const shutdown = async () => {
     scrapingWorker.close(),
     notificationsWorker.close(),
     scheduledPostsWorker.close(),
+    autoScrapeScheduler.close(),
   ]);
   await connection.quit();
   console.log("Workers shut down successfully");

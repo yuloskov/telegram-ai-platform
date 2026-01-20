@@ -7,7 +7,13 @@ import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { Card } from "~/components/ui/card";
+import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { ScrapedContentList } from "~/components/sources/scraped-content-list";
+import { ContentFilters, type SortBy, type DateRange } from "~/components/sources/content-filters";
+import { GenerationActionBar } from "~/components/sources/generation-action-bar";
+import { GenerateFromScrapedModal } from "~/components/sources/generate-from-scraped-modal";
+import { AutoScrapeSettings } from "~/components/sources/auto-scrape-settings";
+import { ScrapingHistory } from "~/components/sources/scraping-history";
 import { RefreshCw, Trash2 } from "lucide-react";
 import { useI18n } from "~/i18n";
 
@@ -28,6 +34,7 @@ interface ContentSource {
 
 interface ScrapedContent {
   id: string;
+  telegramMessageId: string;
   text: string | null;
   mediaUrls: string[];
   views: number;
@@ -57,6 +64,15 @@ export default function SourceDetailPage() {
 
   const [isScraping, setIsScraping] = useState(false);
   const [page, setPage] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // Filter state
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortBy>("date");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
+
+  // Generation modal state
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
 
   const { data: channel, isLoading: channelLoading } = useQuery({
     queryKey: ["channel", channelId],
@@ -79,16 +95,39 @@ export default function SourceDetailPage() {
   });
 
   const { data: contentData, isLoading: contentLoading } = useQuery({
-    queryKey: ["source-content", channelId, sourceId, page],
+    queryKey: ["source-content", channelId, sourceId, page, search, sortBy, dateRange],
     queryFn: async () => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        sortBy,
+        ...(search && { search }),
+        ...(dateRange !== "all" && { dateRange }),
+      });
       const res = await fetch(
-        `/api/channels/${channelId}/sources/${sourceId}/content?page=${page}&limit=20`
+        `/api/channels/${channelId}/sources/${sourceId}/content?${params.toString()}`
       );
       const json = await res.json();
       return json as ContentResponse;
     },
     enabled: !!channelId && !!sourceId && !authLoading,
   });
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleSortByChange = (value: SortBy) => {
+    setSortBy(value);
+    setPage(1);
+  };
+
+  const handleDateRangeChange = (value: DateRange) => {
+    setDateRange(value);
+    setPage(1);
+  };
 
   const scrapeMutation = useMutation({
     mutationFn: async () => {
@@ -174,11 +213,7 @@ export default function SourceDetailPage() {
               </Button>
               <Button
                 variant="ghost"
-                onClick={() => {
-                  if (confirm(t("sources.deleteConfirm"))) {
-                    deleteMutation.mutate();
-                  }
-                }}
+                onClick={() => setDeleteConfirmOpen(true)}
               >
                 <Trash2 className="h-4 w-4" />
                 {t("sources.deleteSource")}
@@ -207,9 +242,34 @@ export default function SourceDetailPage() {
           </div>
         </Card>
 
+        {/* Auto-scrape Settings and History */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <AutoScrapeSettings
+            channelId={channelId as string}
+            sourceId={sourceId as string}
+          />
+          <ScrapingHistory
+            channelId={channelId as string}
+            sourceId={sourceId as string}
+          />
+        </div>
+
         {/* Scraped Content */}
         <PageSection title={t("sources.scrapedContent")}>
-          <ScrapedContentList content={content} isLoading={contentLoading} />
+          <ContentFilters
+            search={search}
+            onSearchChange={handleSearchChange}
+            sortBy={sortBy}
+            onSortByChange={handleSortByChange}
+            dateRange={dateRange}
+            onDateRangeChange={handleDateRangeChange}
+          />
+          <ScrapedContentList
+            content={content}
+            isLoading={contentLoading}
+            channelId={channelId as string}
+            sourceId={sourceId as string}
+          />
 
           {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
@@ -231,12 +291,31 @@ export default function SourceDetailPage() {
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={page === pagination.totalPages}
               >
-                Next
+                {t("common.next")}
               </Button>
             </div>
           )}
         </PageSection>
       </div>
+
+      <GenerationActionBar onGenerate={() => setGenerateModalOpen(true)} />
+
+      <GenerateFromScrapedModal
+        open={generateModalOpen}
+        onOpenChange={setGenerateModalOpen}
+        channelId={channelId as string}
+      />
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t("sources.deleteConfirmTitle")}
+        description={t("sources.deleteConfirmDescription")}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => deleteMutation.mutate()}
+        isLoading={deleteMutation.isPending}
+        variant="danger"
+      />
     </PageLayout>
   );
 }

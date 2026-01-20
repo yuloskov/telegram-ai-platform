@@ -1,0 +1,81 @@
+import type { NextApiResponse } from "next";
+import { prisma } from "~/server/db";
+import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
+import type { ApiResponse } from "@repo/shared/types";
+
+interface ScrapedContentResponse {
+  id: string;
+  telegramMessageId: string;
+  text: string | null;
+  mediaUrls: string[];
+  views: number;
+  forwards: number;
+  reactions: number;
+  scrapedAt: string;
+  usedForGeneration: boolean;
+  source: {
+    telegramUsername: string;
+  };
+}
+
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse<ApiResponse<ScrapedContentResponse>>
+) {
+  const { user } = req;
+  const { id: channelId, sourceId, contentId } = req.query;
+
+  if (typeof channelId !== "string" || typeof sourceId !== "string" || typeof contentId !== "string") {
+    return res.status(400).json({ success: false, error: "Invalid IDs" });
+  }
+
+  // Verify channel ownership
+  const channel = await prisma.channel.findFirst({
+    where: { id: channelId, userId: user.id },
+  });
+
+  if (!channel) {
+    return res.status(404).json({ success: false, error: "Channel not found" });
+  }
+
+  if (req.method === "GET") {
+    const content = await prisma.scrapedContent.findFirst({
+      where: {
+        id: contentId,
+        sourceId,
+        source: { channelId },
+      },
+      include: {
+        source: {
+          select: { telegramUsername: true },
+        },
+      },
+    });
+
+    if (!content) {
+      return res.status(404).json({ success: false, error: "Content not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: content.id,
+        telegramMessageId: content.telegramMessageId.toString(),
+        text: content.text,
+        mediaUrls: content.mediaUrls,
+        views: content.views,
+        forwards: content.forwards,
+        reactions: content.reactions,
+        scrapedAt: content.scrapedAt.toISOString(),
+        usedForGeneration: content.usedForGeneration,
+        source: {
+          telegramUsername: content.source.telegramUsername,
+        },
+      },
+    });
+  }
+
+  return res.status(405).json({ success: false, error: "Method not allowed" });
+}
+
+export default withAuth(handler);

@@ -5,6 +5,15 @@ import type { ScrapingJobPayload } from "@repo/shared/queues";
 export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
   const { sourceId, sessionId } = data;
 
+  // Create scrape log entry
+  const scrapeLog = await prisma.scrapeLog.create({
+    data: {
+      sourceId,
+      status: "running",
+      startedAt: new Date(),
+    },
+  });
+
   // Get the content source
   const source = await prisma.contentSource.findUnique({
     where: { id: sourceId },
@@ -18,6 +27,10 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
   });
 
   if (!source) {
+    await prisma.scrapeLog.update({
+      where: { id: scrapeLog.id },
+      data: { status: "failed", error: "Content source not found", completedAt: new Date() },
+    });
     throw new Error(`Content source not found: ${sourceId}`);
   }
 
@@ -35,6 +48,10 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
   }
 
   if (!session) {
+    await prisma.scrapeLog.update({
+      where: { id: scrapeLog.id },
+      data: { status: "failed", error: "No active Telegram session available", completedAt: new Date() },
+    });
     throw new Error("No active Telegram session available for scraping");
   }
 
@@ -97,7 +114,29 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
       data: { lastUsedAt: new Date() },
     });
 
+    // Update scrape log with success
+    await prisma.scrapeLog.update({
+      where: { id: scrapeLog.id },
+      data: {
+        status: "completed",
+        postsFound: messages.length,
+        newPosts: newCount,
+        completedAt: new Date(),
+      },
+    });
+
     console.log(`Saved ${newCount} new messages from ${source.telegramUsername}`);
+  } catch (error) {
+    // Update scrape log with failure
+    await prisma.scrapeLog.update({
+      where: { id: scrapeLog.id },
+      data: {
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+        completedAt: new Date(),
+      },
+    });
+    throw error;
   } finally {
     await disconnectClient(client);
   }

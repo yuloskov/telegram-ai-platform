@@ -25,7 +25,17 @@ async function handler(
   res: NextApiResponse<PaginatedResponse<ScrapedContentResponse>>
 ) {
   const { user } = req;
-  const { id: channelId, sourceId, page = "1", limit = "20", usedForGeneration } = req.query;
+  const {
+    id: channelId,
+    sourceId,
+    page = "1",
+    limit = "20",
+    usedForGeneration,
+    search,
+    sortBy = "date",
+    sortOrder = "desc",
+    dateRange,
+  } = req.query;
 
   if (typeof channelId !== "string" || typeof sourceId !== "string") {
     return res.status(400).json({
@@ -66,12 +76,42 @@ async function handler(
     const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10)));
     const skip = (pageNum - 1) * limitNum;
 
+    // Build where clause
     const where: Record<string, unknown> = { sourceId };
     if (usedForGeneration === "true") {
       where.usedForGeneration = true;
     } else if (usedForGeneration === "false") {
       where.usedForGeneration = false;
     }
+
+    // Search filter
+    if (search && typeof search === "string" && search.trim()) {
+      where.text = {
+        contains: search.trim(),
+        mode: "insensitive",
+      };
+    }
+
+    // Date range filter
+    if (dateRange && typeof dateRange === "string") {
+      const now = new Date();
+      if (dateRange === "week") {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        where.scrapedAt = { gte: weekAgo };
+      } else if (dateRange === "month") {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        where.scrapedAt = { gte: monthAgo };
+      }
+    }
+
+    // Build orderBy clause
+    type OrderByField = "scrapedAt" | "views" | "forwards";
+    const sortField: OrderByField =
+      sortBy === "views" ? "views" :
+      sortBy === "forwards" ? "forwards" :
+      "scrapedAt";
+    const sortDirection = sortOrder === "asc" ? "asc" : "desc";
+    const orderBy = { [sortField]: sortDirection };
 
     const [content, total] = await Promise.all([
       prisma.scrapedContent.findMany({
@@ -85,7 +125,7 @@ async function handler(
             },
           },
         },
-        orderBy: { scrapedAt: "desc" },
+        orderBy,
         skip,
         take: limitNum,
       }),

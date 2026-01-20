@@ -1,8 +1,10 @@
+import { useState } from "react";
 import Link from "next/link";
 import { RefreshCw, Trash2, ExternalLink, Lightbulb } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
+import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { EmptyState } from "~/components/telegram/empty-state";
 import { useI18n } from "~/i18n";
 
@@ -36,6 +38,21 @@ export function SourceList({
   onOpenAddModal,
 }: SourceListProps) {
   const { t } = useI18n();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
+
+  const handleDeleteClick = (sourceId: string) => {
+    setSourceToDelete(sourceId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (sourceToDelete) {
+      onDelete(sourceToDelete);
+      setDeleteConfirmOpen(false);
+      setSourceToDelete(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -112,11 +129,7 @@ export function SourceList({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => {
-                    if (confirm(t("sources.deleteConfirm"))) {
-                      onDelete(source.id);
-                    }
-                  }}
+                  onClick={() => handleDeleteClick(source.id)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -125,6 +138,16 @@ export function SourceList({
           </Card>
         );
       })}
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t("sources.deleteConfirmTitle")}
+        description={t("sources.deleteConfirmDescription")}
+        confirmLabel={t("common.delete")}
+        onConfirm={handleConfirmDelete}
+        variant="danger"
+      />
     </div>
   );
 }

@@ -93,10 +93,17 @@ model ContentSource {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Auto-scrape settings
+  autoScrapeEnabled Boolean  @default(false)
+  scrapeInterval    String?  // "hourly", "daily", "weekly"
+  scrapeJobId       String?  // BullMQ job ID for the repeatable job
+
   scrapedContent   ScrapedContent[]
+  scrapeLogs       ScrapeLog[]
 
   @@unique([channelId, telegramUsername])
   @@index([channelId])
+  @@index([autoScrapeEnabled])
 }
 
 model ScrapedContent {
@@ -134,6 +141,22 @@ model ImageAnalysis {
   analyzedAt       DateTime @default(now())
 
   @@index([scrapedContentId])
+}
+
+model ScrapeLog {
+  id          String   @id @default(cuid())
+  sourceId    String
+  source      ContentSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  status      String   // pending, running, completed, failed
+  postsFound  Int      @default(0)
+  newPosts    Int      @default(0)
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([sourceId])
+  @@index([createdAt])
 }
 
 // ============================================
