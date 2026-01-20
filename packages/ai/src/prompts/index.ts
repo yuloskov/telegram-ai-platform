@@ -55,10 +55,10 @@ ${hashtagsContext}
 7. Пиши оригинальный, уникальный контент
 8. Пиши ТОЛЬКО на русском языке
 
-Для форматирования в Telegram используй:
-- **жирный** для акцента
-- _курсив_ для мягкого выделения
-- \`код\` для технических терминов
+Для форматирования в Telegram используй HTML:
+- <b>жирный</b> для акцента
+- <i>курсив</i> для мягкого выделения
+- <code>код</code> для технических терминов
 - Переносы строк для читабельности`;
   }
 
@@ -90,10 +90,10 @@ Guidelines:
 7. Write original, unique content
 8. Write ONLY in English
 
-For Telegram formatting, use:
-- **bold** for emphasis
-- _italic_ for subtle emphasis
-- \`code\` for technical terms
+For Telegram formatting, use HTML:
+- <b>bold</b> for emphasis
+- <i>italic</i> for subtle emphasis
+- <code>code</code> for technical terms
 - Line breaks for readability`;
 }
 
