@@ -3,20 +3,12 @@ import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
 
-interface MediaFileResponse {
-  type: string;
-  url: string;
-}
-
 interface ScrapedPostResponse {
   id: string;
   text: string | null;
   views: number;
-  forwards: number;
-  reactions: number;
-  usedForGeneration: boolean;
   scrapedAt: string;
-  mediaFiles: MediaFileResponse[];
+  mediaUrls: string[];
 }
 
 interface SourceWithContentResponse {
@@ -60,16 +52,8 @@ async function handler(
           id: true,
           text: true,
           views: true,
-          forwards: true,
-          reactions: true,
-          usedForGeneration: true,
           scrapedAt: true,
-          mediaFiles: {
-            select: {
-              type: true,
-              url: true,
-            },
-          },
+          mediaUrls: true,
         },
       },
     },
@@ -86,14 +70,8 @@ async function handler(
         id: content.id,
         text: content.text,
         views: content.views,
-        forwards: content.forwards,
-        reactions: content.reactions,
-        usedForGeneration: content.usedForGeneration,
         scrapedAt: content.scrapedAt.toISOString(),
-        mediaFiles: content.mediaFiles.map((mf) => ({
-          type: mf.type,
-          url: mf.url,
-        })),
+        mediaUrls: content.mediaUrls,
       })),
     })),
   });

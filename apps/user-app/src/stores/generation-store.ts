@@ -47,11 +47,6 @@ interface GenerationResult {
   sources: SourceContent[];
 }
 
-interface MediaFile {
-  type: string;
-  url: string;
-}
-
 interface Source {
   id: string;
   telegramUsername: string;
@@ -61,16 +56,17 @@ interface Source {
     text: string | null;
     views: number;
     scrapedAt: string;
-    mediaFiles: MediaFile[];
+    mediaUrls: string[];
   }>;
 }
 
 // Helper to check if a post is video-only (has video but no text and no images)
-function isVideoOnly(post: { text: string | null; mediaFiles: MediaFile[] }): boolean {
+function isVideoOnly(post: { text: string | null; mediaUrls: string[] }): boolean {
   const hasText = post.text && post.text.trim().length > 0;
-  const hasVideo = post.mediaFiles.some((m) => m.type === "video");
-  const hasImage = post.mediaFiles.some((m) => m.type === "image" || m.type === "photo");
-  return !hasText && hasVideo && !hasImage;
+  if (hasText) return false;
+  if (post.mediaUrls.length === 0) return false;
+  // Video-only if all media are skipped videos/documents
+  return post.mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
 }
 
 interface GenerationStore {
@@ -127,9 +123,12 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       const current = newSelections.get(sourceId);
 
       if (current) {
+        const willBeEnabled = !current.enabled;
         newSelections.set(sourceId, {
           ...current,
-          enabled: !current.enabled,
+          enabled: willBeEnabled,
+          // Clear selections when disabling
+          selectedPostIds: willBeEnabled ? current.selectedPostIds : new Set(),
         });
       }
 

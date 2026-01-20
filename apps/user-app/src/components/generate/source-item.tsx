@@ -4,19 +4,11 @@ import { cn } from "~/lib/utils";
 import { useI18n } from "~/i18n";
 import { SourcePostSelector } from "./source-post-selector";
 
-interface MediaFile {
-  type: string;
-  url: string;
-}
-
 interface ScrapedPost {
   id: string;
   text: string | null;
   views: number;
-  forwards: number;
-  reactions: number;
-  usedForGeneration: boolean;
-  mediaFiles: MediaFile[];
+  mediaUrls: string[];
 }
 
 interface SourceItemProps {

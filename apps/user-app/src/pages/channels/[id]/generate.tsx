@@ -21,11 +21,6 @@ interface Channel {
   title: string;
 }
 
-interface MediaFile {
-  type: string;
-  url: string;
-}
-
 interface Source {
   id: string;
   telegramUsername: string;
@@ -34,11 +29,8 @@ interface Source {
     id: string;
     text: string | null;
     views: number;
-    forwards: number;
-    reactions: number;
-    usedForGeneration: boolean;
     scrapedAt: string;
-    mediaFiles: MediaFile[];
+    mediaUrls: string[];
   }>;
 }
 
