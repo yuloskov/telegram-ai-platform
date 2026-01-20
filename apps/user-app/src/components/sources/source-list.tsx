@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Link from "next/link";
-import { RefreshCw, Trash2, ExternalLink, Lightbulb } from "lucide-react";
+import { useRouter } from "next/router";
+import { RefreshCw, Trash2, Lightbulb, ChevronRight } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
@@ -38,8 +38,13 @@ export function SourceList({
   onOpenAddModal,
 }: SourceListProps) {
   const { t } = useI18n();
+  const router = useRouter();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
+
+  const handleCardClick = (sourceId: string) => {
+    router.push(`/channels/${channelId}/sources/${sourceId}`);
+  };
 
   const handleDeleteClick = (sourceId: string) => {
     setSourceToDelete(sourceId);
@@ -86,16 +91,17 @@ export function SourceList({
       {sources.map((source) => {
         const isScraping = scrapingSourceId === source.id;
         return (
-          <Card key={source.id} interactive className="p-4">
+          <Card
+            key={source.id}
+            interactive
+            className="p-4 cursor-pointer"
+            onClick={() => handleCardClick(source.id)}
+          >
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <Link
-                  href={`/channels/${channelId}/sources/${source.id}`}
-                  className="text-sm font-medium text-[var(--text-primary)] hover:underline flex items-center gap-1"
-                >
+                <span className="text-sm font-medium text-[var(--text-primary)]">
                   @{source.telegramUsername}
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
+                </span>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-xs text-[var(--text-tertiary)]">
                     {source._count.scrapedContent} {t("sources.posts")}
@@ -111,7 +117,10 @@ export function SourceList({
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => onTriggerScrape(source.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTriggerScrape(source.id);
+                  }}
                   disabled={isScraping}
                 >
                   {isScraping ? (
@@ -129,10 +138,14 @@ export function SourceList({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => handleDeleteClick(source.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(source.id);
+                  }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
+                <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
               </div>
             </div>
           </Card>
