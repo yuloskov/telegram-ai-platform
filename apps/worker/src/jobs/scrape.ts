@@ -50,11 +50,11 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
 
     const minId = lastScraped ? Number(lastScraped.telegramMessageId) : undefined;
 
-    // Scrape messages
+    // Scrape messages (limit 10 to keep photo downloads manageable)
     const messages = await scrapeChannelMessages(
       client,
       source.telegramUsername,
-      50,
+      10,
       minId
     );
 

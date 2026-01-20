@@ -343,6 +343,9 @@ importers:
       '@repo/database':
         specifier: workspace:*
         version: link:../database
+      '@repo/shared':
+        specifier: workspace:*
+        version: link:../shared
       telegram:
         specifier: ^2.26.22
         version: 2.26.22

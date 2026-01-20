@@ -51,10 +51,10 @@ export function ScrapedContentList({ content, isLoading }: ScrapedContentListPro
       {content.map((item) => (
         <Card key={item.id} interactive className="p-4">
           <div className="flex items-start gap-4">
-            {item.mediaUrls.length > 0 && (
+            {item.mediaUrls.length > 0 && !item.mediaUrls[0].startsWith("skipped:") && !item.mediaUrls[0].startsWith("failed:") && (
               <div className="shrink-0 w-16 h-16 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
                 <img
-                  src={item.mediaUrls[0]}
+                  src={`/api/media/${item.mediaUrls[0]}`}
                   alt=""
                   className="w-full h-full object-cover"
                   onError={(e) => {

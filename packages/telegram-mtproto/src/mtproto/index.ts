@@ -1,5 +1,6 @@
 import { TelegramClient, Api } from "telegram";
 import { StringSession } from "telegram/sessions";
+import { uploadFile, ensureBucket } from "@repo/shared/storage";
 
 export interface MTProtoConfig {
   apiId: number;
@@ -55,10 +56,16 @@ async function resolveUsername(client: TelegramClient, username: string) {
   return channel;
 }
 
+const MEDIA_BUCKET = process.env.MINIO_BUCKET || "telegram-platform";
+
+function isPhotoMedia(media: Api.TypeMessageMedia): boolean {
+  return "photo" in media && media.photo !== null;
+}
+
 export async function scrapeChannelMessages(
   client: TelegramClient,
   channelUsername: string,
-  limit = 50,
+  limit = 10,
   minId?: number
 ): Promise<
   Array<{
@@ -78,6 +85,13 @@ export async function scrapeChannelMessages(
     minId,
   });
 
+  // Ensure bucket exists
+  try {
+    await ensureBucket(MEDIA_BUCKET);
+  } catch (err) {
+    console.log("MinIO bucket setup failed:", err);
+  }
+
   const results = [];
 
   for (const message of messages) {
@@ -85,17 +99,22 @@ export async function scrapeChannelMessages(
 
     const mediaUrls: string[] = [];
 
-    if (message.media) {
+    // Only download photos (skip videos, documents, etc.)
+    if (message.media && isPhotoMedia(message.media)) {
       try {
         const buffer = await client.downloadMedia(message.media, {});
-        if (buffer) {
-          // In production, upload to MinIO and get URL
-          // For now, we'll handle this in the worker
-          mediaUrls.push(`pending:${message.id}`);
+        if (buffer && Buffer.isBuffer(buffer)) {
+          const objectName = `scraped/${channelUsername}/${message.id}.jpg`;
+          const url = await uploadFile(MEDIA_BUCKET, objectName, buffer, "image/jpeg");
+          mediaUrls.push(url);
+          console.log(`Uploaded photo: ${objectName} (${buffer.length} bytes)`);
         }
-      } catch {
-        // Media download failed, skip
+      } catch (err) {
+        console.log(`Failed to download photo for message ${message.id}:`, err);
       }
+    } else if (message.media) {
+      // Mark non-photo media as skipped
+      mediaUrls.push(`skipped:video_or_document:${message.id}`);
     }
 
     results.push({
