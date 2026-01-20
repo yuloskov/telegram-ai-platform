@@ -1,3 +1,4 @@
+import { useRouter } from "next/router";
 import { FileText, Send, RotateCcw, Sparkles } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -16,6 +17,7 @@ interface Post {
 interface PostListProps {
   posts: Post[];
   isLoading: boolean;
+  channelId: string;
   onPublish: (postId: string) => void;
   isPublishing: boolean;
   onOpenGenerator: () => void;
@@ -24,11 +26,21 @@ interface PostListProps {
 export function PostList({
   posts,
   isLoading,
+  channelId,
   onPublish,
   isPublishing,
   onOpenGenerator,
 }: PostListProps) {
   const { t } = useI18n();
+  const router = useRouter();
+
+  const handleClick = (postId: string, e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons
+    if ((e.target as HTMLElement).closest("button")) {
+      return;
+    }
+    router.push(`/channels/${channelId}/posts/${postId}`);
+  };
 
   if (isLoading) {
     return (
@@ -61,7 +73,12 @@ export function PostList({
   return (
     <div className="space-y-3">
       {posts.map((post) => (
-        <Card key={post.id} interactive className="p-4">
+        <Card
+          key={post.id}
+          interactive
+          className="p-4 cursor-pointer"
+          onClick={(e) => handleClick(post.id, e)}
+        >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <p className="text-sm text-[var(--text-primary)] line-clamp-2">

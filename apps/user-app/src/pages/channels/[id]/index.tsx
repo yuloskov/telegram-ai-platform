@@ -235,6 +235,7 @@ export default function ChannelDetailPage() {
           <PostList
             posts={posts}
             isLoading={postsLoading}
+            channelId={id as string}
             onPublish={(postId) => publishMutation.mutate(postId)}
             isPublishing={publishMutation.isPending}
             onOpenGenerator={() => setShowGenerator(true)}
