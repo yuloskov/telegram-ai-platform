@@ -1,6 +1,6 @@
 import { getAIClient } from "./client";
 
-const IMAGE_ANALYSIS_MODEL = "google/gemini-2.0-flash-001";
+const IMAGE_ANALYSIS_MODEL = process.env.IMAGE_ANALYSIS_MODEL ?? "google/gemini-3";
 
 export interface ImageAnalysisResult {
   hasWatermark: boolean;
