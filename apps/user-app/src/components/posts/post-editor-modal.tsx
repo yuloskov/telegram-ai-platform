@@ -14,26 +14,8 @@ import { MessagePreview } from "~/components/telegram/message-bubble";
 import { SourcePostCard } from "~/components/generate/source-post-card";
 import { PostImageSelector } from "~/components/generate/post-image-selector";
 import { useI18n } from "~/i18n";
-import type { PostImage } from "~/stores/generation-store";
-
-interface SourceMedia {
-  url: string;
-  type: string;
-}
-
-interface SourceContent {
-  id: string;
-  text: string | null;
-  telegramLink: string;
-  media: SourceMedia[];
-}
-
-interface ExistingMediaFile {
-  id: string;
-  url: string;
-  type: string;
-  isGenerated: boolean;
-}
+import { getMediaSrc, getValidMediaUrls } from "~/lib/media";
+import type { PostImage, SourceContent, MediaFile } from "~/types";
 
 interface PostEditorModalProps {
   open: boolean;
@@ -54,7 +36,7 @@ interface PostEditorModalProps {
   /** Callback when an image is regenerated */
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
   /** Existing media files attached to this post (for editing existing posts) */
-  existingMedia?: ExistingMediaFile[];
+  existingMedia?: MediaFile[];
 }
 
 export function PostEditorModal({
@@ -82,24 +64,12 @@ export function PostEditorModal({
   const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
   const hasImages = (postImages?.length ?? 0) > 0;
 
-  // Filter valid existing media URLs
-  const validExistingMedia = existingMedia?.filter(
-    (mf) => !mf.url.startsWith("skipped:") && !mf.url.startsWith("failed:")
+  // Filter valid existing media URLs using shared utility
+  const existingUrls = existingMedia?.map((mf) => mf.url) ?? [];
+  const validExistingUrls = getValidMediaUrls(existingUrls);
+  const validExistingMedia = existingMedia?.filter((mf) =>
+    validExistingUrls.includes(mf.url)
   ) ?? [];
-
-  // Helper to get the correct image src (full URL or through /api/media/)
-  const getMediaSrc = (url: string): string => {
-    // Full external URLs - use directly
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    // Already prefixed with /api/media/ - use directly
-    if (url.startsWith("/api/media/")) {
-      return url;
-    }
-    // Storage path - add prefix
-    return `/api/media/${url}`;
-  };
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>

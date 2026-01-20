@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Image, X, Expand, RefreshCw, Sparkles } from "lucide-react";
 import { useI18n } from "~/i18n";
-import type { PostImage } from "~/stores/generation-store";
+import type { PostImage } from "~/types";
 import { ImageAnalysisBadge } from "./image-analysis-badge";
 import { ImagePreviewModal } from "./image-preview-modal";
 

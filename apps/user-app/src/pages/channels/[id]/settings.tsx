@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
+import { useChannel } from "~/hooks/useChannel";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout } from "~/components/layout/page-layout";
 import { Card } from "~/components/ui/card";
@@ -18,17 +19,6 @@ import {
 } from "~/components/ui/select";
 import { ArrowLeft, Save, AlertCircle, Check } from "lucide-react";
 import { useI18n } from "~/i18n";
-
-interface Channel {
-  id: string;
-  telegramId: string;
-  username: string | null;
-  title: string;
-  niche: string | null;
-  tone: string;
-  language: string;
-  hashtags: string[];
-}
 
 export default function ChannelSettingsPage() {
   const router = useRouter();
@@ -46,14 +36,9 @@ export default function ChannelSettingsPage() {
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { data: channel, isLoading: channelLoading } = useQuery({
-    queryKey: ["channel", id],
-    queryFn: async () => {
-      const res = await fetch(`/api/channels/${id}`);
-      const json = await res.json();
-      return json.data as Channel;
-    },
-    enabled: !!id && !authLoading,
+  // Use shared channel hook
+  const { data: channel, isLoading: channelLoading } = useChannel(id, {
+    enabled: !authLoading,
   });
 
   useEffect(() => {
@@ -93,6 +78,7 @@ export default function ChannelSettingsPage() {
     },
   });
 
+  // Handle loading state
   if (authLoading || channelLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
@@ -101,6 +87,7 @@ export default function ChannelSettingsPage() {
     );
   }
 
+  // Handle not found
   if (!channel) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">

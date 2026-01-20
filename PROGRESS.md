@@ -175,12 +175,31 @@ This file tracks what has been built compared to the requirements in `requiremen
 
 ---
 
-## Phase 9: Content Sources [NOT STARTED]
+## Phase 9: Content Sources [COMPLETED]
 
-- [ ] ContentSource API routes
-- [ ] Add/remove source channels
-- [ ] Sources management page
-- [ ] Display scraped content
+### API Routes
+- [x] List sources (`GET /api/channels/[id]/sources`)
+- [x] Add source (`POST /api/channels/[id]/sources`)
+- [x] Get source (`GET /api/channels/[id]/sources/[sourceId]`)
+- [x] Update source (`PUT /api/channels/[id]/sources/[sourceId]`)
+- [x] Delete source (`DELETE /api/channels/[id]/sources/[sourceId]`)
+- [x] Manual scrape trigger (`POST /api/channels/[id]/sources/[sourceId]/scrape`)
+- [x] Get scraped content (`GET /api/channels/[id]/sources/[sourceId]/content`)
+- [x] Get content details (`GET /api/channels/[id]/sources/[sourceId]/content/[contentId]`)
+- [x] Scrape history (`GET /api/channels/[id]/sources/[sourceId]/scrape-logs`)
+- [x] Configure auto-scraping (`POST /api/channels/[id]/sources/[sourceId]/auto-scrape`)
+- [x] Get all content (`GET /api/channels/[id]/sources/all-content`)
+
+### Pages
+- [x] Sources list page (`/channels/[id]/sources`)
+- [x] Source details page (`/channels/[id]/sources/[sourceId]`)
+- [x] Content details page (`/channels/[id]/sources/[sourceId]/content/[contentId]`)
+
+### Features
+- [x] Add/remove source channels
+- [x] Display scraped content with metrics (views, forwards, reactions)
+- [x] Manual scrape trigger
+- [x] Scrape history tracking
 
 ---
 
@@ -199,14 +218,17 @@ This file tracks what has been built compared to the requirements in `requiremen
 
 ---
 
-## Phase 11: MTProto Scraping [PARTIALLY COMPLETED]
+## Phase 11: MTProto Scraping [COMPLETED]
 
 - [x] MTProto client setup (telegram package in @repo/telegram-mtproto)
 - [x] Session management APIs (admin-app)
 - [x] Session management UI (admin-app)
 - [x] Scraping job implementation (worker)
-- [ ] Rate limiting
-- [ ] Content source management UI
+- [x] Content source management UI (pages in user-app)
+- [x] Scrape history and logs
+
+### Missing
+- [ ] Rate limiting for Telegram API
 
 ---
 
@@ -216,16 +238,23 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Generation functions (`packages/ai/src/generate.ts`)
 - [x] Prompt templates (bilingual: en/ru)
 - [x] Generate from prompt API (`/api/generate/prompt`)
-- [x] Generation UI (modal in channel page)
+- [x] Generate from scraped content API (`/api/generate/from-scraped`)
+- [x] Multi-post generation API (`/api/generate/multi`)
+- [x] Multi-post with images API (`/api/generate/multi-with-images`)
+- [x] Image generation API (`/api/generate/image`)
+- [x] Generation UI (modal and dedicated page)
 
 ### Features
 - [x] Respects channel tone/language settings
 - [x] Returns generated content
 - [x] System prompts with channel context
 - [x] Image prompt suggestions
+- [x] Generate from scraped content
+- [x] Batch generation of multiple posts
+- [x] Image generation via Gemini 2.0 Flash
+- [x] Image analysis (detect subject, style, colors, composition)
 
 ### Missing
-- [ ] Generate from scraped content
 - [ ] Generate from web research
 - [ ] Channel post analysis for style matching (3.3.5)
 
@@ -245,12 +274,14 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Post editor component
 - [x] Post preview (message bubble style)
 - [x] Post status badges
+- [x] Post detail page (`/channels/[id]/posts/[postId]`)
 
 ### Features
 - [x] Draft saving
 - [x] Post status tracking (draft, scheduled, publishing, published, failed)
+- [x] AI-generated images attached to posts
 - [ ] Rich text editor with Telegram formatting
-- [ ] Image upload
+- [ ] Manual image upload from device
 
 ---
 
@@ -261,24 +292,25 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Status updates (publishing → published/failed)
 - [x] Telegram message ID tracking
 - [x] User notifications on publish success/failure
+- [x] Scheduled posts queue defined (BullMQ)
 
 ### Missing
-- [ ] Schedule API (`/api/posts/[id]/schedule`)
+- [ ] Scheduled post scheduler (cron job to process scheduled posts)
 - [ ] Scheduled post picker UI
 - [ ] Retry logic for failed posts
 - [ ] Edit published posts
 
 ---
 
-## Phase 15: Basic Admin Panel [PARTIALLY COMPLETED]
+## Phase 15: Basic Admin Panel [COMPLETED]
 
-- [x] Admin dashboard page
+- [x] Admin dashboard page with statistics
 - [x] User management pages/APIs
 - [x] Session management pages/APIs
 - [x] Job queue monitoring
-- [ ] Audit logs
+- [x] Admin authentication system
 
-### Session Management (New)
+### Session Management
 - [x] List sessions API (`GET /api/sessions`)
 - [x] Create session API (`POST /api/sessions`)
 - [x] Get/Update/Delete session APIs (`/api/sessions/[id]`)
@@ -286,7 +318,11 @@ This file tracks what has been built compared to the requirements in `requiremen
 - [x] Phone authentication flow APIs (`/api/sessions/auth/send-code`, `verify-code`)
 - [x] Sessions list page with table view
 - [x] Session creation page with phone auth and manual entry modes
+- [x] Telethon session format import support
 - [x] Sidebar navigation for Sessions
+
+### Missing
+- [ ] Audit logs display UI
 
 ---
 
@@ -305,13 +341,15 @@ This file tracks what has been built compared to the requirements in `requiremen
 
 ---
 
-## Phase 17: Media Storage (MinIO) [NOT STARTED]
+## Phase 17: Media Storage (MinIO) [PARTIALLY COMPLETED]
 
-- [ ] MinIO client setup
-- [ ] Image upload endpoint
-- [ ] Image upload UI component
+- [x] MinIO Docker service configured
+- [x] Media serving endpoint (`/api/media/[...path]`)
+- [x] AI-generated image storage
+- [ ] Manual image upload endpoint
+- [ ] Image upload UI component (drag & drop)
 - [ ] Scraped image storage
-- [ ] Media gallery
+- [ ] Media gallery browser
 
 ---
 
@@ -329,20 +367,30 @@ This file tracks what has been built compared to the requirements in `requiremen
 ### 3.2 Content Scraping
 | Requirement | Status |
 |------------|--------|
-| Add source channel | [ ] |
-| Automatic scraping | [ ] |
-| Display with metrics | [ ] |
-| Manual trigger | [ ] |
-| Image preservation | [ ] |
+| Add source channel | [x] |
+| Automatic scraping | [~] Job exists, needs scheduler |
+| Display with metrics | [x] |
+| Manual trigger | [x] |
+| Image preservation | [~] Partial |
+
+### 3.2.1 Image Analysis and Generation
+| Requirement | Status |
+|------------|--------|
+| Analyze images from scraped posts | [x] |
+| Extract style, colors, composition | [x] |
+| Generate similar images | [x] |
+| Image generation via API | [x] |
 
 ### 3.3 AI Content Generation
 | Requirement | Status |
 |------------|--------|
-| Generate from scraped | [ ] |
+| Generate from scraped | [x] |
 | Generate from prompt | [x] |
 | Generate from research | [ ] |
 | Automatic posting | [ ] |
 | Channel style matching | [ ] |
+| Batch generation | [x] |
+| Image generation | [x] |
 
 ### 3.4 Post Management
 | Requirement | Status |
@@ -350,14 +398,15 @@ This file tracks what has been built compared to the requirements in `requiremen
 | Manual post creation | [x] |
 | Edit generated content | [x] |
 | Telegram formatting | [~] Basic only |
-| Image support | [ ] |
+| AI-generated images | [x] |
+| Manual image upload | [ ] |
 | Draft saving | [x] |
 
 ### 3.5 Scheduling & Publishing
 | Requirement | Status |
 |------------|--------|
 | Immediate publishing | [x] |
-| Scheduled publishing | [ ] |
+| Scheduled publishing | [~] Queue exists, no scheduler |
 | Auto-publish at time | [ ] |
 | Cancel scheduled | [ ] |
 | Retry failed | [ ] |
@@ -366,10 +415,12 @@ This file tracks what has been built compared to the requirements in `requiremen
 ### 3.6 Media Management
 | Requirement | Status |
 |------------|--------|
-| Image upload | [ ] |
-| S3 storage | [ ] |
-| Multiple images | [ ] |
-| Scraped images | [ ] |
+| AI image generation | [x] |
+| Manual image upload | [ ] |
+| S3/MinIO storage | [x] |
+| Multiple images | [~] Via media groups |
+| Scraped images | [~] Partial |
+| Media gallery | [ ] |
 
 ### 3.7 Admin Features
 | Requirement | Status |
@@ -384,8 +435,8 @@ This file tracks what has been built compared to the requirements in `requiremen
 | Requirement | Status |
 |------------|--------|
 | Authentication | [x] |
-| Notifications | [x] Basic |
-| Post review | [x] Basic |
+| Notifications | [x] |
+| Post review | [x] |
 | Commands | [x] |
 
 ### 5.5 Internationalization
@@ -403,15 +454,16 @@ This file tracks what has been built compared to the requirements in `requiremen
 ```
 telegram-ai-channels-platform/
 ├── apps/
-│   ├── user-app/           # [x] User-facing Next.js app
-│   ├── admin-app/          # [~] Basic setup only
+│   ├── user-app/           # [x] User-facing Next.js app (28+ API routes)
+│   ├── admin-app/          # [x] Admin interface (sessions, users, jobs)
 │   ├── bot/                # [x] Standalone Telegram bot
-│   └── worker/             # [x] BullMQ job processor
+│   └── worker/             # [x] BullMQ job processor (5 queues)
 ├── packages/
-│   ├── database/           # [x] Prisma schema and client
-│   ├── shared/             # [x] Shared utilities
+│   ├── database/           # [x] Prisma schema and client (16 models)
+│   ├── shared/             # [x] Shared utilities and queue definitions
 │   ├── telegram/           # [x] Bot API integration
-│   └── ai/                 # [x] OpenRouter integration
+│   ├── telegram-mtproto/   # [x] MTProto scraping client
+│   └── ai/                 # [x] OpenRouter + Gemini integration
 ├── docker/
 │   └── docker-compose.yml  # [x] Development services
 ├── CLAUDE.md               # [x] AI assistant context
@@ -425,9 +477,11 @@ telegram-ai-channels-platform/
 
 ## Next Steps (Priority Order)
 
-1. **Content Sources** - Add source channels for scraping
-2. **MTProto Scraping** - Implement channel scraping
-3. **Scheduled Publishing** - Add scheduling UI and cron job
-4. **Media Upload** - Enable image upload for posts
-5. **Admin Panel** - User and session management
-6. **Channel Style Analysis** - Implement 3.3.5 feature
+1. **Scheduled Publishing** - Add scheduler cron job and UI picker
+2. **Manual Media Upload** - Enable drag & drop image upload for posts
+3. **Auto-Posting** - Implement auto-generation configuration and scheduler
+4. **Web Research Generation** - Add search and synthesis capability
+5. **Channel Style Analysis** - Implement 3.3.5 feature (learn from posted content)
+6. **Post Analytics** - Add engagement metrics dashboard
+7. **Audit Logs UI** - Display admin action history
+8. **Containerization** - Add Dockerfiles for production deployment

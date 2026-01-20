@@ -2,30 +2,7 @@ import type { ReactNode } from "react";
 import { Card } from "~/components/ui/card";
 import { Chip, type ChipProps } from "~/components/content/content-list-item";
 import { useI18n } from "~/i18n";
-
-// Helper to detect if a post contains only video content
-function isVideoOnly(
-  text: string | null,
-  mediaUrls: string[] = []
-): boolean {
-  if (text) return false;
-  if (mediaUrls.length === 0) return false;
-  return mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
-}
-
-// Helper to get the correct image src (full URL or through /api/media/)
-function getMediaSrc(url: string): string {
-  // Full external URLs - use directly
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-  // Already prefixed with /api/media/ - use directly
-  if (url.startsWith("/api/media/")) {
-    return url;
-  }
-  // Storage path - add prefix
-  return `/api/media/${url}`;
-}
+import { getMediaSrc, isVideoOnly, getValidMediaUrls } from "~/lib/media";
 
 interface ContentDetailCardProps {
   text: string | null;
@@ -46,9 +23,7 @@ export function ContentDetailCard({
 }: ContentDetailCardProps) {
   const { t } = useI18n();
 
-  const validMediaUrls = mediaUrls.filter(
-    (url) => !url.startsWith("skipped:") && !url.startsWith("failed:")
-  );
+  const validMediaUrls = getValidMediaUrls(mediaUrls);
 
   return (
     <Card className="p-6">

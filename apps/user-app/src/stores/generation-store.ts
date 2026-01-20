@@ -1,55 +1,21 @@
 import { create } from "zustand";
+import { isPostVideoOnly } from "~/lib/media";
+import type {
+  SourceContent,
+  PostImage,
+  ImageDecision,
+  ImageAnalysisResult,
+  ImageStrategy,
+  GeneratedPost,
+} from "~/types";
+
+// Re-export types for backwards compatibility
+export type { ImageStrategy, ImageDecision, ImageAnalysisResult, PostImage };
 
 interface SourceSelection {
   enabled: boolean;
   postCount: number;
   selectedPostIds: Set<string>;
-}
-
-interface SourceMedia {
-  url: string;
-  type: string;
-}
-
-interface SourceContent {
-  id: string;
-  text: string | null;
-  telegramLink: string;
-  media: SourceMedia[];
-}
-
-export type ImageStrategy = "none" | "use_original" | "generate_new";
-
-export interface ImageDecision {
-  strategy: ImageStrategy;
-  originalImageSourceIds?: string[];
-  imagePrompts?: string[];
-  reasoning?: string;
-}
-
-export interface ImageAnalysisResult {
-  hasWatermark: boolean;
-  hasLink: boolean;
-  hasLogo: boolean;
-  reasoning: string;
-  suggestedPrompt?: string;
-}
-
-export interface PostImage {
-  url: string;
-  isGenerated: boolean;
-  sourceId?: string;
-  prompt?: string;
-  analysisResult?: ImageAnalysisResult;
-  originalUrl?: string; // Link to original if this is a generated replacement
-}
-
-interface GeneratedPost {
-  content: string;
-  angle: string;
-  sourceIds: string[];
-  imageDecision?: ImageDecision;
-  images?: PostImage[];
 }
 
 interface GenerationResult {
@@ -70,14 +36,6 @@ interface Source {
   }>;
 }
 
-// Helper to check if a post is video-only (has video but no text and no images)
-function isVideoOnly(post: { text: string | null; mediaUrls: string[] }): boolean {
-  const hasText = post.text && post.text.trim().length > 0;
-  if (hasText) return false;
-  if (post.mediaUrls.length === 0) return false;
-  // Video-only if all media are skipped videos/documents
-  return post.mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
-}
 
 interface GenerationStore {
   // Source selections
@@ -114,7 +72,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 
     sources.forEach((source) => {
       // Filter out video-only posts, then select first 5 (most recent, already sorted by API)
-      const selectablePosts = source.scrapedContent.filter((p) => !isVideoOnly(p));
+      const selectablePosts = source.scrapedContent.filter((p) => !isPostVideoOnly(p));
       const topPostIds = selectablePosts.slice(0, DEFAULT_POST_COUNT).map((p) => p.id);
 
       selections.set(source.id, {

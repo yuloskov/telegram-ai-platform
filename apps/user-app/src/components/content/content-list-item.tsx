@@ -3,6 +3,7 @@ import { Images } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { useI18n } from "~/i18n";
+import { getMediaSrc, isVideoOnly } from "~/lib/media";
 
 export interface ChipProps {
   label: string;
@@ -42,31 +43,6 @@ export function Chip({ label, icon, variant = "default" }: ChipProps) {
       {label}
     </span>
   );
-}
-
-// Helper to detect if a post contains only video content
-function isVideoOnly(
-  text: string | null,
-  mediaUrls: string[] = []
-): boolean {
-  if (text) return false;
-  if (mediaUrls.length === 0) return false;
-  // Check if all media are skipped videos/documents
-  return mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
-}
-
-// Helper to get the correct image src (full URL or through /api/media/)
-function getMediaSrc(url: string): string {
-  // Full external URLs - use directly
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-  // Already prefixed with /api/media/ - use directly
-  if (url.startsWith("/api/media/")) {
-    return url;
-  }
-  // Storage path - add prefix
-  return `/api/media/${url}`;
 }
 
 export function ContentListItem({

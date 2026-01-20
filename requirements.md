@@ -53,11 +53,11 @@ A unified platform that:
   - Posting schedule preferences
 
 **Acceptance Criteria:**
-- [ ] User can add a channel by username/ID after adding platform bot as admin
-- [ ] System validates platform bot has posting permissions on the channel
-- [ ] User can update channel settings
-- [ ] User can delete a channel (removes from platform, bot remains in channel until manually removed)
-- [ ] User can view list of all their channels
+- [x] User can add a channel by username/ID after adding platform bot as admin
+- [x] System validates platform bot has posting permissions on the channel
+- [x] User can update channel settings
+- [x] User can delete a channel (removes from platform, bot remains in channel until manually removed)
+- [x] User can view list of all their channels
 
 ---
 
@@ -83,13 +83,13 @@ A unified platform that:
 - Stop scraping batch when duplicate is encountered
 
 **Acceptance Criteria:**
-- [ ] User can add a source channel by username
-- [ ] User can configure max posts to scrape (1-50) per source
-- [ ] System scrapes new posts automatically on schedule
-- [ ] Scraped posts are displayed in the UI with engagement metrics
-- [ ] User can manually trigger an update (scrapes only new posts)
-- [ ] Scraping stops when encountering already-scraped posts
-- [ ] Images from posts are preserved
+- [x] User can add a source channel by username
+- [x] User can configure max posts to scrape (1-50) per source
+- [~] System scrapes new posts automatically on schedule (job exists, scheduler needed)
+- [x] Scraped posts are displayed in the UI with engagement metrics
+- [x] User can manually trigger an update (scrapes only new posts)
+- [x] Scraping stops when encountering already-scraped posts
+- [~] Images from posts are preserved (partial)
 - [ ] System tracks which content has been used for generation
 
 #### 3.2.1 Image Analysis and Generation
@@ -102,14 +102,14 @@ A unified platform that:
 - Generated images match the visual style and theme of the source content
 
 **Acceptance Criteria:**
-- [ ] System automatically analyzes images when scraping posts
-- [ ] Image analysis extracts: subject matter, style, colors, composition, text overlays
-- [ ] User can view image analysis results in the UI
-- [ ] When generating from scraped content, user can opt to generate similar images
-- [ ] AI generates image prompts based on analysis of source images
-- [ ] Generated images are created via image generation API
-- [ ] User can regenerate images with modified prompts
-- [ ] System respects copyright by generating original images, not copies
+- [x] System automatically analyzes images when scraping posts
+- [x] Image analysis extracts: subject matter, style, colors, composition, text overlays
+- [x] User can view image analysis results in the UI
+- [x] When generating from scraped content, user can opt to generate similar images
+- [x] AI generates image prompts based on analysis of source images
+- [x] Generated images are created via image generation API
+- [x] User can regenerate images with modified prompts
+- [x] System respects copyright by generating original images, not copies
 
 ---
 
@@ -124,11 +124,11 @@ A unified platform that:
 - Generated content maintains channel's configured tone/style
 
 **Acceptance Criteria:**
-- [ ] User can select multiple scraped posts
-- [ ] User can add custom instructions
-- [ ] AI generates unique, non-plagiarized content
-- [ ] Generated content respects channel language setting
-- [ ] System suggests relevant media/image prompts
+- [x] User can select multiple scraped posts
+- [x] User can add custom instructions
+- [x] AI generates unique, non-plagiarized content
+- [x] Generated content respects channel language setting
+- [x] System suggests relevant media/image prompts
 
 #### 3.3.2 Generate from User Prompt
 
@@ -138,10 +138,10 @@ A unified platform that:
 - Content follows channel's style guidelines
 
 **Acceptance Criteria:**
-- [ ] User can enter free-form prompt
-- [ ] AI generates post matching channel tone
-- [ ] Response includes suggested media prompt
-- [ ] Generation completes within reasonable time (<30s)
+- [x] User can enter free-form prompt
+- [x] AI generates post matching channel tone
+- [x] Response includes suggested media prompt
+- [x] Generation completes within reasonable time (<30s)
 
 #### 3.3.5 Channel Post Analysis for Style Matching
 
@@ -245,11 +245,11 @@ A unified platform that:
 - Posts can be saved as drafts
 
 **Acceptance Criteria:**
-- [ ] Rich text editor with Telegram formatting support
-- [ ] Image upload functionality
-- [ ] Draft saving and editing
-- [ ] Preview of how post will appear in Telegram
-- [ ] Character count and formatting validation
+- [~] Rich text editor with Telegram formatting support (basic editor exists)
+- [~] Image upload functionality (AI-generated images supported, manual upload pending)
+- [x] Draft saving and editing
+- [x] Preview of how post will appear in Telegram
+- [~] Character count and formatting validation (basic)
 
 ---
 
@@ -263,12 +263,12 @@ A unified platform that:
 - Users receive feedback on publish status
 
 **Acceptance Criteria:**
-- [ ] User can set date/time for scheduled posts
-- [ ] Scheduled posts publish automatically
+- [~] User can set date/time for scheduled posts (API supports it, UI picker pending)
+- [~] Scheduled posts publish automatically (queue exists, scheduler pending)
 - [ ] User can cancel scheduled posts
-- [ ] System retries failed posts (max 3 attempts)
-- [ ] User sees publish status (draft/scheduled/publishing/published/failed)
-- [ ] Published posts show Telegram message ID
+- [~] System retries failed posts (max 3 attempts) (BullMQ retry configured)
+- [x] User sees publish status (draft/scheduled/publishing/published/failed)
+- [x] Published posts show Telegram message ID
 
 ---
 
@@ -282,9 +282,9 @@ A unified platform that:
 
 **Acceptance Criteria:**
 - [ ] User can upload images from device
-- [ ] Images are optimized for Telegram
-- [ ] Multiple images can be attached to single post
-- [ ] Scraped images are stored and accessible
+- [~] Images are optimized for Telegram (AI-generated images work)
+- [x] Multiple images can be attached to single post (via media groups)
+- [~] Scraped images are stored and accessible (partial)
 - [ ] Media gallery shows all uploaded/scraped images
 
 ---
@@ -299,10 +299,10 @@ A unified platform that:
 - Admin can view system logs and audit trail
 
 **Acceptance Criteria:**
-- [ ] Admin login separate from user login
-- [ ] Session creation with phone verification + 2FA support
-- [ ] User management CRUD operations
-- [ ] Job queue monitoring dashboard
+- [x] Admin login separate from user login
+- [x] Session creation with phone verification + 2FA support
+- [x] User management CRUD operations
+- [x] Job queue monitoring dashboard
 - [ ] Audit log of admin actions
 
 ---
@@ -325,14 +325,14 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - User accounts are auto-created on first successful authentication
 
 **Acceptance Criteria:**
-- [ ] Web app shows "Login with Telegram" button
-- [ ] System generates unique 6-character alphanumeric code (expires in 5 minutes)
-- [ ] Web app displays code and deep link to the platform bot
-- [ ] Bot validates code and links Telegram user to platform account
-- [ ] Web app polls for authentication status and redirects on success
-- [ ] JWT token issued upon successful authentication
-- [ ] User's Telegram ID, username, and display name stored in database
-- [ ] Returning users can re-authenticate seamlessly
+- [x] Web app shows "Login with Telegram" button
+- [x] System generates unique 6-character alphanumeric code (expires in 5 minutes)
+- [x] Web app displays code and deep link to the platform bot
+- [x] Bot validates code and links Telegram user to platform account
+- [x] Web app polls for authentication status and redirects on success
+- [x] JWT token issued upon successful authentication
+- [x] User's Telegram ID, username, and display name stored in database
+- [x] Returning users can re-authenticate seamlessly
 
 #### 3.8.2 Bot Notifications
 
@@ -350,11 +350,11 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - System alerts (e.g., bot token expired, channel access lost)
 
 **Acceptance Criteria:**
-- [ ] Bot sends notifications for all configured event types
+- [x] Bot sends notifications for all configured event types
 - [ ] User can enable/disable each notification type
-- [ ] Notifications include relevant context and deep links to web app
-- [ ] Failed notifications are retried
-- [ ] Rate limiting prevents notification spam
+- [x] Notifications include relevant context and deep links to web app
+- [x] Failed notifications are retried
+- [~] Rate limiting prevents notification spam (basic)
 
 #### 3.8.3 Post Review via Bot
 
@@ -365,13 +365,13 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - Rejected posts are archived with optional feedback
 
 **Acceptance Criteria:**
-- [ ] Bot sends post preview with text and images
-- [ ] Inline buttons for: Approve, Edit, Reject, Schedule
-- [ ] "Approve" publishes the post immediately
-- [ ] "Edit" opens web app to the post editor
-- [ ] "Reject" archives the post and optionally collects feedback
+- [x] Bot sends post preview with text and images
+- [x] Inline buttons for: Approve, Edit, Reject, Schedule
+- [x] "Approve" publishes the post immediately
+- [x] "Edit" opens web app to the post editor
+- [x] "Reject" archives the post and optionally collects feedback
 - [ ] "Schedule" prompts for date/time selection
-- [ ] User can view pending review queue via bot command
+- [x] User can view pending review queue via bot command
 - [ ] Posts awaiting review expire after configurable time (default: 24 hours)
 
 #### 3.8.4 Bot Commands
@@ -390,10 +390,10 @@ The platform uses a single Telegram bot for all Telegram interactions:
 - `/help` - Command reference and support links
 
 **Acceptance Criteria:**
-- [ ] All commands respond within 2 seconds
-- [ ] Commands are context-aware (different response if authenticated vs not)
-- [ ] Bot provides helpful error messages for invalid commands
-- [ ] Commands support channel selection for multi-channel users
+- [x] All commands respond within 2 seconds
+- [x] Commands are context-aware (different response if authenticated vs not)
+- [x] Bot provides helpful error messages for invalid commands
+- [x] Commands support channel selection for multi-channel users
 
 ---
 
@@ -574,12 +574,12 @@ The UI must follow Telegram's visual design language to create a familiar and co
 - Bot inline buttons and menus
 
 **Acceptance Criteria:**
-- [ ] Language switcher available in web app header/settings
-- [ ] All static UI text extracted to translation files
-- [ ] Bot responds in user's preferred language
-- [ ] Bot `/lang` command allows language switching
-- [ ] Dates and numbers formatted per locale
-- [ ] New translations can be added without code changes
+- [x] Language switcher available in web app header/settings
+- [x] All static UI text extracted to translation files
+- [x] Bot responds in user's preferred language
+- [x] Bot `/lang` command allows language switching
+- [~] Dates and numbers formatted per locale (basic)
+- [x] New translations can be added without code changes
 
 ---
 
@@ -732,30 +732,30 @@ The UI must follow Telegram's visual design language to create a familiar and co
 
 ## 8. MVP Scope
 
-### Phase 1 (MVP)
+### Phase 1 (MVP) ✅ COMPLETED
 
-- Telegram bot authentication (login via platform bot)
-- Channel management (add, configure, delete)
-- Content source management
-- Basic scraping (text only)
-- AI generation from prompt
-- Manual post creation
-- Immediate publishing
-- Basic admin panel
-- Basic bot notifications (publish success/failure)
-- Multi-language support (English/Russian) for web app and bot
+- ✅ Telegram bot authentication (login via platform bot)
+- ✅ Channel management (add, configure, delete)
+- ✅ Content source management
+- ✅ Basic scraping (text only)
+- ✅ AI generation from prompt
+- ✅ Manual post creation
+- ✅ Immediate publishing
+- ✅ Basic admin panel
+- ✅ Basic bot notifications (publish success/failure)
+- ✅ Multi-language support (English/Russian) for web app and bot
 
-### Phase 2
+### Phase 2 (In Progress)
 
-- AI generation from scraped content
-- AI generation from web research
-- Image support (upload and scraped)
-- Scheduled publishing
-- Post analytics (views, forwards)
-- Image analysis for scraped content (Gemini Flash 3)
-- AI image generation based on analyzed images
-- Post review via bot (approve/reject/edit)
-- Full notification preferences
+- ✅ AI generation from scraped content
+- ⬜ AI generation from web research
+- 🟡 Image support (AI-generated ✅, manual upload ⬜)
+- 🟡 Scheduled publishing (queue ready, UI/scheduler pending)
+- ⬜ Post analytics (views, forwards)
+- ✅ Image analysis for scraped content (Gemini Flash 3)
+- ✅ AI image generation based on analyzed images
+- ✅ Post review via bot (approve/reject/edit)
+- 🟡 Full notification preferences (notifications work, preferences UI pending)
 
 ### Phase 3
 

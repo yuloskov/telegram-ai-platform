@@ -1,6 +1,6 @@
 import { AlertTriangle, Link, Stamp, Building2, Sparkles } from "lucide-react";
 import { useI18n } from "~/i18n";
-import type { ImageAnalysisResult } from "~/stores/generation-store";
+import type { ImageAnalysisResult } from "~/types";
 
 interface ImageAnalysisBadgeProps {
   analysisResult?: ImageAnalysisResult;

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
+import { useChannel } from "~/hooks/useChannel";
+import { useCreatePost } from "~/hooks/usePostMutations";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Button } from "~/components/ui/button";
@@ -12,32 +14,11 @@ import { PostList } from "~/components/posts/post-list";
 import { Sparkles, Plus, Settings, Lightbulb, ArrowRight } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { useI18n } from "~/i18n";
-
-interface Channel {
-  id: string;
-  telegramId: string;
-  username: string | null;
-  title: string;
-  niche: string | null;
-  tone: string;
-  language: string;
-  hashtags: string[];
-}
-
-interface Post {
-  id: string;
-  content: string;
-  status: string;
-  generationType: string;
-  scheduledAt: string | null;
-  publishedAt: string | null;
-  createdAt: string;
-}
+import type { PostListItem } from "~/types";
 
 export default function ChannelDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const queryClient = useQueryClient();
   const { isLoading: authLoading } = useRequireAuth();
   const { user, logout } = useAuth();
   const { t } = useI18n();
@@ -45,14 +26,9 @@ export default function ChannelDetailPage() {
   const [showPostEditor, setShowPostEditor] = useState(false);
   const [postContent, setPostContent] = useState("");
 
-  const { data: channel, isLoading: channelLoading } = useQuery({
-    queryKey: ["channel", id],
-    queryFn: async () => {
-      const res = await fetch(`/api/channels/${id}`);
-      const json = await res.json();
-      return json.data as Channel;
-    },
-    enabled: !!id && !authLoading,
+  // Use shared channel hook
+  const { data: channel, isLoading: channelLoading } = useChannel(id, {
+    enabled: !authLoading,
   });
 
   const { data: postsData, isLoading: postsLoading } = useQuery({
@@ -60,29 +36,21 @@ export default function ChannelDetailPage() {
     queryFn: async () => {
       const res = await fetch(`/api/posts?channelId=${id}`);
       const json = await res.json();
-      return json as { data: Post[]; pagination: unknown };
+      return json as { data: PostListItem[]; pagination: unknown };
     },
     enabled: !!id && !authLoading,
   });
 
-  const createPostMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channelId: id, content }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      return data.data;
-    },
+  // Use shared create post hook
+  const createPostMutation = useCreatePost({
+    channelId: id,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts", id] });
       setShowPostEditor(false);
       setPostContent("");
     },
   });
 
+  // Handle loading state
   if (authLoading || channelLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">
@@ -91,6 +59,7 @@ export default function ChannelDetailPage() {
     );
   }
 
+  // Handle not found
   if (!channel) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-secondary)]">

@@ -1,18 +1,23 @@
 import { useRouter } from "next/router";
-import { Sparkles, Calendar, Send, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Sparkles, Send, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { ContentList } from "~/components/content/content-list";
 import { ContentListItem, type ChipProps } from "~/components/content/content-list-item";
 import { PostMetrics } from "~/components/content/content-metrics";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
+import { getValidMediaUrls, getThumbnailUrl } from "~/lib/media";
+import type { PostStatus, MediaFile } from "~/types";
 
-interface MediaFile {
-  id: string;
-  url: string;
-  type: string;
-  isGenerated: boolean;
-}
+// Status config with variants
+const statusVariants: Record<PostStatus, ChipProps["variant"]> = {
+  draft: "default",
+  scheduled: "info",
+  publishing: "warning",
+  published: "success",
+  failed: "error",
+  pending_review: "info",
+};
 
 interface Post {
   id: string;
@@ -32,17 +37,6 @@ interface PostListProps {
   onOpenGenerator: () => void;
 }
 
-type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed" | "pending_review";
-
-const statusConfig: Record<PostStatus, { variant: ChipProps["variant"]; icon: React.ReactNode }> = {
-  draft: { variant: "default", icon: null },
-  scheduled: { variant: "info", icon: <Clock className="h-3 w-3" /> },
-  publishing: { variant: "warning", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-  published: { variant: "success", icon: <CheckCircle className="h-3 w-3" /> },
-  failed: { variant: "error", icon: <AlertCircle className="h-3 w-3" /> },
-  pending_review: { variant: "info", icon: <Send className="h-3 w-3" /> },
-};
-
 export function PostList({
   posts,
   isLoading,
@@ -61,23 +55,26 @@ export function PostList({
 
   const itemIds = posts.map((post) => post.id);
 
+  // Status icons map
+  const statusIcons: Record<PostStatus, React.ReactNode> = {
+    draft: null,
+    scheduled: <Clock className="h-3 w-3" />,
+    publishing: <Loader2 className="h-3 w-3 animate-spin" />,
+    published: <CheckCircle className="h-3 w-3" />,
+    failed: <AlertCircle className="h-3 w-3" />,
+    pending_review: <Send className="h-3 w-3" />,
+  };
+
   const getStatusLabel = (status: PostStatus): string => {
-    switch (status) {
-      case "draft":
-        return t("posts.status.draft");
-      case "scheduled":
-        return t("posts.status.scheduled");
-      case "publishing":
-        return t("posts.status.publishing");
-      case "published":
-        return t("posts.status.published");
-      case "failed":
-        return t("posts.status.failed");
-      case "pending_review":
-        return t("posts.status.pending_review");
-      default:
-        return t("posts.status.draft");
-    }
+    const labels: Record<PostStatus, string> = {
+      draft: t("posts.status.draft"),
+      scheduled: t("posts.status.scheduled"),
+      publishing: t("posts.status.publishing"),
+      published: t("posts.status.published"),
+      failed: t("posts.status.failed"),
+      pending_review: t("posts.status.pending_review"),
+    };
+    return labels[status] ?? labels.draft;
   };
 
   return (
@@ -98,22 +95,16 @@ export function PostList({
     >
       {posts.map((post) => {
         const status = post.status as PostStatus;
-        const config = statusConfig[status] || statusConfig.draft;
-
-        const chips: ChipProps[] = [
-          {
-            label: getStatusLabel(status),
-            icon: config.icon,
-            variant: config.variant,
-          },
-        ];
+        const chips: ChipProps[] = [{
+          label: getStatusLabel(status),
+          icon: statusIcons[status],
+          variant: statusVariants[status] ?? statusVariants.draft,
+        }];
 
         // Get valid media URLs for display
         const mediaUrls = post.mediaFiles?.map((mf) => mf.url) ?? [];
-        const validMediaUrls = mediaUrls.filter(
-          (url) => !url.startsWith("skipped:") && !url.startsWith("failed:")
-        );
-        const thumbnailUrl = validMediaUrls[0] ?? null;
+        const validMediaUrls = getValidMediaUrls(mediaUrls);
+        const thumbnailUrl = getThumbnailUrl(mediaUrls);
 
         return (
           <ContentListItem

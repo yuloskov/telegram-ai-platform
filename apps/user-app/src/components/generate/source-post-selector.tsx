@@ -2,6 +2,7 @@ import { Images, Eye } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { useI18n } from "~/i18n";
+import { isPostVideoOnly, getValidMediaUrls, getMediaSrc } from "~/lib/media";
 
 interface ScrapedPost {
   id: string;
@@ -16,27 +17,11 @@ interface SourcePostSelectorProps {
   onToggle: (postId: string) => void;
 }
 
-// Check if a post is video-only (has video but no text and no images)
-function isVideoOnly(post: ScrapedPost): boolean {
-  const hasText = post.text && post.text.trim().length > 0;
-  if (hasText) return false;
-  if (post.mediaUrls.length === 0) return false;
-  // Video-only if all media are skipped videos/documents
-  return post.mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
-}
-
-// Get valid image URLs (not skipped or failed)
-function getValidImageUrls(mediaUrls: string[]): string[] {
-  return mediaUrls.filter(
-    (url) => !url.startsWith("skipped:") && !url.startsWith("failed:")
-  );
-}
-
 export function SourcePostSelector({ posts, selectedIds, onToggle }: SourcePostSelectorProps) {
   const { t } = useI18n();
 
   // Filter out video-only posts
-  const selectablePosts = posts.filter((post) => !isVideoOnly(post));
+  const selectablePosts = posts.filter((post) => !isPostVideoOnly(post));
 
   if (selectablePosts.length === 0) {
     return (
@@ -53,7 +38,7 @@ export function SourcePostSelector({ posts, selectedIds, onToggle }: SourcePostS
         const hasText = post.text && post.text.trim().length > 0;
 
         // Get valid image URLs
-        const validImageUrls = getValidImageUrls(post.mediaUrls);
+        const validImageUrls = getValidMediaUrls(post.mediaUrls);
         const thumbnailUrl = validImageUrls[0];
         const imageCount = validImageUrls.length;
 
@@ -74,7 +59,7 @@ export function SourcePostSelector({ posts, selectedIds, onToggle }: SourcePostS
               {thumbnailUrl && (
                 <div className="relative shrink-0 w-14 h-14 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
                   <img
-                    src={`/api/media/${thumbnailUrl}`}
+                    src={getMediaSrc(thumbnailUrl)}
                     alt=""
                     className="w-full h-full object-cover"
                     onError={(e) => {
