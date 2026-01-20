@@ -321,11 +321,10 @@ export function getGenerateMultiplePostsPrompt(
 ВДОХНОВЕНИЕ (популярные посты):
 ${scrapedContext}${previousContext}
 
-КРИТИЧЕСКИ ВАЖНО - РАЗНООБРАЗИЕ:
-- Создай ровно ${count} уникальных постов на РАЗНЫЕ ТЕМЫ
-- Каждый пост ДОЛЖЕН быть о ДРУГОЙ теме/новости из источников
-- ЗАПРЕЩЕНО использовать одни и те же источники для разных постов
-- Каждый пост должен использовать 1-2 РАЗНЫХ источника
+КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
+- Создай ровно ${count} уникальных постов с разными подходами/углами
+- Каждый пост ДОЛЖЕН использовать минимум один источник (можно больше)
+- Источники можно использовать повторно в разных постах при необходимости
 - Если все источники на одну тему, найди разные углы: факты, мнение, практические советы, вопрос аудитории
 
 ДРУГИЕ ТРЕБОВАНИЯ:
@@ -374,11 +373,10 @@ ${scrapedContext}${previousContext}
 INSPIRATION (trending posts):
 ${scrapedContext}${previousContext}
 
-CRITICAL - DIVERSITY REQUIREMENT:
-- Create exactly ${count} unique posts about DIFFERENT topics
-- Each post MUST be about a DIFFERENT topic/news item from the sources
-- DO NOT reuse the same sources across different posts
-- Each post should use 1-2 DIFFERENT source posts
+CRITICAL REQUIREMENTS:
+- Create exactly ${count} unique posts with different angles/approaches
+- Each post MUST use at least one source (can use more)
+- Sources can be reused across posts if needed
 - If all sources are about the same topic, find different angles: facts, opinion, practical tips, audience question
 
 OTHER REQUIREMENTS:
@@ -447,10 +445,10 @@ export function getGenerateMultiplePostsWithImagesPrompt(
 ВДОХНОВЕНИЕ (популярные посты):
 ${scrapedContext}${previousContext}
 
-КРИТИЧЕСКИ ВАЖНО - РАЗНООБРАЗИЕ:
-- Создай ровно ${count} уникальных постов на РАЗНЫЕ ТЕМЫ
-- Каждый пост ДОЛЖЕН быть о ДРУГОЙ теме/новости из источников
-- ЗАПРЕЩЕНО использовать одни и те же источники для разных постов
+КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
+- Создай ровно ${count} уникальных постов с разными подходами/углами
+- Каждый пост ДОЛЖЕН использовать минимум один источник (можно больше)
+- Источники можно использовать повторно в разных постах при необходимости
 
 РЕШЕНИЯ ПО ИЗОБРАЖЕНИЯМ:
 Для каждого поста реши, нужны ли изображения:
@@ -511,10 +509,10 @@ ${scrapedContext}${previousContext}
 INSPIRATION (trending posts):
 ${scrapedContext}${previousContext}
 
-CRITICAL - DIVERSITY REQUIREMENT:
-- Create exactly ${count} unique posts about DIFFERENT topics
-- Each post MUST be about a DIFFERENT topic/news item from the sources
-- DO NOT reuse the same sources across different posts
+CRITICAL REQUIREMENTS:
+- Create exactly ${count} unique posts with different angles/approaches
+- Each post MUST use at least one source (can use more)
+- Sources can be reused across posts if needed
 
 IMAGE DECISIONS:
 For each post, decide if images are needed:
