@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
@@ -58,6 +58,9 @@ export default function GeneratePage() {
     reset,
   } = useGenerationStore();
 
+  const [postCount, setPostCount] = useState(3);
+  const [autoRegenerate, setAutoRegenerate] = useState(false);
+
   // Reset store when leaving page
   useEffect(() => {
     return () => reset();
@@ -114,7 +117,8 @@ export default function GeneratePage() {
           channelId: id,
           scrapedContentIds: selectedIds,
           customPrompt: customPrompt || undefined,
-          count: 3,
+          count: postCount,
+          autoRegenerate,
         }),
       });
       const data = await res.json();
@@ -184,8 +188,46 @@ export default function GeneratePage() {
             />
           </PageSection>
 
-          {/* Generate button */}
-          <div className="flex justify-center pt-2">
+          {/* Generation options and button */}
+          <div className="flex flex-col items-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+              {/* Post count selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-[var(--text-secondary)] whitespace-nowrap">
+                  {t("generatePage.postCount")}
+                </span>
+                <div className="flex rounded-[var(--radius-md)] border border-[var(--border-primary)] overflow-hidden">
+                  {[1, 2, 3, 4, 5].map((count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => setPostCount(count)}
+                      className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                        postCount === count
+                          ? "bg-[var(--accent-primary)] text-white"
+                          : "bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+                      } ${count > 1 ? "border-l border-[var(--border-primary)]" : ""}`}
+                    >
+                      {count}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Auto-regenerate checkbox */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoRegenerate}
+                  onChange={(e) => setAutoRegenerate(e.target.checked)}
+                  className="h-4 w-4 rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
+                />
+                <span className="text-sm text-[var(--text-secondary)]">
+                  {t("generatePage.autoRegenerate")}
+                </span>
+              </label>
+            </div>
+
             <Button
               size="lg"
               onClick={() => generateMutation.mutate()}
@@ -194,7 +236,7 @@ export default function GeneratePage() {
               <Sparkles className={`h-5 w-5 ${generateMutation.isPending ? "animate-pulse" : ""}`} />
               {generateMutation.isPending
                 ? t("generate.generating")
-                : t("generatePage.generatePosts", { count: 3 })}
+                : t("generatePage.generatePosts", { count: postCount })}
             </Button>
           </div>
 

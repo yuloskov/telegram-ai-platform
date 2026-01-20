@@ -63,7 +63,7 @@ async function handler(
   }
 
   const { user } = req;
-  const { channelId, scrapedContentIds, customPrompt, count = 3 } = req.body;
+  const { channelId, scrapedContentIds, customPrompt, count = 3, autoRegenerate = false } = req.body;
 
   if (!channelId) {
     return res.status(400).json({ success: false, error: "Channel ID is required" });
@@ -172,11 +172,12 @@ async function handler(
         }
       }
 
-      // Analyze images and generate replacements for those with issues
+      // Analyze images and generate replacements for those with issues (if enabled)
       const { originalImages, generatedImages } = await processPostImages(
         imagesToProcess,
         channelId,
-        channel.language
+        channel.language,
+        autoRegenerate
       );
 
       // Combine original and generated images

@@ -36,11 +36,13 @@ function base64ToBuffer(base64Data: string): Buffer {
  * @param images - Images to process
  * @param channelId - Channel ID for storing generated images
  * @param language - Language for image prompts (default: "en")
+ * @param autoRegenerate - Whether to auto-regenerate images with issues (default: false)
  */
 export async function processPostImages(
   images: ImageToProcess[],
   channelId: string,
-  language: string = "en"
+  language: string = "en",
+  autoRegenerate: boolean = false
 ): Promise<{
   originalImages: ProcessedImage[];
   generatedImages: ProcessedImage[];
@@ -68,8 +70,8 @@ export async function processPostImages(
         analysisResult,
       });
 
-      // If issues detected, generate a replacement
-      if (hasIssues(analysisResult) && analysisResult.suggestedPrompt) {
+      // If issues detected and auto-regenerate is enabled, generate a replacement
+      if (autoRegenerate && hasIssues(analysisResult) && analysisResult.suggestedPrompt) {
         const generatedImageData = await generateImage(analysisResult.suggestedPrompt);
 
         if (generatedImageData) {
