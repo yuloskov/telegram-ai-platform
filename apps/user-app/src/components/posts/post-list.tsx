@@ -7,6 +7,13 @@ import { PostMetrics } from "~/components/content/content-metrics";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
 
+interface MediaFile {
+  id: string;
+  url: string;
+  type: string;
+  isGenerated: boolean;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -14,6 +21,7 @@ interface Post {
   createdAt: string;
   publishedAt?: string | null;
   scheduledAt?: string | null;
+  mediaFiles?: MediaFile[];
 }
 
 interface PostListProps {
@@ -100,12 +108,22 @@ export function PostList({
           },
         ];
 
+        // Get valid media URLs for display
+        const mediaUrls = post.mediaFiles?.map((mf) => mf.url) ?? [];
+        const validMediaUrls = mediaUrls.filter(
+          (url) => !url.startsWith("skipped:") && !url.startsWith("failed:")
+        );
+        const thumbnailUrl = validMediaUrls[0] ?? null;
+
         return (
           <ContentListItem
             key={post.id}
             id={post.id}
             text={post.content}
             chips={chips}
+            thumbnailUrl={thumbnailUrl}
+            imageCount={validMediaUrls.length}
+            mediaUrls={mediaUrls}
             metrics={
               <PostMetrics
                 createdAt={post.createdAt}

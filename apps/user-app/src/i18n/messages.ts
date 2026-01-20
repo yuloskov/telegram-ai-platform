@@ -180,6 +180,7 @@ export const messages = {
       previewEmpty: "Start typing to see preview",
       saving: "Saving...",
       saveAsDraft: "Save as Draft",
+      attachedMedia: "{count} attached media",
     },
 
     // Language
@@ -516,6 +517,7 @@ export const messages = {
       previewEmpty: "Начните вводить текст для предпросмотра",
       saving: "Сохранение...",
       saveAsDraft: "Сохранить как черновик",
+      attachedMedia: "{count} прикреплённых медиа",
     },
 
     // Language

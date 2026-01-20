@@ -55,6 +55,20 @@ function isVideoOnly(
   return mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
 }
 
+// Helper to get the correct image src (full URL or through /api/media/)
+function getMediaSrc(url: string): string {
+  // Full external URLs - use directly
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  // Already prefixed with /api/media/ - use directly
+  if (url.startsWith("/api/media/")) {
+    return url;
+  }
+  // Storage path - add prefix
+  return `/api/media/${url}`;
+}
+
 export function ContentListItem({
   id,
   text,
@@ -111,7 +125,7 @@ export function ContentListItem({
         {validThumbnail && (
           <div className="relative shrink-0 w-16 h-16 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] overflow-hidden">
             <img
-              src={`/api/media/${thumbnailUrl}`}
+              src={getMediaSrc(thumbnailUrl)}
               alt=""
               className="w-full h-full object-cover"
               onError={(e) => {

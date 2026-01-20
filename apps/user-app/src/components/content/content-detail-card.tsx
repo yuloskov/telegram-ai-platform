@@ -13,6 +13,20 @@ function isVideoOnly(
   return mediaUrls.every((url) => url.startsWith("skipped:video_or_document"));
 }
 
+// Helper to get the correct image src (full URL or through /api/media/)
+function getMediaSrc(url: string): string {
+  // Full external URLs - use directly
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  // Already prefixed with /api/media/ - use directly
+  if (url.startsWith("/api/media/")) {
+    return url;
+  }
+  // Storage path - add prefix
+  return `/api/media/${url}`;
+}
+
 interface ContentDetailCardProps {
   text: string | null;
   mediaUrls?: string[];
@@ -53,7 +67,7 @@ export function ContentDetailCard({
               className="rounded-[var(--radius-md)] overflow-hidden bg-[var(--bg-secondary)]"
             >
               <img
-                src={`/api/media/${url}`}
+                src={getMediaSrc(url)}
                 alt=""
                 className="w-full h-auto max-h-96 object-contain"
                 onError={(e) => {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Images } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Spinner } from "~/components/ui/spinner";
@@ -28,6 +28,13 @@ interface SourceContent {
   media: SourceMedia[];
 }
 
+interface ExistingMediaFile {
+  id: string;
+  url: string;
+  type: string;
+  isGenerated: boolean;
+}
+
 interface PostEditorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,6 +53,8 @@ interface PostEditorModalProps {
   onImagesChange?: (images: PostImage[]) => void;
   /** Callback when an image is regenerated */
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
+  /** Existing media files attached to this post (for editing existing posts) */
+  existingMedia?: ExistingMediaFile[];
 }
 
 export function PostEditorModal({
@@ -64,6 +73,7 @@ export function PostEditorModal({
   selectedImages,
   onImagesChange,
   onImageRegenerated,
+  existingMedia,
 }: PostEditorModalProps) {
   const { t } = useI18n();
   const [showSources, setShowSources] = useState(false);
@@ -71,6 +81,25 @@ export function PostEditorModal({
 
   const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
   const hasImages = (postImages?.length ?? 0) > 0;
+
+  // Filter valid existing media URLs
+  const validExistingMedia = existingMedia?.filter(
+    (mf) => !mf.url.startsWith("skipped:") && !mf.url.startsWith("failed:")
+  ) ?? [];
+
+  // Helper to get the correct image src (full URL or through /api/media/)
+  const getMediaSrc = (url: string): string => {
+    // Full external URLs - use directly
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    // Already prefixed with /api/media/ - use directly
+    if (url.startsWith("/api/media/")) {
+      return url;
+    }
+    // Storage path - add prefix
+    return `/api/media/${url}`;
+  };
 
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
@@ -107,6 +136,38 @@ export function PostEditorModal({
             )}
           </div>
         </div>
+
+        {/* Existing media display (for editing existing posts) */}
+        {validExistingMedia.length > 0 && (
+          <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-3">
+              <Images className="h-4 w-4" />
+              {t("postEditor.attachedMedia", { count: validExistingMedia.length })}
+            </div>
+            <div
+              className="grid gap-2"
+              style={{
+                gridTemplateColumns: validExistingMedia.length === 1 ? "1fr" : "repeat(2, 1fr)",
+              }}
+            >
+              {validExistingMedia.map((mf) => (
+                <div
+                  key={mf.id}
+                  className="relative rounded-[var(--radius-md)] overflow-hidden bg-[var(--bg-tertiary)]"
+                >
+                  <img
+                    src={getMediaSrc(mf.url)}
+                    alt=""
+                    className="w-full h-auto max-h-48 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Image selector */}
         {isGenerated && hasImages && onImagesChange && (
