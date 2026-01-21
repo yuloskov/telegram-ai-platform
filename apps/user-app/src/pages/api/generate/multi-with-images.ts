@@ -37,6 +37,7 @@ async function handler(
     autoRegenerate = false,
     regenerateAllImages = false,
     imageType = "raster",
+    svgSettings,
   } = req.body;
 
   if (!channelId) {
@@ -118,12 +119,13 @@ async function handler(
 
     // Handle SVG vs raster image generation
     if (imageType === "svg") {
-      // Generate SVG images for each post using default style
+      // Generate SVG images using settings from request (localStorage) with defaults
       const svgStyleConfig: SVGStyleConfig = {
-        themeColor: "#3B82F6",
-        textColor: "#1F2937",
-        backgroundStyle: "gradient",
-        fontStyle: "modern",
+        stylePrompt: svgSettings?.stylePrompt || undefined,
+        themeColor: svgSettings?.themeColor || "#3B82F6",
+        textColor: svgSettings?.textColor || "#1F2937",
+        backgroundStyle: (svgSettings?.backgroundStyle as "solid" | "gradient" | "transparent") || "gradient",
+        fontStyle: (svgSettings?.fontStyle as "modern" | "classic" | "playful" | "technical") || "modern",
       };
 
       for (const post of result.posts) {

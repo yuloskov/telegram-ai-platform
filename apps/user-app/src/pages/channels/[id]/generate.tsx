@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
 import { useChannel } from "~/hooks/useChannel";
+import { useSvgSettings } from "~/hooks/useSvgSettings";
 import { AppHeader, PageHeader } from "~/components/layout/header";
 import { PageLayout, PageSection } from "~/components/layout/page-layout";
 import { Spinner } from "~/components/ui/spinner";
@@ -41,7 +42,6 @@ export default function GeneratePage() {
     setGenerationResult,
     initializeSources,
     getSelectedPostIds,
-    // Channel context
     channelContextEnabled,
     channelContextSelectedPostIds,
     initializeChannelContext,
@@ -55,6 +55,9 @@ export default function GeneratePage() {
   const [autoRegenerate, setAutoRegenerate] = useState(false);
   const [regenerateAllImages, setRegenerateAllImages] = useState(false);
   const [imageType, setImageType] = useState<ImageType>("raster");
+
+  // SVG settings from localStorage
+  const { settings: svgSettings, updateSetting: updateSvgSetting } = useSvgSettings();
 
   useEffect(() => {
     return () => reset();
@@ -85,15 +88,11 @@ export default function GeneratePage() {
   });
 
   useEffect(() => {
-    if (sources) {
-      initializeSources(sources);
-    }
+    if (sources) initializeSources(sources);
   }, [sources, initializeSources]);
 
   useEffect(() => {
-    if (recentPosts) {
-      initializeChannelContext(recentPosts);
-    }
+    if (recentPosts) initializeChannelContext(recentPosts);
   }, [recentPosts, initializeChannelContext]);
 
   const generateMutation = useMutation({
@@ -111,16 +110,16 @@ export default function GeneratePage() {
           count: postCount,
           autoRegenerate,
           regenerateAllImages,
-          imageType, // Pass imageType to control raster vs SVG generation
+          imageType,
+          // Pass SVG settings from localStorage
+          svgSettings: imageType === "svg" ? svgSettings : undefined,
         }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
       return data.data;
     },
-    onSuccess: (data) => {
-      setGenerationResult(data);
-    },
+    onSuccess: (data) => setGenerationResult(data),
   });
 
   const selectedPostIds = getSelectedPostIds();
@@ -191,6 +190,8 @@ export default function GeneratePage() {
             onRegenerateAllImagesChange={setRegenerateAllImages}
             imageType={imageType}
             onImageTypeChange={setImageType}
+            svgSettings={svgSettings}
+            onSvgSettingUpdate={updateSvgSetting}
             onGenerate={() => generateMutation.mutate()}
             isGenerating={generateMutation.isPending}
             canGenerate={canGenerate}

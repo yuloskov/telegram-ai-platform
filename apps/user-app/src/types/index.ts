@@ -11,6 +11,13 @@ export interface Channel {
   tone: string;
   language: string;
   hashtags: string[];
+  // SVG Style Configuration
+  svgEnabled: boolean;
+  svgStylePrompt: string | null;
+  svgThemeColor: string;
+  svgTextColor: string;
+  svgBackgroundStyle: string;
+  svgFontStyle: string;
 }
 
 // Minimal channel type for pages that only need basic info

@@ -1,9 +1,11 @@
-// Generation options component - post count selector, image type toggle, and auto-regenerate
+// Generation options component - post count selector, image type toggle, SVG settings, and auto-regenerate
 
 import { Sparkles } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
 import { ImageTypeToggle, type ImageType } from "./image-type-toggle";
+import { SVGSettingsInline } from "./svg-settings-inline";
+import type { SvgGenerationSettings } from "~/hooks/useSvgSettings";
 
 interface GenerationOptionsProps {
   postCount: number;
@@ -14,6 +16,8 @@ interface GenerationOptionsProps {
   onRegenerateAllImagesChange: (value: boolean) => void;
   imageType: ImageType;
   onImageTypeChange: (type: ImageType) => void;
+  svgSettings: SvgGenerationSettings;
+  onSvgSettingUpdate: <K extends keyof SvgGenerationSettings>(key: K, value: SvgGenerationSettings[K]) => void;
   onGenerate: () => void;
   isGenerating: boolean;
   canGenerate: boolean;
@@ -28,6 +32,8 @@ export function GenerationOptions({
   onRegenerateAllImagesChange,
   imageType,
   onImageTypeChange,
+  svgSettings,
+  onSvgSettingUpdate,
   onGenerate,
   isGenerating,
   canGenerate,
@@ -46,6 +52,15 @@ export function GenerationOptions({
             disabled={isGenerating}
           />
         </div>
+
+        {/* SVG Style Settings - shown when SVG is selected */}
+        {imageType === "svg" && (
+          <SVGSettingsInline
+            settings={svgSettings}
+            onUpdate={onSvgSettingUpdate}
+            disabled={isGenerating}
+          />
+        )}
 
         {/* Post count selector */}
         <div className="flex items-center gap-2">
