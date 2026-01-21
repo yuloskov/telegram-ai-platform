@@ -116,6 +116,56 @@ export async function suggestImagePrompt(
   return result.trim();
 }
 
+/**
+ * Edit post content using an AI prompt/instruction.
+ * The user provides the current content and an instruction for how to modify it.
+ */
+export async function editPostWithPrompt(
+  currentContent: string,
+  editInstruction: string,
+  language: string = "en"
+): Promise<string> {
+  const systemPrompt = language === "ru"
+    ? `Ты редактор постов для Telegram-каналов. Твоя задача - изменить пост согласно инструкции пользователя.
+Правила:
+- Верни ТОЛЬКО отредактированный текст поста, без объяснений
+- Сохрани форматирование Telegram (эмодзи, переносы строк) если они есть
+- Не добавляй кавычки или другое обрамление вокруг текста
+- Следуй инструкции точно`
+    : `You are a Telegram channel post editor. Your task is to modify the post according to the user's instruction.
+Rules:
+- Return ONLY the edited post text, no explanations
+- Preserve Telegram formatting (emojis, line breaks) if present
+- Don't add quotes or other wrapping around the text
+- Follow the instruction precisely`;
+
+  const userPrompt = language === "ru"
+    ? `Текущий пост:
+"""
+${currentContent}
+"""
+
+Инструкция по редактированию: ${editInstruction}
+
+Отредактированный пост:`
+    : `Current post:
+"""
+${currentContent}
+"""
+
+Edit instruction: ${editInstruction}
+
+Edited post:`;
+
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ];
+
+  const result = await chat(messages, { maxTokens: 2048 });
+  return result.trim();
+}
+
 export interface MultiGenerationPost {
   content: string;
   angle: string;

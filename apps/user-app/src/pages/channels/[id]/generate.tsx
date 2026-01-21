@@ -123,7 +123,8 @@ export default function GeneratePage() {
   });
 
   const selectedPostIds = getSelectedPostIds();
-  const canGenerate = selectedPostIds.length > 0;
+  const hasCustomPrompt = customPrompt.trim().length > 0;
+  const canGenerate = selectedPostIds.length > 0 || hasCustomPrompt;
 
   if (authLoading || channelLoading) {
     return (

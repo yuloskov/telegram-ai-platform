@@ -444,21 +444,25 @@ export function getGenerateMultiplePostsWithImagesPrompt(
   language: string = "en"
 ): string {
   const filteredScraped = shuffleArray(scrapedPosts.filter((p) => p.text));
+  const hasSources = filteredScraped.length > 0;
 
   if (language === "ru") {
-    const scrapedContext = filteredScraped
-      .map((p) => {
-        const mediaInfo = p.hasImages ? `, ${p.imageCount} изобр.` : "";
-        return `[ID: ${p.id}] (${p.views} просмотров${mediaInfo}):\n${p.text}`;
-      })
-      .join("\n\n---\n\n");
-
     const previousContext =
       channelPreviousPosts.length > 0
         ? `\n\nТвои предыдущие посты (для понимания стиля):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
         : "";
 
-    let prompt = `На основе этих популярных постов из похожих каналов, создай ${count} РАЗНЫХ оригинальных постов с решением по изображениям для каждого:
+    let prompt: string;
+
+    if (hasSources) {
+      const scrapedContext = filteredScraped
+        .map((p) => {
+          const mediaInfo = p.hasImages ? `, ${p.imageCount} изобр.` : "";
+          return `[ID: ${p.id}] (${p.views} просмотров${mediaInfo}):\n${p.text}`;
+        })
+        .join("\n\n---\n\n");
+
+      prompt = `На основе этих популярных постов из похожих каналов, создай ${count} РАЗНЫХ оригинальных постов с решением по изображениям для каждого:
 
 ВДОХНОВЕНИЕ (популярные посты):
 ${scrapedContext}${previousContext}
@@ -479,8 +483,29 @@ ${scrapedContext}${previousContext}
 - Короткие мысли/мнения → обычно без изображений
 - Если у источника есть хорошие изображения → используй оригинал
 - Если нужна уникальная визуализация → генерируй новое`;
+    } else {
+      // No sources - generate from scratch using custom prompt
+      prompt = `Создай ${count} РАЗНЫХ оригинальных постов для Telegram-канала с решением по изображениям для каждого:${previousContext}
 
-    if (customPrompt) {
+ЗАДАНИЕ:
+${customPrompt || "Создай увлекательные посты на любую тему, подходящую для канала"}
+
+КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
+- Создай ровно ${count} уникальных постов с разными подходами/углами
+- Каждый пост должен быть уникальным и интересным
+- Пиши контент с нуля, не опираясь на внешние источники
+
+РЕШЕНИЯ ПО ИЗОБРАЖЕНИЯМ:
+Для каждого поста реши, нужны ли изображения:
+- "none": Краткие мысли, цитаты, простые текстовые посты - не нужны изображения
+- "generate_new": Если нужна визуализация (инфографика, иллюстрация) - сгенерируй
+
+Критерии:
+- Информативный контент → часто нужны изображения
+- Короткие мысли/мнения → обычно без изображений`;
+    }
+
+    if (hasSources && customPrompt) {
       prompt += `\n\nДОПОЛНИТЕЛЬНЫЕ ИНСТРУКЦИИ:\n${customPrompt}`;
     }
 
@@ -490,10 +515,10 @@ ${scrapedContext}${previousContext}
     {
       "content": "текст поста",
       "angle": "краткое описание темы/подхода",
-      "sourceIds": ["id1"],
+      "sourceIds": [${hasSources ? '"id1"' : ""}],
       "imageDecision": {
-        "strategy": "none" | "use_original" | "generate_new",
-        "originalImageSourceIds": ["id1"],
+        "strategy": "none" | ${hasSources ? '"use_original" | ' : ""}"generate_new",
+        ${hasSources ? '"originalImageSourceIds": ["id1"],' : ""}
         "imagePrompts": ["описание для генерации изображения"],
         "reasoning": "почему выбрана эта стратегия"
       }
@@ -502,27 +527,30 @@ ${scrapedContext}${previousContext}
 }
 
 ВАЖНО:
-- originalImageSourceIds - только если strategy = "use_original"
-- imagePrompts - только если strategy = "generate_new" (1-2 предложения на РУССКОМ языке для генерации)
+${hasSources ? '- originalImageSourceIds - только если strategy = "use_original"\n' : ""}- imagePrompts - только если strategy = "generate_new" (1-2 предложения на РУССКОМ языке для генерации)
+- sourceIds может быть пустым массивом если генерируешь без источников
 - Ответь ТОЛЬКО валидным JSON без дополнительного текста.`;
 
     return prompt;
   }
 
   // English (default)
-  const scrapedContext = filteredScraped
-    .map((p) => {
-      const mediaInfo = p.hasImages ? `, ${p.imageCount} images` : "";
-      return `[ID: ${p.id}] (${p.views} views${mediaInfo}):\n${p.text}`;
-    })
-    .join("\n\n---\n\n");
-
   const previousContext =
     channelPreviousPosts.length > 0
       ? `\n\nYour previous posts (for style reference):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
       : "";
 
-  let prompt = `Based on these trending posts from similar channels, create ${count} DIFFERENT original posts with image decisions for each:
+  let prompt: string;
+
+  if (hasSources) {
+    const scrapedContext = filteredScraped
+      .map((p) => {
+        const mediaInfo = p.hasImages ? `, ${p.imageCount} images` : "";
+        return `[ID: ${p.id}] (${p.views} views${mediaInfo}):\n${p.text}`;
+      })
+      .join("\n\n---\n\n");
+
+    prompt = `Based on these trending posts from similar channels, create ${count} DIFFERENT original posts with image decisions for each:
 
 INSPIRATION (trending posts):
 ${scrapedContext}${previousContext}
@@ -543,8 +571,29 @@ Criteria:
 - Short thoughts/opinions → usually no images
 - If source has good images → use original
 - If unique visualization needed → generate new`;
+  } else {
+    // No sources - generate from scratch using custom prompt
+    prompt = `Create ${count} DIFFERENT original posts for a Telegram channel with image decisions for each:${previousContext}
 
-  if (customPrompt) {
+TASK:
+${customPrompt || "Create engaging posts on any topic suitable for the channel"}
+
+CRITICAL REQUIREMENTS:
+- Create exactly ${count} unique posts with different angles/approaches
+- Each post should be unique and engaging
+- Write content from scratch, without relying on external sources
+
+IMAGE DECISIONS:
+For each post, decide if images are needed:
+- "none": Short thoughts, quotes, simple text posts - no images needed
+- "generate_new": If visualization needed (infographic, illustration) - generate new
+
+Criteria:
+- Informational content → often needs images
+- Short thoughts/opinions → usually no images`;
+  }
+
+  if (hasSources && customPrompt) {
     prompt += `\n\nADDITIONAL INSTRUCTIONS:\n${customPrompt}`;
   }
 
@@ -554,10 +603,10 @@ Criteria:
     {
       "content": "post text",
       "angle": "brief topic/approach description",
-      "sourceIds": ["id1"],
+      "sourceIds": [${hasSources ? '"id1"' : ""}],
       "imageDecision": {
-        "strategy": "none" | "use_original" | "generate_new",
-        "originalImageSourceIds": ["id1"],
+        "strategy": "none" | ${hasSources ? '"use_original" | ' : ""}"generate_new",
+        ${hasSources ? '"originalImageSourceIds": ["id1"],' : ""}
         "imagePrompts": ["image generation prompt"],
         "reasoning": "why this strategy was chosen"
       }
@@ -566,8 +615,8 @@ Criteria:
 }
 
 IMPORTANT:
-- originalImageSourceIds - only if strategy = "use_original"
-- imagePrompts - only if strategy = "generate_new" (1-2 sentences in English for generation, matching the channel language)
+${hasSources ? '- originalImageSourceIds - only if strategy = "use_original"\n' : ""}- imagePrompts - only if strategy = "generate_new" (1-2 sentences in English for generation)
+- sourceIds can be an empty array when generating without sources
 - Respond with ONLY valid JSON, no additional text.`;
 
   return prompt;

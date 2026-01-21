@@ -44,10 +44,14 @@ async function handler(
     return res.status(400).json({ success: false, error: "Channel ID is required" });
   }
 
-  if (!scrapedContentIds || !Array.isArray(scrapedContentIds) || scrapedContentIds.length === 0) {
+  const hasSourceIds = scrapedContentIds && Array.isArray(scrapedContentIds) && scrapedContentIds.length > 0;
+  const hasCustomPrompt = customPrompt && typeof customPrompt === "string" && customPrompt.trim().length > 0;
+
+  // Require either sources or a custom prompt
+  if (!hasSourceIds && !hasCustomPrompt) {
     return res.status(400).json({
       success: false,
-      error: "At least one scraped content ID is required",
+      error: "Either source content or a custom prompt is required",
     });
   }
 
@@ -61,22 +65,26 @@ async function handler(
     return res.status(404).json({ success: false, error: "Channel not found" });
   }
 
-  const scrapedContent = await prisma.scrapedContent.findMany({
-    where: {
-      id: { in: scrapedContentIds },
-      source: { channelId },
-    },
-    select: {
-      id: true,
-      text: true,
-      views: true,
-      telegramMessageId: true,
-      source: { select: { telegramUsername: true } },
-      mediaUrls: true,
-    },
-  });
+  // Fetch scraped content only if source IDs were provided
+  const scrapedContent = hasSourceIds
+    ? await prisma.scrapedContent.findMany({
+        where: {
+          id: { in: scrapedContentIds },
+          source: { channelId },
+        },
+        select: {
+          id: true,
+          text: true,
+          views: true,
+          telegramMessageId: true,
+          source: { select: { telegramUsername: true } },
+          mediaUrls: true,
+        },
+      })
+    : [];
 
-  if (scrapedContent.length === 0) {
+  // Only error if sources were requested but not found
+  if (hasSourceIds && scrapedContent.length === 0) {
     return res.status(404).json({ success: false, error: "No scraped content found" });
   }
 
@@ -379,10 +387,13 @@ async function handler(
       }
     }
 
-    await prisma.scrapedContent.updateMany({
-      where: { id: { in: scrapedContent.map((c) => c.id) } },
-      data: { usedForGeneration: true },
-    });
+    // Mark scraped content as used (only if we had sources)
+    if (scrapedContent.length > 0) {
+      await prisma.scrapedContent.updateMany({
+        where: { id: { in: scrapedContent.map((c) => c.id) } },
+        data: { usedForGeneration: true },
+      });
+    }
 
     return res.status(200).json({
       success: true,

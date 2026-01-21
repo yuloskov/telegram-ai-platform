@@ -14,7 +14,9 @@ import { MessagePreview } from "~/components/telegram/message-bubble";
 import { SourcePostCard } from "~/components/generate/source-post-card";
 import { PostImageSelector } from "~/components/generate/post-image-selector";
 import { GenerateMoreImages } from "~/components/generate/generate-more-images";
+import { EditWithAI } from "~/components/posts/edit-with-ai";
 import { useGenerateNewImage } from "~/hooks/useImageGeneration";
+import { useEditWithAI } from "~/hooks/useEditWithAI";
 import { useI18n } from "~/i18n";
 import { getMediaSrc, getValidMediaUrls } from "~/lib/media";
 import type { PostImage, SourceContent, MediaFile } from "~/types";
@@ -63,6 +65,7 @@ export function PostEditorModal({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const generateNewImageMutation = useGenerateNewImage(onNewImageGenerated);
+  const editWithAIMutation = useEditWithAI(onContentChange);
 
   const handleGenerateImage = (prompt: string, useSvg: boolean) => {
     if (!channelId) return;
@@ -70,6 +73,15 @@ export function PostEditorModal({
       channelId,
       prompt,
       useSvg,
+    });
+  };
+
+  const handleEditWithAI = (instruction: string) => {
+    if (!channelId || !content) return;
+    editWithAIMutation.mutate({
+      channelId,
+      currentContent: content,
+      editInstruction: instruction,
     });
   };
 
@@ -115,6 +127,17 @@ export function PostEditorModal({
             )}
           </div>
         </div>
+
+        {/* Edit with AI */}
+        {channelId && content && (
+          <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
+            <EditWithAI
+              onEdit={handleEditWithAI}
+              isEditing={editWithAIMutation.isPending}
+              disabled={isSaving}
+            />
+          </div>
+        )}
 
         {/* Existing media display (for editing existing posts) */}
         {validExistingMedia.length > 0 && (
