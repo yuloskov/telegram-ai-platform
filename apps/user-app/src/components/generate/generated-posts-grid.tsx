@@ -157,7 +157,7 @@ export function GeneratedPostsGrid({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {posts.map((post, index) => {
           const postSources = sources.filter((s) => post.sourceIds.includes(s.id));
           return (

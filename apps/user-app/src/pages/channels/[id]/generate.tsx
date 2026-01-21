@@ -146,7 +146,7 @@ export default function GeneratePage() {
     <PageLayout title={`${t("generatePage.title")} - ${channel.title}`}>
       <AppHeader user={user} onLogout={logout} />
 
-      <div className="px-4 md:px-6 lg:px-8 py-6 max-w-3xl mx-auto">
+      <div className="px-4 md:px-6 lg:px-8 py-6 max-w-6xl mx-auto">
         <PageHeader
           title={t("generatePage.title")}
           breadcrumbs={[
