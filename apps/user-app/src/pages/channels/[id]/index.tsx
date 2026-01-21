@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
 import { useChannel } from "~/hooks/useChannel";
 import { useCreatePost } from "~/hooks/usePostMutations";
@@ -11,6 +11,8 @@ import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostList } from "~/components/posts/post-list";
+import { SelectionToolbar } from "~/components/posts/selection-toolbar";
+import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { Sparkles, Plus, Settings, Lightbulb, ArrowRight } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { useI18n } from "~/i18n";
@@ -50,6 +52,71 @@ export default function ChannelDetailPage() {
     },
   });
 
+  // Selection store
+  const { selectedIds, clearSelection } = useContentSelectionStore();
+  const queryClient = useQueryClient();
+
+  // Get selected posts info for determining available actions
+  const posts = postsData?.data || [];
+  const selectedPosts = useMemo(() => {
+    return posts.filter((p) => selectedIds.has(p.id));
+  }, [posts, selectedIds]);
+
+  const canPublish = selectedPosts.some((p) => p.status === "draft" || p.status === "failed");
+  const canDelete = selectedPosts.some((p) => p.status === "draft");
+
+  // Bulk publish mutation
+  const bulkPublishMutation = useMutation({
+    mutationFn: async (postIds: string[]) => {
+      const res = await fetch("/api/posts/bulk-publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postIds }),
+      });
+      if (!res.ok) throw new Error("Failed to publish");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", id] });
+      clearSelection();
+    },
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (postIds: string[]) => {
+      const res = await fetch("/api/posts/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postIds }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", id] });
+      clearSelection();
+    },
+  });
+
+  const handleBulkPublish = () => {
+    const publishableIds = selectedPosts
+      .filter((p) => p.status === "draft" || p.status === "failed")
+      .map((p) => p.id);
+    if (publishableIds.length > 0) {
+      bulkPublishMutation.mutate(publishableIds);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    const deletableIds = selectedPosts
+      .filter((p) => p.status === "draft")
+      .map((p) => p.id);
+    if (deletableIds.length > 0) {
+      bulkDeleteMutation.mutate(deletableIds);
+    }
+  };
+
   // Handle loading state
   if (authLoading || channelLoading) {
     return (
@@ -67,8 +134,6 @@ export default function ChannelDetailPage() {
       </div>
     );
   }
-
-  const posts = postsData?.data || [];
 
   const handleCancelEditor = () => {
     setShowPostEditor(false);
@@ -160,6 +225,18 @@ export default function ChannelDetailPage() {
           />
         </PageSection>
       </div>
+
+      {/* Selection Toolbar */}
+      <SelectionToolbar
+        selectedCount={selectedIds.size}
+        canPublish={canPublish}
+        canDelete={canDelete}
+        onPublish={handleBulkPublish}
+        onDelete={handleBulkDelete}
+        onClear={clearSelection}
+        isPublishing={bulkPublishMutation.isPending}
+        isDeleting={bulkDeleteMutation.isPending}
+      />
     </PageLayout>
   );
 }

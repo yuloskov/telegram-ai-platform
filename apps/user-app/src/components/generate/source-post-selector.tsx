@@ -1,6 +1,7 @@
 import { Images, Eye } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
+import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 import { isPostVideoOnly, getValidMediaUrls, getMediaSrc } from "~/lib/media";
 
@@ -78,13 +79,15 @@ export function SourcePostSelector({ posts, selectedIds, onToggle }: SourcePostS
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-[var(--text-primary)] line-clamp-2">
-                  {hasText ? post.text : (
+                <div className="text-sm text-[var(--text-primary)] line-clamp-2">
+                  {hasText ? (
+                    <TelegramHtml content={post.text!} />
+                  ) : (
                     <span className="italic text-[var(--text-tertiary)]">
                       {t("sources.mediaOnly")}
                     </span>
                   )}
-                </p>
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
                     <Eye className="h-3 w-3" />

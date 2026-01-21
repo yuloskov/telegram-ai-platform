@@ -1,5 +1,6 @@
 import { Edit2, Save, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 import { useState } from "react";
 import { SourcePostCard } from "./source-post-card";
@@ -81,9 +82,9 @@ export function GeneratedPostCard({
             </span>
           </div>
         )}
-        <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
-          {content}
-        </p>
+        <div className="text-sm text-[var(--text-primary)] leading-relaxed">
+          <TelegramHtml content={content} />
+        </div>
       </div>
 
       {/* Sources toggle */}

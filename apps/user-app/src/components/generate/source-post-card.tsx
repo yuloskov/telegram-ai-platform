@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 
 interface SourceMedia {
@@ -55,9 +56,9 @@ export function SourcePostCard({ text, telegramLink, media }: SourcePostCardProp
       <div className="p-3 space-y-2">
         {/* Text */}
         {text && (
-          <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">
-            {text}
-          </p>
+          <div className="text-sm text-[var(--text-primary)]">
+            <TelegramHtml content={text} />
+          </div>
         )}
 
         {/* Link */}

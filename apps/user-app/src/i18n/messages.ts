@@ -360,6 +360,12 @@ export const messages = {
       },
     },
 
+    // Selection
+    selection: {
+      selectedCount: "{count} selected",
+      clear: "Clear",
+    },
+
     // Image Type Toggle
     imageType: {
       label: "Image type:",
@@ -734,6 +740,12 @@ export const messages = {
         playful: "Игривый (округлый)",
         technical: "Технический (моноширинный)",
       },
+    },
+
+    // Selection
+    selection: {
+      selectedCount: "Выбрано: {count}",
+      clear: "Очистить",
     },
 
     // Image Type Toggle

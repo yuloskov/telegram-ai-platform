@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
+import { TelegramHtml } from "./telegram-html";
 
 interface MessageBubbleProps {
   content: string;
@@ -20,9 +21,9 @@ export function MessageBubble({
         {/* Message bubble */}
         <div className="rounded-[var(--radius-lg)] rounded-br-[var(--radius-sm)] bg-[var(--bg-message)] px-3 py-2">
           {/* Content */}
-          <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap break-words">
-            {content}
-          </p>
+          <div className="text-sm text-[var(--text-primary)]">
+            <TelegramHtml content={content} />
+          </div>
 
           {/* Meta (timestamp + status) */}
           <div className="flex items-center justify-end gap-1 mt-1">

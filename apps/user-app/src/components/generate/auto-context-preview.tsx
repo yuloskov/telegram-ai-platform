@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, BookOpen } from "lucide-react";
+import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 
 interface RecentPost {
@@ -56,7 +57,9 @@ export function AutoContextPreview({ posts, isLoading }: AutoContextPreviewProps
               key={post.id}
               className="p-3 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] text-sm text-[var(--text-secondary)]"
             >
-              <p className="line-clamp-3">{post.content}</p>
+              <div className="line-clamp-3">
+                <TelegramHtml content={post.content} />
+              </div>
             </div>
           ))}
         </div>

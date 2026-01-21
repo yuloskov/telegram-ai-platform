@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Images } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
+import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 import { getMediaSrc, isVideoOnly } from "~/lib/media";
 
@@ -121,15 +122,17 @@ export function ContentListItem({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm text-[var(--text-primary)] line-clamp-3">
-              {text || (
+            <div className="text-sm text-[var(--text-primary)] line-clamp-3">
+              {text ? (
+                <TelegramHtml content={text} />
+              ) : (
                 <span className="italic text-[var(--text-tertiary)]">
                   {isVideoOnly(text, mediaUrls)
                     ? t("sources.videoOnly")
                     : t("sources.mediaOnly")}
                 </span>
               )}
-            </p>
+            </div>
             {chips.length > 0 && (
               <div className="flex items-center gap-1 shrink-0">
                 {chips.map((chip, idx) => (

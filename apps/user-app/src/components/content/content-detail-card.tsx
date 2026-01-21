@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Card } from "~/components/ui/card";
 import { Chip, type ChipProps } from "~/components/content/content-list-item";
+import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 import { getMediaSrc, isVideoOnly, getValidMediaUrls } from "~/lib/media";
 
@@ -59,9 +60,9 @@ export function ContentDetailCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {text ? (
-              <p className="text-[var(--text-primary)] whitespace-pre-wrap">
-                {text}
-              </p>
+              <div className="text-[var(--text-primary)]">
+                <TelegramHtml content={text} />
+              </div>
             ) : (
               <p className="text-[var(--text-tertiary)] italic">
                 {isVideoOnly(text, mediaUrls)
