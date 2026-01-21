@@ -12,6 +12,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostList } from "~/components/posts/post-list";
 import { SelectionToolbar } from "~/components/posts/selection-toolbar";
+import { ScheduleModal } from "~/components/posts/schedule-modal";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { Sparkles, Plus, Settings, Lightbulb, ArrowRight } from "lucide-react";
 import { Card } from "~/components/ui/card";
@@ -26,6 +27,7 @@ export default function ChannelDetailPage() {
   const { t } = useI18n();
 
   const [showPostEditor, setShowPostEditor] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [postContent, setPostContent] = useState("");
   const [generatedImages, setGeneratedImages] = useState<PostImage[]>([]);
 
@@ -64,7 +66,8 @@ export default function ChannelDetailPage() {
   }, [posts, selectedIds]);
 
   const canPublish = selectedPosts.some((p) => p.status === "draft" || p.status === "failed");
-  const canDelete = selectedPosts.some((p) => p.status === "draft");
+  const canDelete = selectedPosts.some((p) => p.status === "draft" || p.status === "scheduled");
+  const canSchedule = selectedPosts.some((p) => ["draft", "failed", "scheduled"].includes(p.status));
 
   // Bulk publish mutation
   const bulkPublishMutation = useMutation({
@@ -100,6 +103,24 @@ export default function ChannelDetailPage() {
     },
   });
 
+  // Bulk schedule mutation
+  const bulkScheduleMutation = useMutation({
+    mutationFn: async ({ postIds, scheduledAt }: { postIds: string[]; scheduledAt: string }) => {
+      const res = await fetch("/api/posts/bulk-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postIds, scheduledAt }),
+      });
+      if (!res.ok) throw new Error("Failed to schedule");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts", id] });
+      clearSelection();
+      setShowScheduleModal(false);
+    },
+  });
+
   const handleBulkPublish = () => {
     const publishableIds = selectedPosts
       .filter((p) => p.status === "draft" || p.status === "failed")
@@ -111,10 +132,22 @@ export default function ChannelDetailPage() {
 
   const handleBulkDelete = () => {
     const deletableIds = selectedPosts
-      .filter((p) => p.status === "draft")
+      .filter((p) => p.status === "draft" || p.status === "scheduled")
       .map((p) => p.id);
     if (deletableIds.length > 0) {
       bulkDeleteMutation.mutate(deletableIds);
+    }
+  };
+
+  const handleBulkSchedule = (scheduledAt: Date) => {
+    const schedulableIds = selectedPosts
+      .filter((p) => ["draft", "failed", "scheduled"].includes(p.status))
+      .map((p) => p.id);
+    if (schedulableIds.length > 0) {
+      bulkScheduleMutation.mutate({
+        postIds: schedulableIds,
+        scheduledAt: scheduledAt.toISOString(),
+      });
     }
   };
 
@@ -239,11 +272,25 @@ export default function ChannelDetailPage() {
         selectedCount={selectedIds.size}
         canPublish={canPublish}
         canDelete={canDelete}
+        canSchedule={canSchedule}
         onPublish={handleBulkPublish}
         onDelete={handleBulkDelete}
+        onSchedule={() => setShowScheduleModal(true)}
         onClear={clearSelection}
         isPublishing={bulkPublishMutation.isPending}
         isDeleting={bulkDeleteMutation.isPending}
+        isScheduling={bulkScheduleMutation.isPending}
+      />
+
+      {/* Bulk Schedule Modal */}
+      <ScheduleModal
+        open={showScheduleModal}
+        onOpenChange={setShowScheduleModal}
+        currentScheduledAt={null}
+        onSchedule={handleBulkSchedule}
+        onUnschedule={() => {}}
+        isLoading={bulkScheduleMutation.isPending}
+        postCount={selectedPosts.filter((p) => ["draft", "failed", "scheduled"].includes(p.status)).length}
       />
     </PageLayout>
   );

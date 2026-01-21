@@ -389,6 +389,25 @@ export const messages = {
       regenerate: "Regenerate",
       accept: "Use This",
     },
+
+    // Scheduling
+    schedule: {
+      title: "Schedule Post",
+      rescheduleTitle: "Reschedule Post",
+      bulkTitle: "Schedule {count} Posts",
+      description: "Choose when you want this post to be published automatically.",
+      bulkDescription: "All {count} selected posts will be scheduled for the same time.",
+      confirm: "Schedule",
+      scheduling: "Scheduling...",
+      unschedule: "Unschedule",
+      schedule: "Schedule",
+      reschedule: "Reschedule",
+      currentlyScheduled: "Currently scheduled",
+      scheduledFor: "Publish date & time",
+      scheduleSuccess: "Post scheduled successfully",
+      unscheduleSuccess: "Post unscheduled",
+      scheduleError: "Failed to schedule post",
+    },
   },
 
   ru: {
@@ -780,6 +799,25 @@ export const messages = {
       generating: "Генерация SVG...",
       regenerate: "Сгенерировать заново",
       accept: "Использовать",
+    },
+
+    // Scheduling
+    schedule: {
+      title: "Запланировать публикацию",
+      rescheduleTitle: "Перенести публикацию",
+      bulkTitle: "Запланировать {count} постов",
+      description: "Выберите, когда вы хотите автоматически опубликовать этот пост.",
+      bulkDescription: "Все {count} выбранных постов будут запланированы на одно время.",
+      confirm: "Запланировать",
+      scheduling: "Планирование...",
+      unschedule: "Отменить",
+      schedule: "Запланировать",
+      reschedule: "Перенести",
+      currentlyScheduled: "Текущее расписание",
+      scheduledFor: "Дата и время публикации",
+      scheduleSuccess: "Публикация запланирована",
+      unscheduleSuccess: "Публикация отменена",
+      scheduleError: "Не удалось запланировать публикацию",
     },
   },
 } as const;

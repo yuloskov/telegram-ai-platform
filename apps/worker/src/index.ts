@@ -6,6 +6,7 @@ import { handlePublishJob } from "./jobs/publish.js";
 import { handleScrapeJob } from "./jobs/scrape.js";
 import { handleNotificationJob } from "./jobs/notify.js";
 import { getAutoScrapeScheduler } from "./services/auto-scrape-scheduler.js";
+import { getPostScheduler } from "./services/post-scheduler.js";
 
 // Helper to update job status in database
 async function updateJobStatus(
@@ -143,6 +144,10 @@ autoScrapeScheduler.initialize().catch((err) => {
   console.error("Failed to initialize auto-scrape scheduler:", err);
 });
 
+// Initialize post scheduler (polls for scheduled posts every minute)
+const postScheduler = getPostScheduler(REDIS_URL);
+postScheduler.start();
+
 // Graceful shutdown
 const shutdown = async () => {
   console.log("Shutting down workers...");
@@ -152,6 +157,7 @@ const shutdown = async () => {
     notificationsWorker.close(),
     scheduledPostsWorker.close(),
     autoScrapeScheduler.close(),
+    postScheduler.close(),
   ]);
   await connection.quit();
   console.log("Workers shut down successfully");

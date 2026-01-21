@@ -10,10 +10,11 @@ interface UsePostMutationsOptions {
   onDeleteSuccess?: () => void;
   onUpdateSuccess?: () => void;
   onPublishSuccess?: () => void;
+  onScheduleSuccess?: () => void;
 }
 
 /**
- * Hook for post mutations: publish, update, delete.
+ * Hook for post mutations: publish, update, delete, schedule.
  */
 export function usePostMutations({
   postId,
@@ -21,6 +22,7 @@ export function usePostMutations({
   onDeleteSuccess,
   onUpdateSuccess,
   onPublishSuccess,
+  onScheduleSuccess,
 }: UsePostMutationsOptions) {
   const queryClient = useQueryClient();
   const id = Array.isArray(postId) ? postId[0] : postId;
@@ -58,10 +60,22 @@ export function usePostMutations({
     },
   });
 
+  const scheduleMutation = useMutation({
+    mutationFn: async (scheduledAt: string | null) => {
+      return apiMutate(`/api/posts/${id}/schedule`, "POST", { scheduledAt });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["post", id] });
+      queryClient.invalidateQueries({ queryKey: ["posts", chId] });
+      onScheduleSuccess?.();
+    },
+  });
+
   return {
     publishMutation,
     updateMutation,
     deleteMutation,
+    scheduleMutation,
   };
 }
 

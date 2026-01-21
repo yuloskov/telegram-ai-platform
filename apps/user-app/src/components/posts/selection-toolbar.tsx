@@ -1,4 +1,4 @@
-import { Trash2, Send, X, Loader2 } from "lucide-react";
+import { Trash2, Send, X, Loader2, Clock } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
 
@@ -6,25 +6,31 @@ interface SelectionToolbarProps {
   selectedCount: number;
   canPublish: boolean;
   canDelete: boolean;
+  canSchedule: boolean;
   onPublish: () => void;
   onDelete: () => void;
+  onSchedule: () => void;
   onClear: () => void;
   isPublishing?: boolean;
   isDeleting?: boolean;
+  isScheduling?: boolean;
 }
 
 export function SelectionToolbar({
   selectedCount,
   canPublish,
   canDelete,
+  canSchedule,
   onPublish,
   onDelete,
+  onSchedule,
   onClear,
   isPublishing = false,
   isDeleting = false,
+  isScheduling = false,
 }: SelectionToolbarProps) {
   const { t } = useI18n();
-  const isLoading = isPublishing || isDeleting;
+  const isLoading = isPublishing || isDeleting || isScheduling;
 
   if (selectedCount === 0) return null;
 
@@ -38,6 +44,22 @@ export function SelectionToolbar({
         <div className="w-px h-5 bg-[var(--border-primary)]" />
 
         <div className="flex items-center gap-2">
+          {canSchedule && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onSchedule}
+              disabled={isLoading}
+            >
+              {isScheduling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Clock className="h-4 w-4" />
+              )}
+              {t("schedule.schedule")}
+            </Button>
+          )}
+
           {canPublish && (
             <Button
               size="sm"

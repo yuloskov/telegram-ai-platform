@@ -11,6 +11,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { PostActions } from "~/components/posts/post-actions";
+import { ScheduleModal } from "~/components/posts/schedule-modal";
 import { ContentDetailCard } from "~/components/content/content-detail-card";
 import { PostMetrics } from "~/components/content/content-metrics";
 import { useI18n } from "~/i18n";
@@ -26,6 +27,7 @@ export default function PostDetailPage() {
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [generatedImages, setGeneratedImages] = useState<PostImage[]>([]);
 
@@ -37,11 +39,12 @@ export default function PostDetailPage() {
     enabled: !authLoading,
   });
 
-  const { publishMutation, updateMutation, deleteMutation } = usePostMutations({
+  const { publishMutation, updateMutation, deleteMutation, scheduleMutation } = usePostMutations({
     postId,
     channelId,
     onDeleteSuccess: () => router.push(`/channels/${channelId}`),
     onUpdateSuccess: () => setEditModalOpen(false),
+    onScheduleSuccess: () => setScheduleModalOpen(false),
   });
 
   const handleEditClick = () => {
@@ -83,7 +86,9 @@ export default function PostDetailPage() {
   const canEdit = ["draft", "failed"].includes(post.status);
   const canPublish = post.status === "draft";
   const canRetry = post.status === "failed";
-  const canDelete = post.status === "draft";
+  const canDelete = ["draft", "scheduled"].includes(post.status);
+  const canSchedule = ["draft", "failed", "scheduled"].includes(post.status);
+  const isScheduled = post.status === "scheduled";
 
   const telegramUrl =
     post.status === "published" && post.telegramMessageId && channel.username
@@ -133,11 +138,14 @@ export default function PostDetailPage() {
               canPublish={canPublish}
               canRetry={canRetry}
               canDelete={canDelete}
+              canSchedule={canSchedule}
+              isScheduled={isScheduled}
               telegramUrl={telegramUrl}
               isPublishing={publishMutation.isPending}
               onEdit={handleEditClick}
               onPublish={() => publishMutation.mutate()}
               onDelete={() => setDeleteConfirmOpen(true)}
+              onSchedule={() => setScheduleModalOpen(true)}
             />
           }
         />
@@ -182,6 +190,15 @@ export default function PostDetailPage() {
         onConfirm={() => deleteMutation.mutate()}
         isLoading={deleteMutation.isPending}
         variant="danger"
+      />
+
+      <ScheduleModal
+        open={scheduleModalOpen}
+        onOpenChange={setScheduleModalOpen}
+        currentScheduledAt={post.scheduledAt ? new Date(post.scheduledAt) : null}
+        onSchedule={(date) => scheduleMutation.mutate(date.toISOString())}
+        onUnschedule={() => scheduleMutation.mutate(null)}
+        isLoading={scheduleMutation.isPending}
       />
     </PageLayout>
   );

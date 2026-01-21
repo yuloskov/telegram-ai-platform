@@ -1,6 +1,6 @@
 // Action buttons for post detail page header
 
-import { Send, RotateCcw, ExternalLink, Trash2, Edit2 } from "lucide-react";
+import { Send, RotateCcw, ExternalLink, Trash2, Edit2, Clock } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
 
@@ -9,11 +9,14 @@ interface PostActionsProps {
   canPublish: boolean;
   canRetry: boolean;
   canDelete: boolean;
+  canSchedule: boolean;
+  isScheduled: boolean;
   telegramUrl: string | null;
   isPublishing: boolean;
   onEdit: () => void;
   onPublish: () => void;
   onDelete: () => void;
+  onSchedule: () => void;
 }
 
 export function PostActions({
@@ -21,11 +24,14 @@ export function PostActions({
   canPublish,
   canRetry,
   canDelete,
+  canSchedule,
+  isScheduled,
   telegramUrl,
   isPublishing,
   onEdit,
   onPublish,
   onDelete,
+  onSchedule,
 }: PostActionsProps) {
   const { t } = useI18n();
 
@@ -35,6 +41,12 @@ export function PostActions({
         <Button variant="secondary" size="sm" onClick={onEdit}>
           <Edit2 className="h-4 w-4" />
           {t("common.edit")}
+        </Button>
+      )}
+      {canSchedule && (
+        <Button variant="secondary" size="sm" onClick={onSchedule}>
+          <Clock className="h-4 w-4" />
+          {isScheduled ? t("schedule.reschedule") : t("schedule.schedule")}
         </Button>
       )}
       {canPublish && (
