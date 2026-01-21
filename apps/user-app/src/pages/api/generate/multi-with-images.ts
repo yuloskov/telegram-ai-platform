@@ -196,6 +196,7 @@ async function handler(
                 url: toMediaUrl(pngStoragePath),
                 isGenerated: true,
                 prompt: svgResult.prompt,
+                sourceStoragePath: img.storagePath,
               });
             }
           }
@@ -326,6 +327,7 @@ async function handler(
                   url: toMediaUrl(storagePath),
                   isGenerated: true,
                   prompt: imagePrompt,
+                  sourceStoragePath: img.storagePath,
                 });
               }
             }

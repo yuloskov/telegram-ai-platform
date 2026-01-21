@@ -126,6 +126,8 @@ export interface PostImage {
   originalUrl?: string;
   svgUrl?: string;
   isSvg?: boolean;
+  /** Storage path of the source image used to generate this image (for SVG regeneration) */
+  sourceStoragePath?: string;
 }
 
 export type ImageStrategy = "none" | "use_original" | "generate_new";

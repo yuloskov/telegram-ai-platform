@@ -26,7 +26,8 @@ interface ImageResponse {
 
 interface SVGRegenerateParams {
   channelId: string;
-  originalImageUrl: string;
+  originalImageUrl?: string;
+  sourceStoragePath?: string;
 }
 
 /**
@@ -136,6 +137,7 @@ export function useRegenerateWithSVG(
         body: {
           channelId: params.channelId,
           originalImageUrl: params.originalImageUrl,
+          sourceStoragePath: params.sourceStoragePath,
           mode: "svg",
         },
       });
@@ -143,6 +145,11 @@ export function useRegenerateWithSVG(
       if (!response.success || !response.data) {
         throw new Error(response.error || "Failed to regenerate image as SVG");
       }
+
+      // Preserve sourceStoragePath for subsequent regenerations
+      const sourceStoragePath = params.sourceStoragePath
+        ?? originalImage.sourceStoragePath
+        ?? (originalImage.isGenerated ? undefined : originalImage.url?.replace(/^\/api\/media\//, ""));
 
       const newImage: PostImage = {
         url: response.data.url,
@@ -153,6 +160,7 @@ export function useRegenerateWithSVG(
           : originalImage.url,
         svgUrl: response.data.svgUrl,
         isSvg: response.data.isSvg,
+        sourceStoragePath,
       };
 
       return { oldUrl: originalImage.url, newImage };
@@ -203,10 +211,19 @@ export function useImageGeneration({
 
   const regenerateAsSvg = (image: PostImage) => {
     if (!channelId) return;
+
+    // Use sourceStoragePath if available (for generated images), otherwise fall back to URL
+    const sourceStoragePath = image.sourceStoragePath
+      ?? (image.isGenerated ? undefined : image.url?.replace(/^\/api\/media\//, ""));
+
     svgMutation.mutate({
       params: {
         channelId,
-        originalImageUrl: image.isGenerated ? (image.originalUrl ?? image.url) : image.url,
+        sourceStoragePath,
+        // Fall back to URL if no storage path (for backwards compatibility)
+        originalImageUrl: !sourceStoragePath
+          ? (image.isGenerated ? (image.originalUrl ?? image.url) : image.url)
+          : undefined,
       },
       originalImage: image,
     });

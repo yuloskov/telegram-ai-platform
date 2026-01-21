@@ -28,6 +28,8 @@ export interface PostImage {
   prompt?: string;
   analysisResult?: ImageAnalysisResult;
   originalUrl?: string;
+  /** Storage path of the source image used to generate this image (for SVG regeneration) */
+  sourceStoragePath?: string;
 }
 
 export interface SourceContent {

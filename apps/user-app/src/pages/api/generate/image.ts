@@ -30,7 +30,7 @@ async function handler(
   }
 
   const { user } = req;
-  const { channelId, prompt, originalImageUrl, mode } = req.body;
+  const { channelId, prompt, originalImageUrl, sourceStoragePath, mode } = req.body;
 
   if (!channelId) {
     return res.status(400).json({ success: false, error: "Channel ID is required" });
@@ -94,19 +94,19 @@ async function handler(
 
     // Mode: "svg" - generate SVG from image content
     if (mode === "svg") {
-      if (!originalImageUrl) {
+      if (!sourceStoragePath && !originalImageUrl) {
         return res.status(400).json({
           success: false,
-          error: "originalImageUrl is required for SVG mode",
+          error: "Either sourceStoragePath or originalImageUrl is required for SVG mode",
         });
       }
 
-      // Convert media URL to storage path and then to base64
-      const storagePath = originalImageUrl.replace(/^\/api\/media\//, "");
+      // Use sourceStoragePath directly if provided, otherwise convert from URL
+      const storagePath = sourceStoragePath ?? originalImageUrl.replace(/^\/api\/media\//, "");
       const base64DataUrl = await storagePathToBase64(storagePath);
 
       // Extract content from the original image
-      console.log("Extracting content from image for SVG generation:", originalImageUrl);
+      console.log("Extracting content from image for SVG generation:", storagePath);
       const imageContent = await extractImageContent(base64DataUrl, channel.language);
 
       // Build content for SVG generation
