@@ -334,6 +334,44 @@ export const messages = {
       saveSuccess: "Settings saved successfully",
       saveError: "Failed to save settings",
     },
+
+    // SVG Generation
+    svg: {
+      title: "SVG Image Generation",
+      enableLabel: "Enable SVG image generation",
+      stylePromptLabel: "Style Description",
+      stylePromptPlaceholder: "e.g., minimalist design with geometric shapes, corporate style with clean lines...",
+      stylePromptHint: "Describe the visual style you want for generated SVG images",
+      themeColorLabel: "Theme Color",
+      textColorLabel: "Text Color",
+      backgroundStyleLabel: "Background Style",
+      backgroundStyles: {
+        solid: "Solid Color",
+        gradient: "Gradient",
+        transparent: "Transparent",
+      },
+      fontStyleLabel: "Font Style",
+      fontStyles: {
+        modern: "Modern (Sans-serif)",
+        classic: "Classic (Serif)",
+        playful: "Playful (Rounded)",
+        technical: "Technical (Monospace)",
+      },
+    },
+
+    // Image Type Toggle
+    imageType: {
+      label: "Image type:",
+      raster: "Photo",
+      svg: "Vector/SVG",
+    },
+
+    // SVG Generation
+    svgGeneration: {
+      generating: "Generating SVG...",
+      regenerate: "Regenerate",
+      accept: "Use This",
+    },
   },
 
   ru: {
@@ -670,6 +708,44 @@ export const messages = {
       saving: "Сохранение...",
       saveSuccess: "Настройки успешно сохранены",
       saveError: "Не удалось сохранить настройки",
+    },
+
+    // SVG Generation
+    svg: {
+      title: "Генерация SVG изображений",
+      enableLabel: "Включить генерацию SVG изображений",
+      stylePromptLabel: "Описание стиля",
+      stylePromptPlaceholder: "напр., минималистичный дизайн с геометрическими формами, корпоративный стиль с чистыми линиями...",
+      stylePromptHint: "Опишите визуальный стиль для генерируемых SVG изображений",
+      themeColorLabel: "Основной цвет",
+      textColorLabel: "Цвет текста",
+      backgroundStyleLabel: "Стиль фона",
+      backgroundStyles: {
+        solid: "Сплошной цвет",
+        gradient: "Градиент",
+        transparent: "Прозрачный",
+      },
+      fontStyleLabel: "Стиль шрифта",
+      fontStyles: {
+        modern: "Современный (без засечек)",
+        classic: "Классический (с засечками)",
+        playful: "Игривый (округлый)",
+        technical: "Технический (моноширинный)",
+      },
+    },
+
+    // Image Type Toggle
+    imageType: {
+      label: "Тип изображения:",
+      raster: "Фото",
+      svg: "Вектор/SVG",
+    },
+
+    // SVG Generation
+    svgGeneration: {
+      generating: "Генерация SVG...",
+      regenerate: "Сгенерировать заново",
+      accept: "Использовать",
     },
   },
 } as const;

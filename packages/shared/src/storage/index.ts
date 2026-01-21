@@ -109,6 +109,7 @@ export async function storagePathToBase64(storagePath: string): Promise<string> 
     png: "image/png",
     gif: "image/gif",
     webp: "image/webp",
+    svg: "image/svg+xml",
   };
   const mime = mimeTypes[ext ?? ""] ?? "image/jpeg";
 

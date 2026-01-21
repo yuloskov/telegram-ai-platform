@@ -70,6 +70,15 @@ model Channel {
   tone             String   @default("professional")
   language         String   @default("en")
   hashtags         String[] @default([])
+
+  // SVG Style Configuration
+  svgEnabled         Boolean  @default(false)
+  svgStylePrompt     String?
+  svgThemeColor      String   @default("#3B82F6")
+  svgTextColor       String   @default("#1F2937")
+  svgBackgroundStyle String   @default("solid")  // "solid", "gradient", "transparent"
+  svgFontStyle       String   @default("modern") // "modern", "classic", "playful", "technical"
+
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

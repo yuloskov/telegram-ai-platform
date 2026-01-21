@@ -1,3 +1,5 @@
+export * from "./svg-prompts";
+
 export interface ChannelContext {
   niche?: string;
   tone: string;

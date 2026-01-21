@@ -28,6 +28,10 @@
     "./types": {
       "types": "./src/types/index.ts",
       "default": "./src/types/index.ts"
+    },
+    "./svg": {
+      "types": "./src/svg/index.ts",
+      "default": "./src/svg/index.ts"
     }
   },
   "scripts": {
@@ -35,6 +39,7 @@
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
+    "@resvg/resvg-js": "^2.6.0",
     "jose": "^5.9.6",
     "minio": "^8.0.2",
     "nanoid": "^5.0.9",

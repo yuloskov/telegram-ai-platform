@@ -2,10 +2,14 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateMultiplePostsWithImages } from "@repo/ai";
+import { generateMultiplePostsWithImages, generateSVG } from "@repo/ai";
+import type { SVGStyleConfig } from "@repo/ai";
+import { svgToPng } from "@repo/shared/svg";
+import { uploadFile } from "@repo/shared/storage";
 import {
   processGeneratedPost,
   transformToSourceContent,
+  toMediaUrl,
   type GeneratedPost,
   type SourceContent,
 } from "~/lib/generation-helpers";
@@ -30,6 +34,7 @@ async function handler(
     customPrompt,
     count = 3,
     autoRegenerate = false,
+    imageType = "raster",
   } = req.body;
 
   if (!channelId) {
@@ -105,15 +110,61 @@ async function handler(
     const sourceMap = new Map(scrapedContent.map((c) => [c.id, c]));
 
     const postsWithImages: GeneratedPost[] = [];
-    for (const post of result.posts) {
-      const processedPost = await processGeneratedPost(
-        post,
-        sourceMap,
-        channelId,
-        channel.language,
-        autoRegenerate
-      );
-      postsWithImages.push(processedPost);
+
+    // Handle SVG vs raster image generation
+    if (imageType === "svg") {
+      // Generate SVG images for each post using default style
+      const svgStyleConfig: SVGStyleConfig = {
+        themeColor: "#3B82F6",
+        textColor: "#1F2937",
+        backgroundStyle: "gradient",
+        fontStyle: "modern",
+      };
+
+      for (const post of result.posts) {
+        const svgResult = await generateSVG(post.content, svgStyleConfig, channel.language);
+
+        let images: GeneratedPost["images"] = [];
+        if (svgResult) {
+          // Convert SVG to PNG and upload both
+          const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
+          const timestamp = Date.now();
+          const pngObjectName = `svg-png/${channelId}/${timestamp}.png`;
+          const svgObjectName = `svg/${channelId}/${timestamp}.svg`;
+
+          await Promise.all([
+            uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
+            uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
+          ]);
+
+          const pngStoragePath = `telegram-platform/${pngObjectName}`;
+          images = [{
+            url: toMediaUrl(pngStoragePath),
+            isGenerated: true,
+            prompt: svgResult.prompt,
+          }];
+        }
+
+        postsWithImages.push({
+          content: post.content,
+          angle: post.angle,
+          sourceIds: post.sourceIds,
+          imageDecision: post.imageDecision,
+          images,
+        });
+      }
+    } else {
+      // Standard raster image processing
+      for (const post of result.posts) {
+        const processedPost = await processGeneratedPost(
+          post,
+          sourceMap,
+          channelId,
+          channel.language,
+          autoRegenerate
+        );
+        postsWithImages.push(processedPost);
+      }
     }
 
     await prisma.scrapedContent.updateMany({

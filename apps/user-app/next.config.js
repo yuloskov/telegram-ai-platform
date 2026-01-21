@@ -19,6 +19,9 @@ const config = {
     defaultLocale: "en",
   },
 
+  // Native modules that shouldn't be bundled by webpack
+  serverExternalPackages: ["@resvg/resvg-js"],
+
   // Transpile all workspace packages for proper hot reload
   transpilePackages: [
     "@repo/database",
@@ -28,7 +31,7 @@ const config = {
   ],
 
   // Enable watching for symlinked workspace packages
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer }) => {
     if (dev) {
       config.watchOptions = {
         ...config.watchOptions,
@@ -39,6 +42,15 @@ const config = {
         managedPaths: [],
       };
     }
+
+    // Externalize native modules on the server
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        "@resvg/resvg-js": "commonjs @resvg/resvg-js",
+      });
+    }
+
     return config;
   },
 };

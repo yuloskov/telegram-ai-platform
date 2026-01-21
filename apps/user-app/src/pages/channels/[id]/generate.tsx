@@ -15,6 +15,7 @@ import {
   GeneratedPostsGrid,
 } from "~/components/generate";
 import { GenerationOptions } from "~/components/generate/generation-options";
+import type { ImageType } from "~/components/generate/image-type-toggle";
 
 interface Source {
   id: string;
@@ -45,6 +46,7 @@ export default function GeneratePage() {
 
   const [postCount, setPostCount] = useState(3);
   const [autoRegenerate, setAutoRegenerate] = useState(false);
+  const [imageType, setImageType] = useState<ImageType>("raster");
 
   useEffect(() => {
     return () => reset();
@@ -92,6 +94,7 @@ export default function GeneratePage() {
           customPrompt: customPrompt || undefined,
           count: postCount,
           autoRegenerate,
+          imageType, // Pass imageType to control raster vs SVG generation
         }),
       });
       const data = await res.json();
@@ -163,6 +166,8 @@ export default function GeneratePage() {
             onPostCountChange={setPostCount}
             autoRegenerate={autoRegenerate}
             onAutoRegenerateChange={setAutoRegenerate}
+            imageType={imageType}
+            onImageTypeChange={setImageType}
             onGenerate={() => generateMutation.mutate()}
             isGenerating={generateMutation.isPending}
             canGenerate={canGenerate}

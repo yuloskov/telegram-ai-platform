@@ -15,6 +15,13 @@ interface ChannelResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // SVG settings
+  svgEnabled: boolean;
+  svgStylePrompt: string | null;
+  svgThemeColor: string;
+  svgTextColor: string;
+  svgBackgroundStyle: string;
+  svgFontStyle: string;
 }
 
 async function handler(
@@ -55,12 +62,30 @@ async function handler(
         isActive: channel.isActive,
         createdAt: channel.createdAt.toISOString(),
         updatedAt: channel.updatedAt.toISOString(),
+        svgEnabled: channel.svgEnabled,
+        svgStylePrompt: channel.svgStylePrompt,
+        svgThemeColor: channel.svgThemeColor,
+        svgTextColor: channel.svgTextColor,
+        svgBackgroundStyle: channel.svgBackgroundStyle,
+        svgFontStyle: channel.svgFontStyle,
       },
     });
   }
 
   if (req.method === "PUT" || req.method === "PATCH") {
-    const { title, niche, tone, language, hashtags } = req.body;
+    const {
+      title,
+      niche,
+      tone,
+      language,
+      hashtags,
+      svgEnabled,
+      svgStylePrompt,
+      svgThemeColor,
+      svgTextColor,
+      svgBackgroundStyle,
+      svgFontStyle,
+    } = req.body;
 
     const updated = await prisma.channel.update({
       where: { id },
@@ -70,6 +95,12 @@ async function handler(
         ...(tone && { tone }),
         ...(language && { language }),
         ...(hashtags && { hashtags }),
+        ...(svgEnabled !== undefined && { svgEnabled }),
+        ...(svgStylePrompt !== undefined && { svgStylePrompt }),
+        ...(svgThemeColor && { svgThemeColor }),
+        ...(svgTextColor && { svgTextColor }),
+        ...(svgBackgroundStyle && { svgBackgroundStyle }),
+        ...(svgFontStyle && { svgFontStyle }),
       },
     });
 
@@ -87,6 +118,12 @@ async function handler(
         isActive: updated.isActive,
         createdAt: updated.createdAt.toISOString(),
         updatedAt: updated.updatedAt.toISOString(),
+        svgEnabled: updated.svgEnabled,
+        svgStylePrompt: updated.svgStylePrompt,
+        svgThemeColor: updated.svgThemeColor,
+        svgTextColor: updated.svgTextColor,
+        svgBackgroundStyle: updated.svgBackgroundStyle,
+        svgFontStyle: updated.svgFontStyle,
       },
     });
   }
