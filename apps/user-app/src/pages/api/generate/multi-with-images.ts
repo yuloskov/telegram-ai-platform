@@ -122,9 +122,34 @@ async function handler(
       };
 
       for (const post of result.posts) {
+        // Collect original images from source posts (same logic as raster path)
+        const sourceIdsToUse =
+          post.imageDecision.strategy === "use_original" &&
+          post.imageDecision.originalImageSourceIds
+            ? post.imageDecision.originalImageSourceIds
+            : post.sourceIds;
+
+        const originalImages: GeneratedPost["images"] = [];
+        for (const sourceId of sourceIdsToUse) {
+          const source = sourceMap.get(sourceId);
+          if (source) {
+            const validPaths = source.mediaUrls.filter(
+              (path) => !path.startsWith("skipped:")
+            );
+            for (const path of validPaths) {
+              originalImages.push({
+                url: toMediaUrl(path),
+                isGenerated: false,
+                sourceId,
+              });
+            }
+          }
+        }
+
+        // Generate SVG image
         const svgResult = await generateSVG(post.content, svgStyleConfig, channel.language);
 
-        let images: GeneratedPost["images"] = [];
+        const generatedImages: GeneratedPost["images"] = [];
         if (svgResult) {
           // Convert SVG to PNG and upload both
           const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
@@ -138,11 +163,11 @@ async function handler(
           ]);
 
           const pngStoragePath = `telegram-platform/${pngObjectName}`;
-          images = [{
+          generatedImages.push({
             url: toMediaUrl(pngStoragePath),
             isGenerated: true,
             prompt: svgResult.prompt,
-          }];
+          });
         }
 
         postsWithImages.push({
@@ -150,7 +175,7 @@ async function handler(
           angle: post.angle,
           sourceIds: post.sourceIds,
           imageDecision: post.imageDecision,
-          images,
+          images: [...originalImages, ...generatedImages],
         });
       }
     } else {

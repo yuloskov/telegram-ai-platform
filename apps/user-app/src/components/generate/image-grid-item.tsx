@@ -1,6 +1,6 @@
 // Image grid item component - extracted from post-image-selector.tsx
 
-import { Check, Expand, RefreshCw, Sparkles } from "lucide-react";
+import { Check, Expand, RefreshCw, Sparkles, FileImage } from "lucide-react";
 import { useI18n } from "~/i18n";
 import type { PostImage } from "~/types";
 import { ImageAnalysisBadge } from "./image-analysis-badge";
@@ -11,10 +11,12 @@ export interface ImageGridItemProps {
   isSelected: boolean;
   isRegenerating: boolean;
   isCleaning: boolean;
+  isRegeneratingSvg: boolean;
   onToggle: () => void;
   onPreview: () => void;
   onRegenerate?: () => void;
   onClean?: () => void;
+  onRegenerateAsSvg?: () => void;
 }
 
 export function ImageGridItem({
@@ -23,13 +25,15 @@ export function ImageGridItem({
   isSelected,
   isRegenerating,
   isCleaning,
+  isRegeneratingSvg,
   onToggle,
   onPreview,
   onRegenerate,
   onClean,
+  onRegenerateAsSvg,
 }: ImageGridItemProps) {
   const { t } = useI18n();
-  const isProcessing = isRegenerating || isCleaning;
+  const isProcessing = isRegenerating || isCleaning || isRegeneratingSvg;
 
   return (
     <div className="relative group">
@@ -64,6 +68,8 @@ export function ImageGridItem({
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             {isCleaning ? (
               <Sparkles className="h-5 w-5 text-white animate-pulse" />
+            ) : isRegeneratingSvg ? (
+              <FileImage className="h-5 w-5 text-white animate-pulse" />
             ) : (
               <RefreshCw className="h-5 w-5 text-white animate-spin" />
             )}
@@ -115,6 +121,22 @@ export function ImageGridItem({
             title={t("generatePage.imageActions.regenerate")}
           >
             <RefreshCw className={`h-3 w-3 ${isRegenerating ? "animate-spin" : ""}`} />
+          </button>
+        )}
+
+        {/* Regenerate as SVG button */}
+        {onRegenerateAsSvg && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRegenerateAsSvg();
+            }}
+            disabled={isProcessing}
+            className="p-1 rounded bg-black/60 text-white hover:bg-black/80 transition-colors disabled:opacity-50"
+            title={t("generatePage.imageActions.regenerateAsSvg")}
+          >
+            <FileImage className={`h-3 w-3 ${isRegeneratingSvg ? "animate-pulse" : ""}`} />
           </button>
         )}
       </div>

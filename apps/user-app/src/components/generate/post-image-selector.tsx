@@ -26,7 +26,7 @@ export function PostImageSelector({
   const { t } = useI18n();
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
-  const { regeneratingUrl, cleaningUrl, regenerateImage, cleanImage } =
+  const { regeneratingUrl, cleaningUrl, regeneratingSvgUrl, regenerateImage, cleanImage, regenerateAsSvg } =
     useImageGeneration({ channelId, onImageRegenerated });
 
   const originalImages = useMemo(
@@ -107,8 +107,10 @@ export function PostImageSelector({
             onToggle={toggleImage}
             onPreview={(i) => openPreview(getFullIndex(i, true))}
             onRegenerate={canRegenerate ? regenerateImage : undefined}
+            onRegenerateAsSvg={canRegenerate ? regenerateAsSvg : undefined}
             regeneratingUrl={regeneratingUrl}
             cleaningUrl={cleaningUrl}
+            regeneratingSvgUrl={regeneratingSvgUrl}
           />
         </div>
       )}
@@ -125,8 +127,10 @@ export function PostImageSelector({
             onPreview={(i) => openPreview(getFullIndex(i, false))}
             onRegenerate={canRegenerate ? regenerateImage : undefined}
             onClean={canRegenerate ? cleanImage : undefined}
+            onRegenerateAsSvg={canRegenerate ? regenerateAsSvg : undefined}
             regeneratingUrl={regeneratingUrl}
             cleaningUrl={cleaningUrl}
+            regeneratingSvgUrl={regeneratingSvgUrl}
           />
         </div>
       )}

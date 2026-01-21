@@ -124,6 +124,8 @@ export interface PostImage {
   prompt?: string;
   analysisResult?: ImageAnalysisResult;
   originalUrl?: string;
+  svgUrl?: string;
+  isSvg?: boolean;
 }
 
 export type ImageStrategy = "none" | "use_original" | "generate_new";

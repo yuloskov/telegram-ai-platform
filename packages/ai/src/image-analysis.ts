@@ -10,6 +10,14 @@ export interface ImageAnalysisResult {
   suggestedPrompt?: string;
 }
 
+export interface ImageContentResult {
+  description: string;
+  textContent: string | null;
+  mainElements: string[];
+  mood: string;
+  colors: string[];
+}
+
 /**
  * Analyze an image for watermarks, links, logos using vision AI
  * @param imageUrl - URL or base64 data URL of the image to analyze
@@ -129,4 +137,98 @@ export async function analyzeImages(
   }
 
   return results;
+}
+
+/**
+ * Extract content and description from an image for SVG generation
+ * @param imageUrl - URL or base64 data URL of the image to analyze
+ * @param language - Language for the description (default: "en")
+ */
+export async function extractImageContent(
+  imageUrl: string,
+  language: string = "en"
+): Promise<ImageContentResult> {
+  const client = getAIClient();
+
+  const languageInstruction =
+    language === "ru"
+      ? "Отвечай на РУССКОМ языке"
+      : "Respond in English";
+
+  try {
+    const response = await client.chat.completions.create({
+      model: IMAGE_ANALYSIS_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this image and extract its content for creating a similar visual representation. ${languageInstruction}.
+
+IMPORTANT: When extracting text content, you MUST:
+- EXCLUDE any URLs, website links, or @usernames
+- EXCLUDE any company names, brand names, or channel names
+- EXCLUDE any logos or watermark text
+- ONLY include the main message/quote/headline text that conveys the core idea
+
+Respond in JSON format:
+{
+  "description": "A concise description of what the image shows (1-2 sentences)",
+  "textContent": "The main message/quote text only, WITHOUT any links, company names, or branding (or null if no meaningful text)",
+  "mainElements": ["List", "of", "main", "visual", "elements"],
+  "mood": "The overall mood/feeling of the image (e.g., professional, playful, serious, inspiring)",
+  "colors": ["List", "of", "dominant", "colors", "in", "hex", "format"]
+}
+
+Focus on:
+- What message or concept the image conveys (without attribution to any brand/company)
+- Key visual elements that could be recreated
+- The emotional tone and style
+- Only the core text message, cleaned of any promotional or identifying content`,
+            },
+            {
+              type: "image_url",
+              image_url: { url: imageUrl },
+            },
+          ],
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 800,
+    });
+
+    const content = response.choices[0]?.message?.content ?? "";
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        description: parsed.description ?? "Image content",
+        textContent: parsed.textContent ?? null,
+        mainElements: parsed.mainElements ?? [],
+        mood: parsed.mood ?? "neutral",
+        colors: parsed.colors ?? [],
+      };
+    }
+
+    // Fallback if JSON parsing fails
+    return {
+      description: "Image content",
+      textContent: null,
+      mainElements: [],
+      mood: "neutral",
+      colors: [],
+    };
+  } catch (error) {
+    console.error("Image content extraction error:", error);
+    return {
+      description: "Image content",
+      textContent: null,
+      mainElements: [],
+      mood: "neutral",
+      colors: [],
+    };
+  }
 }

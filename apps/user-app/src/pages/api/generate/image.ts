@@ -2,12 +2,15 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateImage, analyzeImage, cleanImage } from "@repo/ai";
+import { generateImage, analyzeImage, cleanImage, extractImageContent, generateSVG, type SVGStyleConfig } from "@repo/ai";
 import { uploadFile, storagePathToBase64 } from "@repo/shared/storage";
+import { svgToPng, normalizeSvgDimensions } from "@repo/shared/svg";
 
 interface RegenerateImageResponse {
   url: string;
   prompt: string;
+  svgUrl?: string;
+  isSvg?: boolean;
 }
 
 /**
@@ -85,6 +88,74 @@ async function handler(
         data: {
           url: `/api/media/${uploadedPath}`,
           prompt: "Cleaned image (watermarks removed)",
+        },
+      });
+    }
+
+    // Mode: "svg" - generate SVG from image content
+    if (mode === "svg") {
+      if (!originalImageUrl) {
+        return res.status(400).json({
+          success: false,
+          error: "originalImageUrl is required for SVG mode",
+        });
+      }
+
+      // Convert media URL to storage path and then to base64
+      const storagePath = originalImageUrl.replace(/^\/api\/media\//, "");
+      const base64DataUrl = await storagePathToBase64(storagePath);
+
+      // Extract content from the original image
+      console.log("Extracting content from image for SVG generation:", originalImageUrl);
+      const imageContent = await extractImageContent(base64DataUrl, channel.language);
+
+      // Build content for SVG generation
+      let svgContent = imageContent.description;
+      if (imageContent.textContent) {
+        svgContent = imageContent.textContent;
+      }
+
+      // Build style config from channel settings or defaults
+      const styleConfig: SVGStyleConfig = {
+        stylePrompt: channel.svgStylePrompt ?? undefined,
+        themeColor: channel.svgThemeColor ?? (imageContent.colors[0] || "#3B82F6"),
+        textColor: channel.svgTextColor ?? "#1F2937",
+        backgroundStyle: (channel.svgBackgroundStyle as SVGStyleConfig["backgroundStyle"]) ?? "gradient",
+        fontStyle: (channel.svgFontStyle as SVGStyleConfig["fontStyle"]) ?? "modern",
+      };
+
+      // Generate SVG
+      console.log("Generating SVG with content:", svgContent);
+      const svgResult = await generateSVG(svgContent, styleConfig, channel.language);
+
+      if (!svgResult) {
+        return res.status(500).json({
+          success: false,
+          error: "SVG generation failed. Please try again.",
+        });
+      }
+
+      // Normalize and convert to PNG
+      const normalizedSvg = normalizeSvgDimensions(svgResult.svg, 1080, 1080);
+      const pngBuffer = await svgToPng(normalizedSvg, { width: 1080, height: 1080 });
+
+      // Upload both SVG and PNG
+      const timestamp = Date.now();
+      const svgObjectName = `svg/${channelId}/${timestamp}.svg`;
+      const pngObjectName = `svg-png/${channelId}/${timestamp}.png`;
+
+      const [svgPath, pngPath] = await Promise.all([
+        uploadFile("telegram-platform", svgObjectName, Buffer.from(normalizedSvg), "image/svg+xml"),
+        uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          url: `/api/media/${pngPath}`,
+          svgUrl: `/api/media/${svgPath}`,
+          prompt: svgResult.prompt,
+          isSvg: true,
         },
       });
     }

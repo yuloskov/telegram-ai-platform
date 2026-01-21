@@ -306,6 +306,7 @@ export const messages = {
       imageActions: {
         preview: "View full size",
         regenerate: "Regenerate image",
+        regenerateAsSvg: "Regenerate as SVG",
         clean: "Remove watermarks",
       },
     },
@@ -681,6 +682,7 @@ export const messages = {
       imageActions: {
         preview: "Открыть в полном размере",
         regenerate: "Сгенерировать заново",
+        regenerateAsSvg: "Сгенерировать как SVG",
         clean: "Убрать водяные знаки",
       },
     },

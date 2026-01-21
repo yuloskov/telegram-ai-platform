@@ -8,10 +8,12 @@ export interface ImageGridProps {
   selectedUrls: Set<string>;
   regeneratingUrl: string | null;
   cleaningUrl: string | null;
+  regeneratingSvgUrl: string | null;
   onToggle: (image: PostImage) => void;
   onPreview: (index: number) => void;
   onRegenerate?: (image: PostImage) => void;
   onClean?: (image: PostImage) => void;
+  onRegenerateAsSvg?: (image: PostImage) => void;
 }
 
 export function ImageGrid({
@@ -19,10 +21,12 @@ export function ImageGrid({
   selectedUrls,
   regeneratingUrl,
   cleaningUrl,
+  regeneratingSvgUrl,
   onToggle,
   onPreview,
   onRegenerate,
   onClean,
+  onRegenerateAsSvg,
 }: ImageGridProps) {
   return (
     <div className="grid grid-cols-4 gap-2">
@@ -34,10 +38,12 @@ export function ImageGrid({
           isSelected={selectedUrls.has(image.url)}
           isRegenerating={regeneratingUrl === image.url}
           isCleaning={cleaningUrl === image.url}
+          isRegeneratingSvg={regeneratingSvgUrl === image.url}
           onToggle={() => onToggle(image)}
           onPreview={() => onPreview(index)}
           onRegenerate={onRegenerate ? () => onRegenerate(image) : undefined}
           onClean={onClean ? () => onClean(image) : undefined}
+          onRegenerateAsSvg={onRegenerateAsSvg ? () => onRegenerateAsSvg(image) : undefined}
         />
       ))}
     </div>
