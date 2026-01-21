@@ -111,6 +111,51 @@ A unified platform that:
 - [x] User can regenerate images with modified prompts
 - [x] System respects copyright by generating original images, not copies
 
+#### 3.2.2 SVG Image Generation
+
+**Requirements:**
+- System provides an alternative image generation method using AI-generated SVG graphics
+- SVG generation is ideal for informative images with significant text content (infographics, diagrams, quote cards, statistics)
+- AI uses OPENROUTER_MODEL to generate valid SVG markup based on content and user style preferences
+- Generated SVG is rendered and previewed in the UI before publishing
+- Users can customize SVG appearance through style settings and prompts
+
+**SVG Style Configuration:**
+- **Style Prompt**: Free-form text describing desired visual style (e.g., "minimalist tech style", "bold corporate infographic")
+- **Theme Color**: Primary/accent color for the SVG (user-selectable color picker)
+- **Text Color**: Color for text elements (user-selectable, with auto-contrast option)
+- **Background Style**: Solid color, gradient, or transparent
+- **Font Style**: Modern, classic, playful, or technical
+
+**Use Cases:**
+- Quote cards with styled typography
+- Statistics/metrics displays (e.g., "↑ 50% growth")
+- Simple infographics and diagrams
+- Text-heavy informational posts
+- Announcement banners
+- Comparison charts
+
+**Generation Flow:**
+1. User opts to use SVG generation instead of raster image generation
+2. User configures style settings (theme color, text color) and optional style prompt
+3. AI analyzes post content and generates appropriate SVG markup
+4. SVG is rendered as a preview in the UI
+5. User can regenerate with adjusted settings or accept
+6. Accepted SVG is converted to PNG for Telegram publishing
+
+**Acceptance Criteria:**
+- [ ] User can toggle between raster image generation and SVG generation
+- [ ] User can set theme color via color picker
+- [ ] User can set text color via color picker (with auto-contrast suggestion)
+- [ ] User can provide optional style prompt for additional customization
+- [ ] AI generates valid, well-structured SVG markup
+- [ ] SVG preview renders correctly in the UI
+- [ ] User can regenerate SVG with different settings
+- [ ] SVG is converted to high-quality PNG for Telegram compatibility
+- [ ] SVG generation respects post language (text direction, fonts)
+- [ ] Error handling for invalid SVG generation with retry option
+- [ ] SVG templates/presets available for common use cases (quote, stats, comparison)
+
 ---
 
 ### 3.3 AI Content Generation
@@ -716,6 +761,7 @@ The UI must follow Telegram's visual design language to create a familiar and co
 - **Post**: Generated/written posts (draft, scheduled, pending_review, published)
 - **MediaFile**: Uploaded or scraped images
 - **ImageAnalysis**: AI-generated analysis of scraped images (style, subject, composition)
+- **SvgStyleConfig**: User preferences for SVG generation (theme color, text color, style prompt, font style)
 - **AutoPostConfig**: Configuration for automatic research-based posting per channel
 - **AutoPostLog**: History of automatically generated posts and their status
 - **NotificationPreference**: User preferences for bot notifications
@@ -750,6 +796,7 @@ The UI must follow Telegram's visual design language to create a familiar and co
 - ✅ AI generation from scraped content
 - ⬜ AI generation from web research
 - 🟡 Image support (AI-generated ✅, manual upload ⬜)
+- ⬜ SVG image generation (AI-generated infographics, quote cards, diagrams)
 - 🟡 Scheduled publishing (queue ready, UI/scheduler pending)
 - ⬜ Post analytics (views, forwards)
 - ✅ Image analysis for scraped content (Gemini Flash 3)
