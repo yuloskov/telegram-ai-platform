@@ -10,6 +10,8 @@ interface GenerationOptionsProps {
   onPostCountChange: (count: number) => void;
   autoRegenerate: boolean;
   onAutoRegenerateChange: (value: boolean) => void;
+  regenerateAllImages: boolean;
+  onRegenerateAllImagesChange: (value: boolean) => void;
   imageType: ImageType;
   onImageTypeChange: (type: ImageType) => void;
   onGenerate: () => void;
@@ -22,6 +24,8 @@ export function GenerationOptions({
   onPostCountChange,
   autoRegenerate,
   onAutoRegenerateChange,
+  regenerateAllImages,
+  onRegenerateAllImagesChange,
   imageType,
   onImageTypeChange,
   onGenerate,
@@ -75,11 +79,25 @@ export function GenerationOptions({
             type="checkbox"
             checked={autoRegenerate}
             onChange={(e) => onAutoRegenerateChange(e.target.checked)}
+            disabled={isGenerating || regenerateAllImages}
+            className="h-4 w-4 rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
+          />
+          <span className={`text-sm ${regenerateAllImages ? "text-[var(--text-tertiary)]" : "text-[var(--text-secondary)]"}`}>
+            {t("generatePage.autoRegenerate")}
+          </span>
+        </label>
+
+        {/* Regenerate all images checkbox */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={regenerateAllImages}
+            onChange={(e) => onRegenerateAllImagesChange(e.target.checked)}
             disabled={isGenerating}
             className="h-4 w-4 rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
           />
           <span className="text-sm text-[var(--text-secondary)]">
-            {t("generatePage.autoRegenerate")}
+            {t("generatePage.regenerateAllImages")}
           </span>
         </label>
       </div>

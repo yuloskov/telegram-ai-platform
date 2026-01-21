@@ -2,10 +2,10 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateMultiplePostsWithImages, generateSVG } from "@repo/ai";
+import { generateMultiplePostsWithImages, generateSVG, generateImagePromptFromContent, generateImage, extractImageContent } from "@repo/ai";
 import type { SVGStyleConfig } from "@repo/ai";
 import { svgToPng } from "@repo/shared/svg";
-import { uploadFile } from "@repo/shared/storage";
+import { uploadFile, storagePathToBase64 } from "@repo/shared/storage";
 import {
   processGeneratedPost,
   transformToSourceContent,
@@ -35,6 +35,7 @@ async function handler(
     customPrompt,
     count = 3,
     autoRegenerate = false,
+    regenerateAllImages = false,
     imageType = "raster",
   } = req.body;
 
@@ -126,52 +127,122 @@ async function handler(
       };
 
       for (const post of result.posts) {
-        // Collect original images from source posts (same logic as raster path)
+        // Always collect original images from source posts
         const sourceIdsToUse =
           post.imageDecision.strategy === "use_original" &&
           post.imageDecision.originalImageSourceIds
             ? post.imageDecision.originalImageSourceIds
             : post.sourceIds;
 
-        const originalImages: GeneratedPost["images"] = [];
+        // Collect images with both URL and storage path for processing
+        const imagesWithPaths: Array<{ url: string; storagePath: string; sourceId: string }> = [];
         for (const sourceId of sourceIdsToUse) {
           const source = sourceMap.get(sourceId);
           if (source) {
             const validPaths = source.mediaUrls.filter(
               (path) => !path.startsWith("skipped:")
             );
-            for (const path of validPaths) {
-              originalImages.push({
-                url: toMediaUrl(path),
-                isGenerated: false,
+            for (const storagePath of validPaths) {
+              imagesWithPaths.push({
+                url: toMediaUrl(storagePath),
+                storagePath,
                 sourceId,
               });
             }
           }
         }
 
-        // Generate SVG image
-        const svgResult = await generateSVG(post.content, svgStyleConfig, channel.language);
+        // Build originalImages for the response
+        const originalImages: GeneratedPost["images"] = imagesWithPaths.map((img) => ({
+          url: img.url,
+          isGenerated: false,
+          sourceId: img.sourceId,
+        }));
 
         const generatedImages: GeneratedPost["images"] = [];
-        if (svgResult) {
-          // Convert SVG to PNG and upload both
-          const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
-          const timestamp = Date.now();
-          const pngObjectName = `svg-png/${channelId}/${timestamp}.png`;
-          const svgObjectName = `svg/${channelId}/${timestamp}.svg`;
 
-          await Promise.all([
-            uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
-            uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
-          ]);
+        if (regenerateAllImages) {
+          // For each original image: extract text content, then generate SVG
+          let svgIndex = 0;
+          for (const img of imagesWithPaths) {
+            // Convert storage path to base64 for AI analysis
+            const base64DataUrl = await storagePathToBase64(img.storagePath);
+            const imageContent = await extractImageContent(base64DataUrl, channel.language);
 
-          const pngStoragePath = `telegram-platform/${pngObjectName}`;
-          generatedImages.push({
-            url: toMediaUrl(pngStoragePath),
-            isGenerated: true,
-            prompt: svgResult.prompt,
-          });
+            // Use extracted text for SVG - skip if extraction failed
+            const validDescription = imageContent.description !== "Image content" ? imageContent.description : null;
+            const contentForSVG = imageContent.textContent || validDescription;
+
+            // Skip this image if no content was extracted
+            if (!contentForSVG) {
+              continue;
+            }
+
+            const svgResult = await generateSVG(contentForSVG, svgStyleConfig, channel.language);
+            if (svgResult) {
+              const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
+              const timestamp = Date.now() + svgIndex; // Ensure unique timestamps
+              svgIndex++;
+              const pngObjectName = `svg-png/${channelId}/${timestamp}.png`;
+              const svgObjectName = `svg/${channelId}/${timestamp}.svg`;
+
+              await Promise.all([
+                uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
+                uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
+              ]);
+
+              const pngStoragePath = `telegram-platform/${pngObjectName}`;
+              generatedImages.push({
+                url: toMediaUrl(pngStoragePath),
+                isGenerated: true,
+                prompt: svgResult.prompt,
+              });
+            }
+          }
+
+          // If no original images, generate one SVG based on post content
+          if (originalImages.length === 0) {
+            const svgResult = await generateSVG(post.content, svgStyleConfig, channel.language);
+            if (svgResult) {
+              const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
+              const timestamp = Date.now();
+              const pngObjectName = `svg-png/${channelId}/${timestamp}.png`;
+              const svgObjectName = `svg/${channelId}/${timestamp}.svg`;
+
+              await Promise.all([
+                uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
+                uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
+              ]);
+
+              const pngStoragePath = `telegram-platform/${pngObjectName}`;
+              generatedImages.push({
+                url: toMediaUrl(pngStoragePath),
+                isGenerated: true,
+                prompt: svgResult.prompt,
+              });
+            }
+          }
+        } else {
+          // Generate single SVG image
+          const svgResult = await generateSVG(post.content, svgStyleConfig, channel.language);
+          if (svgResult) {
+            const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
+            const timestamp = Date.now();
+            const pngObjectName = `svg-png/${channelId}/${timestamp}.png`;
+            const svgObjectName = `svg/${channelId}/${timestamp}.svg`;
+
+            await Promise.all([
+              uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
+              uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
+            ]);
+
+            const pngStoragePath = `telegram-platform/${pngObjectName}`;
+            generatedImages.push({
+              url: toMediaUrl(pngStoragePath),
+              isGenerated: true,
+              prompt: svgResult.prompt,
+            });
+          }
         }
 
         postsWithImages.push({
@@ -185,14 +256,122 @@ async function handler(
     } else {
       // Standard raster image processing
       for (const post of result.posts) {
-        const processedPost = await processGeneratedPost(
-          post,
-          sourceMap,
-          channelId,
-          channel.language,
-          autoRegenerate
-        );
-        postsWithImages.push(processedPost);
+        if (regenerateAllImages) {
+          // Always collect original images from source posts
+          const sourceIdsToUse =
+            post.imageDecision.strategy === "use_original" &&
+            post.imageDecision.originalImageSourceIds
+              ? post.imageDecision.originalImageSourceIds
+              : post.sourceIds;
+
+          // Collect images with both URL and storage path for processing
+          const imagesWithPaths: Array<{ url: string; storagePath: string; sourceId: string }> = [];
+          for (const sourceId of sourceIdsToUse) {
+            const source = sourceMap.get(sourceId);
+            if (source) {
+              const validPaths = source.mediaUrls.filter(
+                (path) => !path.startsWith("skipped:")
+              );
+              for (const storagePath of validPaths) {
+                imagesWithPaths.push({
+                  url: toMediaUrl(storagePath),
+                  storagePath,
+                  sourceId,
+                });
+              }
+            }
+          }
+
+          // Build originalImages for the response
+          const originalImages: GeneratedPost["images"] = imagesWithPaths.map((img) => ({
+            url: img.url,
+            isGenerated: false,
+            sourceId: img.sourceId,
+          }));
+
+          // For each original image: extract content, generate prompt, then generate raster image
+          const generatedImages: GeneratedPost["images"] = [];
+          let rasterIndex = 0;
+
+          for (const img of imagesWithPaths) {
+            // Convert storage path to base64 for AI analysis
+            const base64DataUrl = await storagePathToBase64(img.storagePath);
+            const imageContent = await extractImageContent(base64DataUrl, channel.language);
+
+            // Generate prompt from extracted content - skip if extraction failed
+            const validDescription = imageContent.description !== "Image content" ? imageContent.description : null;
+            const contentForPrompt = imageContent.textContent || validDescription;
+
+            // Skip this image if no content was extracted
+            if (!contentForPrompt) {
+              continue;
+            }
+
+            const imagePrompt = await generateImagePromptFromContent(contentForPrompt, channel.language);
+
+            if (imagePrompt) {
+              const imageData = await generateImage(imagePrompt);
+              if (imageData) {
+                const buffer = Buffer.from(
+                  imageData.replace(/^data:image\/\w+;base64,/, ""),
+                  "base64"
+                );
+                const timestamp = Date.now() + rasterIndex; // Ensure unique timestamps
+                rasterIndex++;
+                const objectName = `generated/${channelId}/${timestamp}.jpg`;
+                await uploadFile("telegram-platform", objectName, buffer, "image/jpeg");
+
+                const storagePath = `telegram-platform/${objectName}`;
+                generatedImages.push({
+                  url: toMediaUrl(storagePath),
+                  isGenerated: true,
+                  prompt: imagePrompt,
+                });
+              }
+            }
+          }
+
+          // If no original images, generate one based on post content
+          if (imagesWithPaths.length === 0) {
+            const imagePrompt = await generateImagePromptFromContent(post.content, channel.language);
+            if (imagePrompt) {
+              const imageData = await generateImage(imagePrompt);
+              if (imageData) {
+                const buffer = Buffer.from(
+                  imageData.replace(/^data:image\/\w+;base64,/, ""),
+                  "base64"
+                );
+                const timestamp = Date.now();
+                const objectName = `generated/${channelId}/${timestamp}.jpg`;
+                await uploadFile("telegram-platform", objectName, buffer, "image/jpeg");
+
+                const storagePath = `telegram-platform/${objectName}`;
+                generatedImages.push({
+                  url: toMediaUrl(storagePath),
+                  isGenerated: true,
+                  prompt: imagePrompt,
+                });
+              }
+            }
+          }
+
+          postsWithImages.push({
+            content: post.content,
+            angle: post.angle,
+            sourceIds: post.sourceIds,
+            imageDecision: post.imageDecision,
+            images: [...originalImages, ...generatedImages],
+          });
+        } else {
+          const processedPost = await processGeneratedPost(
+            post,
+            sourceMap,
+            channelId,
+            channel.language,
+            autoRegenerate
+          );
+          postsWithImages.push(processedPost);
+        }
       }
     }
 

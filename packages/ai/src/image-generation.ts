@@ -1,7 +1,10 @@
-import { getAIClient } from "./client";
+import { getAIClient, chat, type ChatMessage } from "./client";
 
 const IMAGE_GENERATION_MODEL =
   process.env.IMAGE_GENERATION_MODEL ?? "google/gemini-2.0-flash-exp:free";
+
+const IMAGE_PROMPT_MODEL =
+  process.env.IMAGE_PROMPT_MODEL ?? "google/gemini-2.0-flash-001";
 
 // Model for image editing (requires multimodal input/output support)
 const IMAGE_EDITING_MODEL =
@@ -225,5 +228,56 @@ export async function cleanImage(sourceImageUrl: string): Promise<string | null>
       throw new Error("Rate limit exceeded. Please wait a moment and try again.");
     }
     throw error;
+  }
+}
+
+/**
+ * Generate an image prompt from post content
+ * Analyzes the post text and creates a prompt suitable for image generation
+ * @param postContent - The text content of the post
+ * @param language - Language for the prompt (default: "en")
+ */
+export async function generateImagePromptFromContent(
+  postContent: string,
+  language: string = "en"
+): Promise<string | null> {
+  const languageInstruction =
+    language === "ru"
+      ? "Создай промпт на АНГЛИЙСКОМ языке (для генератора изображений)"
+      : "Create the prompt in English";
+
+  const systemPrompt = `You are a creative director who creates concise image generation prompts.
+Your task is to analyze social media post content and create a single, focused prompt that would generate an engaging, visually appealing image to accompany the post.
+
+Guidelines:
+- The prompt should be 1-3 sentences
+- Focus on the main theme or concept, not literal text
+- Describe visual elements, style, and mood
+- The image should be suitable for a Telegram channel
+- No text or watermarks in the generated image
+- ${languageInstruction}`;
+
+  const userPrompt = `Create an image generation prompt for this social media post:
+
+"${postContent}"
+
+Respond with ONLY the image prompt, nothing else.`;
+
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ];
+
+  try {
+    const response = await chat(messages, {
+      maxTokens: 200,
+      temperature: 0.7,
+      model: IMAGE_PROMPT_MODEL,
+    });
+
+    return response.trim();
+  } catch (error) {
+    console.error("Image prompt generation error:", error);
+    return null;
   }
 }

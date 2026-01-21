@@ -53,6 +53,7 @@ export default function GeneratePage() {
 
   const [postCount, setPostCount] = useState(3);
   const [autoRegenerate, setAutoRegenerate] = useState(false);
+  const [regenerateAllImages, setRegenerateAllImages] = useState(false);
   const [imageType, setImageType] = useState<ImageType>("raster");
 
   useEffect(() => {
@@ -109,6 +110,7 @@ export default function GeneratePage() {
           customPrompt: customPrompt || undefined,
           count: postCount,
           autoRegenerate,
+          regenerateAllImages,
           imageType, // Pass imageType to control raster vs SVG generation
         }),
       });
@@ -185,6 +187,8 @@ export default function GeneratePage() {
             onPostCountChange={setPostCount}
             autoRegenerate={autoRegenerate}
             onAutoRegenerateChange={setAutoRegenerate}
+            regenerateAllImages={regenerateAllImages}
+            onRegenerateAllImagesChange={setRegenerateAllImages}
             imageType={imageType}
             onImageTypeChange={setImageType}
             onGenerate={() => generateMutation.mutate()}
