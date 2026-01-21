@@ -7,6 +7,7 @@ interface RecentPostResponse {
   id: string;
   content: string;
   publishedAt: string;
+  mediaUrls: string[];
 }
 
 async function handler(
@@ -45,6 +46,9 @@ async function handler(
       id: true,
       content: true,
       publishedAt: true,
+      mediaFiles: {
+        select: { url: true },
+      },
     },
   });
 
@@ -56,6 +60,7 @@ async function handler(
         id: post.id,
         content: post.content,
         publishedAt: post.publishedAt!.toISOString(),
+        mediaUrls: post.mediaFiles.map((m) => m.url),
       })),
   });
 }

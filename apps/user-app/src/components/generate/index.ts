@@ -1,4 +1,5 @@
 export { AutoContextPreview } from "./auto-context-preview";
+export { ChannelContextItem } from "./channel-context-item";
 export { GenerationPromptInput } from "./generation-prompt-input";
 export { SourceSelectionPanel } from "./source-selection-panel";
 export { SourceItem } from "./source-item";

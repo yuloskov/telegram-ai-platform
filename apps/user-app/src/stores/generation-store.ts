@@ -37,6 +37,12 @@ interface Source {
 }
 
 
+interface ChannelPost {
+  id: string;
+  content: string;
+  publishedAt: string;
+}
+
 interface GenerationStore {
   // Source selections
   sourceSelections: Map<string, SourceSelection>;
@@ -45,6 +51,14 @@ interface GenerationStore {
   togglePost: (sourceId: string, postId: string) => void;
   initializeSources: (sources: Source[]) => void;
   getSelectedPostIds: () => string[];
+
+  // Channel context selection
+  channelContextEnabled: boolean;
+  channelContextSelectedPostIds: Set<string>;
+  initializeChannelContext: (posts: ChannelPost[]) => void;
+  toggleChannelContext: () => void;
+  toggleChannelContextPost: (postId: string) => void;
+  getSelectedChannelContextPostIds: () => string[];
 
   // Custom prompt
   customPrompt: string;
@@ -63,6 +77,8 @@ const DEFAULT_POST_COUNT = 5;
 
 export const useGenerationStore = create<GenerationStore>((set, get) => ({
   sourceSelections: new Map(),
+  channelContextEnabled: true,
+  channelContextSelectedPostIds: new Set(),
   customPrompt: "",
   generatedPosts: [],
   generatedSources: [],
@@ -83,6 +99,46 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     });
 
     set({ sourceSelections: selections });
+  },
+
+  initializeChannelContext: (posts: ChannelPost[]) => {
+    // Select all posts by default (up to 10)
+    const topPostIds = posts.slice(0, 10).map((p) => p.id);
+    set({
+      channelContextEnabled: topPostIds.length > 0,
+      channelContextSelectedPostIds: new Set(topPostIds),
+    });
+  },
+
+  toggleChannelContext: () => {
+    set((state) => {
+      const willBeEnabled = !state.channelContextEnabled;
+      return {
+        channelContextEnabled: willBeEnabled,
+        // Clear selections when disabling
+        channelContextSelectedPostIds: willBeEnabled
+          ? state.channelContextSelectedPostIds
+          : new Set(),
+      };
+    });
+  },
+
+  toggleChannelContextPost: (postId: string) => {
+    set((state) => {
+      const newSelectedIds = new Set(state.channelContextSelectedPostIds);
+      if (newSelectedIds.has(postId)) {
+        newSelectedIds.delete(postId);
+      } else {
+        newSelectedIds.add(postId);
+      }
+      return { channelContextSelectedPostIds: newSelectedIds };
+    });
+  },
+
+  getSelectedChannelContextPostIds: () => {
+    const { channelContextEnabled, channelContextSelectedPostIds } = get();
+    if (!channelContextEnabled) return [];
+    return Array.from(channelContextSelectedPostIds);
   },
 
   toggleSource: (sourceId: string) => {
@@ -166,6 +222,8 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   reset: () => {
     set({
       sourceSelections: new Map(),
+      channelContextEnabled: true,
+      channelContextSelectedPostIds: new Set(),
       customPrompt: "",
       generatedPosts: [],
       generatedSources: [],

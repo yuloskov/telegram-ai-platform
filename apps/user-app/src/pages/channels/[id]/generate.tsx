@@ -9,7 +9,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { useI18n } from "~/i18n";
 import { useGenerationStore } from "~/stores/generation-store";
 import {
-  AutoContextPreview,
+  ChannelContextItem,
   GenerationPromptInput,
   SourceSelectionPanel,
   GeneratedPostsGrid,
@@ -24,7 +24,7 @@ interface Source {
   scrapedContent: Array<{ id: string; text: string | null; views: number; scrapedAt: string; mediaUrls: string[] }>;
 }
 
-interface RecentPost { id: string; content: string; publishedAt: string; }
+interface RecentPost { id: string; content: string; publishedAt: string; mediaUrls: string[]; }
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -41,6 +41,13 @@ export default function GeneratePage() {
     setGenerationResult,
     initializeSources,
     getSelectedPostIds,
+    // Channel context
+    channelContextEnabled,
+    channelContextSelectedPostIds,
+    initializeChannelContext,
+    toggleChannelContext,
+    toggleChannelContextPost,
+    getSelectedChannelContextPostIds,
     reset,
   } = useGenerationStore();
 
@@ -82,15 +89,23 @@ export default function GeneratePage() {
     }
   }, [sources, initializeSources]);
 
+  useEffect(() => {
+    if (recentPosts) {
+      initializeChannelContext(recentPosts);
+    }
+  }, [recentPosts, initializeChannelContext]);
+
   const generateMutation = useMutation({
     mutationFn: async () => {
       const selectedIds = getSelectedPostIds();
+      const channelContextPostIds = getSelectedChannelContextPostIds();
       const res = await fetch("/api/generate/multi-with-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           channelId: id,
           scrapedContentIds: selectedIds,
+          channelContextPostIds: channelContextPostIds.length > 0 ? channelContextPostIds : undefined,
           customPrompt: customPrompt || undefined,
           count: postCount,
           autoRegenerate,
@@ -141,8 +156,12 @@ export default function GeneratePage() {
         />
 
         <div className="space-y-6">
-          <AutoContextPreview
+          <ChannelContextItem
             posts={recentPosts || []}
+            enabled={channelContextEnabled}
+            selectedPostIds={channelContextSelectedPostIds}
+            onToggle={toggleChannelContext}
+            onTogglePost={toggleChannelContextPost}
             isLoading={recentPostsLoading}
           />
 

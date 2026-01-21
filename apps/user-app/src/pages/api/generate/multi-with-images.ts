@@ -31,6 +31,7 @@ async function handler(
   const {
     channelId,
     scrapedContentIds,
+    channelContextPostIds,
     customPrompt,
     count = 3,
     autoRegenerate = false,
@@ -77,10 +78,13 @@ async function handler(
     return res.status(404).json({ success: false, error: "No scraped content found" });
   }
 
+  // Fetch channel context posts - either selected ones or recent published
   const recentPosts = await prisma.post.findMany({
-    where: { channelId, status: "published" },
+    where: channelContextPostIds?.length > 0
+      ? { id: { in: channelContextPostIds }, channelId, status: "published" }
+      : { channelId, status: "published" },
     orderBy: { publishedAt: "desc" },
-    take: 10,
+    take: channelContextPostIds?.length > 0 ? undefined : 10,
     select: { content: true },
   });
 
