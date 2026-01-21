@@ -123,6 +123,13 @@ export function GeneratedPostsGrid({
     });
   };
 
+  const handleNewImageGenerated = (newImage: PostImage) => {
+    // Add to available images
+    setEditPostImages((prev) => [...prev, newImage]);
+    // Auto-select the new image
+    setEditImages((prev) => [...prev, newImage]);
+  };
+
   if (posts.length === 0) {
     return null;
   }
@@ -194,6 +201,7 @@ export function GeneratedPostsGrid({
         selectedImages={editImages}
         onImagesChange={setEditImages}
         onImageRegenerated={handleImageRegenerated}
+        onNewImageGenerated={handleNewImageGenerated}
       />
     </div>
   );

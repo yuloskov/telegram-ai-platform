@@ -181,6 +181,11 @@ export const messages = {
       saving: "Saving...",
       saveAsDraft: "Save as Draft",
       attachedMedia: "{count} attached media",
+      generateMoreImages: "Generate More Images",
+      generateImagePromptPlaceholder: "Describe the image you want to generate...",
+      generateAsSvg: "Generate as SVG",
+      generateImage: "Generate",
+      svgPromptHint: "SVG will use your channel's color and style settings. Your prompt will be added to the style description.",
     },
 
     // Language
@@ -564,6 +569,11 @@ export const messages = {
       saving: "Сохранение...",
       saveAsDraft: "Сохранить как черновик",
       attachedMedia: "{count} прикреплённых медиа",
+      generateMoreImages: "Сгенерировать ещё изображений",
+      generateImagePromptPlaceholder: "Опишите изображение, которое хотите сгенерировать...",
+      generateAsSvg: "Сгенерировать как SVG",
+      generateImage: "Сгенерировать",
+      svgPromptHint: "SVG будет использовать настройки цвета и стиля вашего канала. Ваш промпт будет добавлен к описанию стиля.",
     },
 
     // Language

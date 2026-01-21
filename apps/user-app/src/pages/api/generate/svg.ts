@@ -22,7 +22,7 @@ async function handler(
   }
 
   const { user } = req;
-  const { channelId, postContent, previousSvg, feedback } = req.body;
+  const { channelId, postContent, previousSvg, feedback, additionalStylePrompt } = req.body;
 
   if (!channelId) {
     return res.status(400).json({ success: false, error: "Channel ID is required" });
@@ -42,8 +42,16 @@ async function handler(
   }
 
   // Build SVG style config from channel settings
+  // Concatenate channel's svgStylePrompt with additionalStylePrompt if provided
+  let combinedStylePrompt = channel.svgStylePrompt ?? "";
+  if (additionalStylePrompt) {
+    combinedStylePrompt = combinedStylePrompt
+      ? `${combinedStylePrompt}. ${additionalStylePrompt}`
+      : additionalStylePrompt;
+  }
+
   const styleConfig: SVGStyleConfig = {
-    stylePrompt: channel.svgStylePrompt ?? undefined,
+    stylePrompt: combinedStylePrompt || undefined,
     themeColor: channel.svgThemeColor,
     textColor: channel.svgTextColor,
     backgroundStyle: channel.svgBackgroundStyle as SVGStyleConfig["backgroundStyle"],

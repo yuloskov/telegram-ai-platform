@@ -13,6 +13,8 @@ import {
 import { MessagePreview } from "~/components/telegram/message-bubble";
 import { SourcePostCard } from "~/components/generate/source-post-card";
 import { PostImageSelector } from "~/components/generate/post-image-selector";
+import { GenerateMoreImages } from "~/components/generate/generate-more-images";
+import { useGenerateNewImage } from "~/hooks/useImageGeneration";
 import { useI18n } from "~/i18n";
 import { getMediaSrc, getValidMediaUrls } from "~/lib/media";
 import type { PostImage, SourceContent, MediaFile } from "~/types";
@@ -33,6 +35,7 @@ interface PostEditorModalProps {
   selectedImages?: PostImage[];
   onImagesChange?: (images: PostImage[]) => void;
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
+  onNewImageGenerated?: (newImage: PostImage) => void;
   existingMedia?: MediaFile[];
 }
 
@@ -52,11 +55,23 @@ export function PostEditorModal({
   selectedImages,
   onImagesChange,
   onImageRegenerated,
+  onNewImageGenerated,
   existingMedia,
 }: PostEditorModalProps) {
   const { t } = useI18n();
   const [showSources, setShowSources] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const generateNewImageMutation = useGenerateNewImage(onNewImageGenerated);
+
+  const handleGenerateImage = (prompt: string, useSvg: boolean) => {
+    if (!channelId) return;
+    generateNewImageMutation.mutate({
+      channelId,
+      prompt,
+      useSvg,
+    });
+  };
 
   const validSources = sources?.filter((s) => s.text || s.media.length > 0) ?? [];
   const hasImages = (postImages?.length ?? 0) > 0;
@@ -143,6 +158,17 @@ export function PostEditorModal({
               channelId={channelId}
               onImageRegenerated={onImageRegenerated}
               onPreviewStateChange={setIsPreviewOpen}
+            />
+          </div>
+        )}
+
+        {/* Generate more images */}
+        {channelId && onNewImageGenerated && (
+          <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
+            <GenerateMoreImages
+              onGenerate={handleGenerateImage}
+              isGenerating={generateNewImageMutation.isPending}
+              disabled={isSaving}
             />
           </div>
         )}

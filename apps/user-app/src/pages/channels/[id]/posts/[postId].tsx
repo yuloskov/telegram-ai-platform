@@ -14,7 +14,7 @@ import { PostActions } from "~/components/posts/post-actions";
 import { ContentDetailCard } from "~/components/content/content-detail-card";
 import { PostMetrics } from "~/components/content/content-metrics";
 import { useI18n } from "~/i18n";
-import type { PostStatus } from "~/types";
+import type { PostStatus, PostImage } from "~/types";
 import type { ChipProps } from "~/components/content/content-list-item";
 
 export default function PostDetailPage() {
@@ -27,6 +27,7 @@ export default function PostDetailPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editContent, setEditContent] = useState("");
+  const [generatedImages, setGeneratedImages] = useState<PostImage[]>([]);
 
   const { data: channel, isLoading: channelLoading } = useChannel(channelId, {
     enabled: !authLoading,
@@ -46,8 +47,18 @@ export default function PostDetailPage() {
   const handleEditClick = () => {
     if (post) {
       setEditContent(post.content);
+      setGeneratedImages([]);
       setEditModalOpen(true);
     }
+  };
+
+  const handleNewImageGenerated = (newImage: PostImage) => {
+    setGeneratedImages((prev) => [...prev, newImage]);
+  };
+
+  const handleCloseEditor = () => {
+    setEditModalOpen(false);
+    setGeneratedImages([]);
   };
 
   const isLoading = authLoading || channelLoading || postLoading;
@@ -149,15 +160,17 @@ export default function PostDetailPage() {
 
       <PostEditorModal
         open={editModalOpen}
-        onOpenChange={setEditModalOpen}
+        onOpenChange={(open) => !open && handleCloseEditor()}
         content={editContent}
         onContentChange={setEditContent}
         onSave={() => updateMutation.mutate(editContent)}
-        onCancel={() => setEditModalOpen(false)}
+        onCancel={handleCloseEditor}
         isSaving={updateMutation.isPending}
         channelName={channel.title}
+        channelId={channelId as string}
         isGenerated={false}
         existingMedia={post.mediaFiles}
+        onNewImageGenerated={handleNewImageGenerated}
       />
 
       <ConfirmModal

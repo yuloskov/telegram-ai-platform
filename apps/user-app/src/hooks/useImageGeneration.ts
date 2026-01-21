@@ -30,6 +30,19 @@ interface SVGRegenerateParams {
   sourceStoragePath?: string;
 }
 
+interface GenerateNewImageParams {
+  channelId: string;
+  prompt: string;
+  useSvg: boolean;
+}
+
+interface SVGResponse {
+  svg: string;
+  svgUrl: string;
+  pngUrl: string;
+  prompt: string;
+}
+
 /**
  * Regenerate an image using AI.
  */
@@ -167,6 +180,70 @@ export function useRegenerateWithSVG(
     },
     onSuccess: (result) => {
       onSuccess?.(result.oldUrl, result.newImage);
+    },
+  });
+}
+
+/**
+ * Generate a new image from a custom prompt.
+ * Supports both regular images and SVG.
+ */
+export function useGenerateNewImage(
+  onSuccess?: (newImage: PostImage) => void
+) {
+  return useMutation({
+    mutationFn: async (params: GenerateNewImageParams) => {
+      if (params.useSvg) {
+        // Generate SVG - use only the user's prompt (not post content)
+        // The prompt is used as the content to visualize
+        // additionalStylePrompt is concatenated with channel's style settings
+        const response = await apiRequest<SVGResponse>("/api/generate/svg", {
+          method: "POST",
+          body: {
+            channelId: params.channelId,
+            postContent: params.prompt,
+            additionalStylePrompt: params.prompt,
+          },
+        });
+
+        if (!response.success || !response.data) {
+          throw new Error(response.error || "Failed to generate SVG");
+        }
+
+        const newImage: PostImage = {
+          url: response.data.pngUrl,
+          isGenerated: true,
+          prompt: response.data.prompt,
+          svgUrl: response.data.svgUrl,
+          isSvg: true,
+        };
+
+        return newImage;
+      } else {
+        // Generate regular image
+        const response = await apiRequest<ImageResponse>("/api/generate/image", {
+          method: "POST",
+          body: {
+            channelId: params.channelId,
+            prompt: params.prompt,
+          },
+        });
+
+        if (!response.success || !response.data) {
+          throw new Error(response.error || "Failed to generate image");
+        }
+
+        const newImage: PostImage = {
+          url: response.data.url,
+          isGenerated: true,
+          prompt: response.data.prompt,
+        };
+
+        return newImage;
+      }
+    },
+    onSuccess: (result) => {
+      onSuccess?.(result);
     },
   });
 }

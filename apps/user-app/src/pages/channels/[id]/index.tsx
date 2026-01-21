@@ -16,7 +16,7 @@ import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { Sparkles, Plus, Settings, Lightbulb, ArrowRight } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { useI18n } from "~/i18n";
-import type { PostListItem } from "~/types";
+import type { PostListItem, PostImage } from "~/types";
 
 export default function ChannelDetailPage() {
   const router = useRouter();
@@ -27,6 +27,7 @@ export default function ChannelDetailPage() {
 
   const [showPostEditor, setShowPostEditor] = useState(false);
   const [postContent, setPostContent] = useState("");
+  const [generatedImages, setGeneratedImages] = useState<PostImage[]>([]);
 
   // Use shared channel hook
   const { data: channel, isLoading: channelLoading } = useChannel(id, {
@@ -138,6 +139,11 @@ export default function ChannelDetailPage() {
   const handleCancelEditor = () => {
     setShowPostEditor(false);
     setPostContent("");
+    setGeneratedImages([]);
+  };
+
+  const handleNewImageGenerated = (newImage: PostImage) => {
+    setGeneratedImages((prev) => [...prev, newImage]);
   };
 
   return (
@@ -205,14 +211,16 @@ export default function ChannelDetailPage() {
 
         <PostEditorModal
           open={showPostEditor}
-          onOpenChange={setShowPostEditor}
+          onOpenChange={(open) => !open && handleCancelEditor()}
           content={postContent}
           onContentChange={setPostContent}
           onSave={() => createPostMutation.mutate(postContent)}
           onCancel={handleCancelEditor}
           isSaving={createPostMutation.isPending}
           channelName={channel.title}
+          channelId={id as string}
           isGenerated={false}
+          onNewImageGenerated={handleNewImageGenerated}
         />
 
         {/* Posts List */}
