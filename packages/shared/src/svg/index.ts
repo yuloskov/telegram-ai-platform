@@ -27,6 +27,10 @@ export async function svgToPng(
       value: width,
     },
     background,
+    font: {
+      loadSystemFonts: true,
+      defaultFontFamily: "Arial",
+    },
   });
 
   const pngData = resvg.render();

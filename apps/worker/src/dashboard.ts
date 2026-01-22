@@ -6,7 +6,7 @@ import express from "express";
 import type { Redis } from "ioredis";
 import { QUEUE_NAMES } from "@repo/shared/queues";
 
-const DASHBOARD_PORT = process.env.BULL_BOARD_PORT ?? 3001;
+const DASHBOARD_PORT = process.env.BULL_BOARD_PORT ?? 3003;
 
 export function startDashboard(connection: Redis) {
   // Create Queue instances for Bull Board (read-only)
