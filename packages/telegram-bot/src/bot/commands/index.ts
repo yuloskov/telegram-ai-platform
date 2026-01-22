@@ -5,3 +5,4 @@ export { handleStatus } from "./status";
 export { handleChannels } from "./channels";
 export { handlePending, handleReviewCallback } from "./pending";
 export { handleAuthCode, handleLogin } from "./auth";
+export { handleReviewEditCallback, handleEditTextInput } from "./review-edit";

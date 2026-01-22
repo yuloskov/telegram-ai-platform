@@ -11,6 +11,8 @@ import {
   handleReviewCallback,
   handleAuthCode,
   handleLogin,
+  handleReviewEditCallback,
+  handleEditTextInput,
 } from "./commands/index";
 
 export function setupBot(bot: Bot<BotContext>): void {
@@ -26,8 +28,16 @@ export function setupBot(bot: Bot<BotContext>): void {
   // Callback queries
   bot.callbackQuery(/^lang:/, handleLangCallback);
   bot.callbackQuery(/^review:/, handleReviewCallback);
+  bot.callbackQuery(/^review_edit:/, handleReviewEditCallback);
 
-  // Text messages (for auth codes)
+  // Text messages - check for review edit mode first, then auth codes
+  bot.on("message:text", async (ctx, next) => {
+    if (ctx.session.reviewEditState?.awaitingInput === "text_edit") {
+      await handleEditTextInput(ctx);
+      return;
+    }
+    await next();
+  });
   bot.on("message:text", handleAuthCode);
 
   // Error handler

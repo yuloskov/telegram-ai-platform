@@ -2,6 +2,7 @@ import { InlineKeyboard } from "grammy";
 import type { BotContext } from "../index";
 import { t, getReviewButtons, type Language } from "../../i18n/index";
 import { prisma } from "@repo/database";
+import { enterReviewEditMode } from "./review-edit";
 
 export async function handlePending(ctx: BotContext): Promise<void> {
   const lang = (ctx.session.language ?? "en") as Language;
@@ -142,21 +143,14 @@ async function handleReject(ctx: BotContext, postId: string, lang: Language): Pr
 }
 
 async function handleEdit(ctx: BotContext, postId: string, lang: Language): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_USER_APP_URL ?? "http://localhost:3000";
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    include: { channel: true },
-  });
-
-  if (!post) {
-    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred") });
-    return;
-  }
-
-  const editUrl = `${appUrl}/channels/${post.channelId}/posts/${postId}`;
-
+  console.log(`[v2] handleEdit called for postId: ${postId}`);
   await ctx.answerCallbackQuery();
-  await ctx.reply(`Edit your post here: ${editUrl}`);
+  try {
+    await enterReviewEditMode(ctx, postId);
+  } catch (error) {
+    console.error(`[v2] enterReviewEditMode error:`, error);
+    await ctx.reply(t(lang, "errorOccurred"));
+  }
 }
 
 async function handleSchedule(ctx: BotContext, postId: string, lang: Language): Promise<void> {

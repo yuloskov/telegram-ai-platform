@@ -13,7 +13,8 @@
   "dependencies": {
     "@repo/database": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@repo/telegram-bot": "workspace:*"
+    "@repo/telegram-bot": "workspace:*",
+    "@repo/ai": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

@@ -29,7 +29,7 @@ async function updateJobStatus(
     } else if (status === "completed") {
       await prisma.jobLog.update({
         where: { id: jobLog.id },
-        data: { status, completedAt: new Date(), result: extra?.result ?? null },
+        data: { status, completedAt: new Date(), result: extra?.result ?? undefined },
       });
     } else if (status === "failed") {
       await prisma.jobLog.update({

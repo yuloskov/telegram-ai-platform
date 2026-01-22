@@ -9,13 +9,14 @@ import {
   type SVGStyleConfig,
 } from "@repo/ai";
 import { svgToPng } from "@repo/shared/svg";
-import { uploadFile } from "@repo/shared/storage";
+import { uploadFile, getFileBuffer } from "@repo/shared/storage";
 import {
   QUEUE_NAMES,
   PUBLISHING_JOB_OPTIONS,
   type ContentPlanJobPayload,
   type PublishingJobPayload,
 } from "@repo/shared/queues";
+import { sendPendingReviewNotification } from "@repo/telegram-bot/bot";
 
 const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
 
@@ -227,6 +228,56 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
         where: { id: { in: generatedPost.sourceIds } },
         data: { usedForGeneration: true },
       });
+    }
+
+    // If review_first, create PendingReview and send notification
+    if (plan.publishMode === "review_first" && channel.user.telegramId) {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+
+      // Fetch image buffer if there's media
+      let imageBuffer: Buffer | undefined;
+      console.log(`[v2] mediaUrls for notification:`, mediaUrls);
+      if (mediaUrls.length > 0) {
+        try {
+          // Parse the URL format: /api/media/{bucket}/{objectName}
+          const mediaUrl = mediaUrls[0]!;
+          console.log(`Parsing mediaUrl: ${mediaUrl}`);
+          const match = mediaUrl.match(/^\/api\/media\/([^/]+)\/(.+)$/);
+          console.log(`Regex match result:`, match);
+          if (match) {
+            const [, bucket, objectName] = match;
+            console.log(`Fetching image from bucket: ${bucket}, objectName: ${objectName}`);
+            imageBuffer = await getFileBuffer(bucket!, objectName!);
+            console.log(`Image buffer size: ${imageBuffer.length} bytes`);
+          } else {
+            console.error(`Failed to parse mediaUrl: ${mediaUrl}`);
+          }
+        } catch (err) {
+          console.error("Failed to fetch image for notification:", err);
+        }
+      } else {
+        console.log(`No media URLs available for notification`);
+      }
+
+      const messageId = await sendPendingReviewNotification(
+        channel.user.telegramId.toString(),
+        post.id,
+        channel.title,
+        generatedPost.content,
+        (channelContext.language as "en" | "ru") ?? "en",
+        imageBuffer
+      );
+
+      await prisma.pendingReview.create({
+        data: {
+          postId: post.id,
+          telegramMessageId: BigInt(messageId),
+          expiresAt,
+        },
+      });
+
+      console.log(`Sent pending review notification for post ${post.id}`);
     }
 
     // If auto-publish, queue the publishing job

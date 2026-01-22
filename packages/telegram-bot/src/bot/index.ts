@@ -1,9 +1,20 @@
 import { Bot, Context, session, InputFile } from "grammy";
 import type { SessionFlavor } from "grammy";
 
+export interface ReviewEditState {
+  postId: string;
+  channelId: string;
+  contentPlanId?: string;
+  originalContent: string;
+  currentContent: string;
+  imageUrl?: string;
+  awaitingInput: "text_edit" | "image_feedback" | null;
+}
+
 interface SessionData {
   language: string;
   pendingAuthCode?: string;
+  reviewEditState?: ReviewEditState;
 }
 
 export type BotContext = Context & SessionFlavor<SessionData>;
@@ -183,6 +194,87 @@ export async function getChannelInfo(channelId: number | string): Promise<{
   } catch {
     return null;
   }
+}
+
+/**
+ * Send a pending review notification to a user with action buttons
+ * Returns the message ID for storing in PendingReview
+ */
+export async function sendPendingReviewNotification(
+  telegramId: string | number,
+  postId: string,
+  channelTitle: string,
+  content: string,
+  language: "en" | "ru" = "en",
+  imageBuffer?: Buffer
+): Promise<number> {
+  const bot = getBot();
+
+  const labels =
+    language === "ru"
+      ? {
+          title: "Новый пост для проверки",
+          approve: "Одобрить",
+          reject: "Отклонить",
+          edit: "Редактировать",
+          schedule: "Запланировать",
+        }
+      : {
+          title: "New post for review",
+          approve: "Approve",
+          reject: "Reject",
+          edit: "Edit",
+          schedule: "Schedule",
+        };
+
+  const keyboard = {
+    inline_keyboard: [
+      [
+        { text: labels.approve, callback_data: `review:approve:${postId}` },
+        { text: labels.reject, callback_data: `review:reject:${postId}` },
+      ],
+      [
+        { text: labels.edit, callback_data: `review:edit:${postId}` },
+        { text: labels.schedule, callback_data: `review:schedule:${postId}` },
+      ],
+    ],
+  };
+
+  console.log(`[v2] sendPendingReviewNotification called with imageBuffer: ${imageBuffer ? `${imageBuffer.length} bytes` : 'undefined'}, content length: ${content.length}`);
+
+  // If there's an image, send as photo with caption
+  if (imageBuffer) {
+    // Photo captions are limited to 1024 chars
+    const header = `<b>${labels.title}</b>\n\n<b>${channelTitle}</b>\n\n`;
+    const maxContentLength = 1024 - header.length - 10; // Reserve space for "..."
+    const truncatedContent = content.length > maxContentLength
+      ? `${content.substring(0, maxContentLength)}...`
+      : content;
+    const caption = `${header}${truncatedContent}`;
+
+    const result = await bot.api.sendPhoto(telegramId, new InputFile(imageBuffer), {
+      caption,
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+
+    return result.message_id;
+  }
+
+  // No image - send as text message (up to 4096 chars)
+  const header = `<b>${labels.title}</b>\n\n<b>${channelTitle}</b>\n\n`;
+  const maxContentLength = 4096 - header.length - 10;
+  const truncatedContent = content.length > maxContentLength
+    ? `${content.substring(0, maxContentLength)}...`
+    : content;
+  const message = `${header}${truncatedContent}`;
+
+  const result = await bot.api.sendMessage(telegramId, message, {
+    parse_mode: "HTML",
+    reply_markup: keyboard,
+  });
+
+  return result.message_id;
 }
 
 export { setupBot, setCommands } from "./setup";
