@@ -29,12 +29,12 @@ export async function apiRequest<T>(
 }
 
 /**
- * Make an API mutation (POST, PATCH, DELETE) with error handling.
+ * Make an API mutation (POST, PUT, PATCH, DELETE) with error handling.
  * Throws an error if the response is not successful.
  */
 export async function apiMutate<T, P = unknown>(
   url: string,
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   payload?: P
 ): Promise<T> {
   const response = await apiRequest<T>(url, {

@@ -86,6 +86,7 @@ model Channel {
   posts           Post[]
   contentSources  ContentSource[]
   autoPostConfig  AutoPostConfig?
+  contentPlans    ContentPlan[]
 
   @@index([userId])
   @@index([telegramId])
@@ -110,8 +111,9 @@ model ContentSource {
   scrapeInterval    String?  // "hourly", "daily", "weekly"
   scrapeJobId       String?  // BullMQ job ID for the repeatable job
 
-  scrapedContent   ScrapedContent[]
-  scrapeLogs       ScrapeLog[]
+  scrapedContent      ScrapedContent[]
+  scrapeLogs          ScrapeLog[]
+  contentPlanSources  ContentPlanSource[]
 
   @@unique([channelId, telegramUsername])
   @@index([channelId])
@@ -198,6 +200,8 @@ model Post {
   id                 String             @id @default(cuid())
   channelId          String
   channel            Channel            @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  contentPlanId      String?
+  contentPlan        ContentPlan?       @relation(fields: [contentPlanId], references: [id], onDelete: SetNull)
   content            String
   status             PostStatus         @default(draft)
   generationType     PostGenerationType @default(manual)
@@ -215,6 +219,7 @@ model Post {
   pendingReview      PendingReview?
 
   @@index([channelId])
+  @@index([contentPlanId])
   @@index([status])
   @@index([scheduledAt])
 }
@@ -300,6 +305,72 @@ model AutoPostLog {
 
   @@index([configId])
   @@index([createdAt])
+}
+
+// ============================================
+// Content Plans
+// ============================================
+
+enum ContentPlanPublishMode {
+  auto_publish
+  review_first
+  draft_only
+}
+
+model ContentPlan {
+  id                String                  @id @default(cuid())
+  channelId         String
+  channel           Channel                 @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  name              String
+  promptTemplate    String
+  isEnabled         Boolean                 @default(true)
+
+  // Schedule (cron pattern)
+  cronSchedule      String                  @default("0 9 * * *")
+  timezone          String                  @default("UTC")
+
+  // Publishing
+  publishMode       ContentPlanPublishMode  @default(review_first)
+
+  // Image generation
+  imageEnabled      Boolean                 @default(true)
+  imageType         String                  @default("svg")
+
+  // SVG generation settings
+  svgThemeColor     String                  @default("#3B82F6")
+  svgBackgroundStyle String                 @default("gradient")
+  svgFontStyle      String                  @default("modern")
+  svgStylePrompt    String?
+
+  // Tone/Style overrides (null = use channel defaults)
+  toneOverride      String?
+  languageOverride  String?
+
+  // Memory settings
+  lookbackDays      Int                     @default(30)
+  lookbackPostCount Int                     @default(50)
+  topicsToAvoid     String[]                @default([])
+
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  contentSources    ContentPlanSource[]
+  posts             Post[]
+
+  @@index([channelId])
+  @@index([isEnabled])
+}
+
+model ContentPlanSource {
+  id              String        @id @default(cuid())
+  contentPlanId   String
+  contentPlan     ContentPlan   @relation(fields: [contentPlanId], references: [id], onDelete: Cascade)
+  contentSourceId String
+  contentSource   ContentSource @relation(fields: [contentSourceId], references: [id], onDelete: Cascade)
+
+  @@unique([contentPlanId, contentSourceId])
+  @@index([contentPlanId])
 }
 
 // ============================================

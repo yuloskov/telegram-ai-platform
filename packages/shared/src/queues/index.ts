@@ -4,6 +4,7 @@ export const QUEUE_NAMES = {
   NOTIFICATIONS: "notifications",
   SCHEDULED_POSTS: "scheduled-posts",
   AUTO_GENERATION: "auto-generation",
+  CONTENT_PLAN: "content-plan",
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -39,6 +40,10 @@ export interface AutoGenerationJobPayload {
   sourceMode: "research" | "scraped";
   topic?: string;
   scrapedContentIds?: string[];
+}
+
+export interface ContentPlanJobPayload {
+  contentPlanId: string;
 }
 
 // Job options

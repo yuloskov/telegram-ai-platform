@@ -5,8 +5,11 @@ import { prisma } from "@repo/database";
 import { handlePublishJob } from "./jobs/publish.js";
 import { handleScrapeJob } from "./jobs/scrape.js";
 import { handleNotificationJob } from "./jobs/notify.js";
+import { handleContentPlanJob } from "./jobs/content-plan.js";
 import { getAutoScrapeScheduler } from "./services/auto-scrape-scheduler.js";
 import { getPostScheduler } from "./services/post-scheduler.js";
+import { getContentPlanScheduler } from "./services/content-plan-scheduler.js";
+import { startDashboard } from "./dashboard.js";
 
 // Helper to update job status in database
 async function updateJobStatus(
@@ -135,6 +138,27 @@ scheduledPostsWorker.on("failed", (job, err) => {
   console.error(`Scheduled post job ${job?.id} failed:`, err.message);
 });
 
+// Content plan worker
+const contentPlanWorker = new Worker(
+  QUEUE_NAMES.CONTENT_PLAN,
+  async (job) => {
+    console.log(`Processing content plan job: ${job.id}`);
+    return handleContentPlanJob(job.data);
+  },
+  {
+    connection,
+    concurrency: 2,
+  }
+);
+
+contentPlanWorker.on("completed", (job) => {
+  console.log(`Content plan job ${job.id} completed`);
+});
+
+contentPlanWorker.on("failed", (job, err) => {
+  console.error(`Content plan job ${job?.id} failed:`, err.message);
+});
+
 console.log("Worker started successfully!");
 console.log(`Listening on queues: ${Object.values(QUEUE_NAMES).join(", ")}`);
 
@@ -148,6 +172,15 @@ autoScrapeScheduler.initialize().catch((err) => {
 const postScheduler = getPostScheduler(REDIS_URL);
 postScheduler.start();
 
+// Initialize content plan scheduler
+const contentPlanScheduler = getContentPlanScheduler(REDIS_URL);
+contentPlanScheduler.initialize().catch((err) => {
+  console.error("Failed to initialize content plan scheduler:", err);
+});
+
+// Start Bull Board dashboard
+const dashboard = startDashboard(connection);
+
 // Graceful shutdown
 const shutdown = async () => {
   console.log("Shutting down workers...");
@@ -156,8 +189,11 @@ const shutdown = async () => {
     scrapingWorker.close(),
     notificationsWorker.close(),
     scheduledPostsWorker.close(),
+    contentPlanWorker.close(),
     autoScrapeScheduler.close(),
     postScheduler.close(),
+    contentPlanScheduler.close(),
+    dashboard.close(),
   ]);
   await connection.quit();
   console.log("Workers shut down successfully");
