@@ -101,6 +101,9 @@ export async function handleReviewCallback(ctx: BotContext): Promise<void> {
 }
 
 async function handleApprove(ctx: BotContext, postId: string, lang: Language): Promise<void> {
+  // Clear any pending edit state
+  ctx.session.reviewEditState = undefined;
+
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: { channel: true },
@@ -123,12 +126,13 @@ async function handleApprove(ctx: BotContext, postId: string, lang: Language): P
   });
 
   await ctx.answerCallbackQuery({ text: t(lang, "approved") });
-  await ctx.editMessageText(`${t(lang, "approved")}\n\n${post.content}`, {
-    parse_mode: "HTML",
-  });
+  await ctx.reply(`✅ ${t(lang, "approved")}`, { parse_mode: "HTML" });
 }
 
 async function handleReject(ctx: BotContext, postId: string, lang: Language): Promise<void> {
+  // Clear any pending edit state
+  ctx.session.reviewEditState = undefined;
+
   await prisma.post.update({
     where: { id: postId },
     data: { status: "draft" },
@@ -139,7 +143,7 @@ async function handleReject(ctx: BotContext, postId: string, lang: Language): Pr
   });
 
   await ctx.answerCallbackQuery({ text: t(lang, "rejected") });
-  await ctx.editMessageText(t(lang, "rejected"), { parse_mode: "HTML" });
+  await ctx.reply(`❌ ${t(lang, "rejected")}`, { parse_mode: "HTML" });
 }
 
 async function handleEdit(ctx: BotContext, postId: string, lang: Language): Promise<void> {
@@ -154,7 +158,9 @@ async function handleEdit(ctx: BotContext, postId: string, lang: Language): Prom
 }
 
 async function handleSchedule(ctx: BotContext, postId: string, lang: Language): Promise<void> {
-  // For now, just acknowledge - full scheduling UI would require more interaction
+  // Clear any pending edit state
+  ctx.session.reviewEditState = undefined;
+
   await ctx.answerCallbackQuery({ text: t(lang, "scheduled") });
 
   // Update to scheduled with default time (1 hour from now)
@@ -173,8 +179,8 @@ async function handleSchedule(ctx: BotContext, postId: string, lang: Language): 
     where: { postId },
   });
 
-  await ctx.editMessageText(
-    `${t(lang, "scheduled")}\n\nScheduled for: ${scheduledAt.toISOString()}`,
+  await ctx.reply(
+    `📅 ${t(lang, "scheduled")}\n\nScheduled for: ${scheduledAt.toISOString()}`,
     { parse_mode: "HTML" }
   );
 }
