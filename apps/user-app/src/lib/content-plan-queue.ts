@@ -57,13 +57,12 @@ export async function removeContentPlanJob(planId: string): Promise<void> {
 
   try {
     const repeatableJobs = await q.getRepeatableJobs();
-    const existingJob = repeatableJobs.find(
-      (j) => j.id === jobKey || j.key.includes(jobKey)
-    );
+    // Find ALL jobs matching this plan (there might be duplicates with different cron patterns)
+    const matchingJobs = repeatableJobs.filter((j) => j.name === jobKey);
 
-    if (existingJob) {
-      await q.removeRepeatableByKey(existingJob.key);
-      console.log(`Removed content plan job for ${planId}`);
+    for (const job of matchingJobs) {
+      await q.removeRepeatableByKey(job.key);
+      console.log(`Removed content plan job for ${planId} (key: ${job.key})`);
     }
   } catch (error) {
     console.error(`Failed to remove job for plan ${planId}:`, error);

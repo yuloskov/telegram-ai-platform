@@ -69,13 +69,13 @@ export class ContentPlanScheduler {
     const jobKey = `content-plan-${planId}`;
 
     try {
-      // Get all repeatable jobs and find the one for this plan
+      // Get all repeatable jobs and find ALL matching this plan (may have duplicates)
       const repeatableJobs = await this.queue.getRepeatableJobs();
-      const existingJob = repeatableJobs.find((j) => j.id === jobKey || j.key.includes(jobKey));
+      const matchingJobs = repeatableJobs.filter((j) => j.name === jobKey);
 
-      if (existingJob) {
-        await this.queue.removeRepeatableByKey(existingJob.key);
-        console.log(`Removed content plan job for ${planId}`);
+      for (const job of matchingJobs) {
+        await this.queue.removeRepeatableByKey(job.key);
+        console.log(`Removed content plan job for ${planId} (key: ${job.key})`);
       }
     } catch (error) {
       console.error(`Failed to remove job for plan ${planId}:`, error);

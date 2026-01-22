@@ -1,8 +1,19 @@
 import { InlineKeyboard } from "grammy";
+import { Queue } from "bullmq";
+import Redis from "ioredis";
 import type { BotContext } from "../index";
 import { t, getReviewButtons, type Language } from "../../i18n/index";
 import { prisma } from "@repo/database";
+import { QUEUE_NAMES, PUBLISHING_JOB_OPTIONS, type PublishingJobPayload } from "@repo/shared/queues";
 import { enterReviewEditMode } from "./review-edit";
+
+const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
+  maxRetriesPerRequest: null,
+});
+
+const publishQueue = new Queue<PublishingJobPayload>(QUEUE_NAMES.PUBLISHING, {
+  connection: redis,
+});
 
 export async function handlePending(ctx: BotContext): Promise<void> {
   const lang = (ctx.session.language ?? "en") as Language;
@@ -101,6 +112,9 @@ export async function handleReviewCallback(ctx: BotContext): Promise<void> {
 }
 
 async function handleApprove(ctx: BotContext, postId: string, lang: Language): Promise<void> {
+  // Answer callback immediately to avoid timeout
+  await ctx.answerCallbackQuery({ text: t(lang, "approved") });
+
   // Clear any pending edit state
   ctx.session.reviewEditState = undefined;
 
@@ -110,11 +124,11 @@ async function handleApprove(ctx: BotContext, postId: string, lang: Language): P
   });
 
   if (!post) {
-    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred") });
+    await ctx.reply(t(lang, "errorOccurred"));
     return;
   }
 
-  // Update post status to publishing (worker will handle actual publishing)
+  // Update post status to publishing
   await prisma.post.update({
     where: { id: postId },
     data: { status: "publishing" },
@@ -125,11 +139,23 @@ async function handleApprove(ctx: BotContext, postId: string, lang: Language): P
     where: { postId },
   });
 
-  await ctx.answerCallbackQuery({ text: t(lang, "approved") });
+  // Queue publishing job
+  await publishQueue.add(
+    "publish",
+    {
+      postId,
+      channelTelegramId: post.channel.telegramId.toString(),
+    },
+    PUBLISHING_JOB_OPTIONS
+  );
+
   await ctx.reply(`✅ ${t(lang, "approved")}`, { parse_mode: "HTML" });
 }
 
 async function handleReject(ctx: BotContext, postId: string, lang: Language): Promise<void> {
+  // Answer callback immediately to avoid timeout
+  await ctx.answerCallbackQuery({ text: t(lang, "rejected") });
+
   // Clear any pending edit state
   ctx.session.reviewEditState = undefined;
 
@@ -142,7 +168,6 @@ async function handleReject(ctx: BotContext, postId: string, lang: Language): Pr
     where: { postId },
   });
 
-  await ctx.answerCallbackQuery({ text: t(lang, "rejected") });
   await ctx.reply(`❌ ${t(lang, "rejected")}`, { parse_mode: "HTML" });
 }
 
@@ -158,10 +183,11 @@ async function handleEdit(ctx: BotContext, postId: string, lang: Language): Prom
 }
 
 async function handleSchedule(ctx: BotContext, postId: string, lang: Language): Promise<void> {
+  // Answer callback immediately to avoid timeout
+  await ctx.answerCallbackQuery({ text: t(lang, "scheduled") });
+
   // Clear any pending edit state
   ctx.session.reviewEditState = undefined;
-
-  await ctx.answerCallbackQuery({ text: t(lang, "scheduled") });
 
   // Update to scheduled with default time (1 hour from now)
   const scheduledAt = new Date();
