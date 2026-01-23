@@ -16,7 +16,7 @@ interface OwnershipCheckResult {
   source?: {
     id: string;
     channelId: string;
-    telegramUsername: string;
+    telegramUsername: string | null;
   };
   post?: {
     id: string;

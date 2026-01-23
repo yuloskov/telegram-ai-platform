@@ -6,8 +6,13 @@ import type { ApiResponse } from "@repo/shared/types";
 
 interface ContentSourceDetailResponse {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document";
+  telegramUsername: string | null;
   telegramId: string | null;
+  documentName: string | null;
+  documentUrl: string | null;
+  documentMimeType: string | null;
+  documentSize: number | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -59,8 +64,13 @@ async function handler(
       success: true,
       data: {
         id: source.id,
+        sourceType: source.sourceType,
         telegramUsername: source.telegramUsername,
         telegramId: source.telegramId?.toString() ?? null,
+        documentName: source.documentName,
+        documentUrl: source.documentUrl,
+        documentMimeType: source.documentMimeType,
+        documentSize: source.documentSize,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),
@@ -93,8 +103,13 @@ async function handler(
       success: true,
       data: {
         id: updated.id,
+        sourceType: updated.sourceType,
         telegramUsername: updated.telegramUsername,
         telegramId: updated.telegramId?.toString() ?? null,
+        documentName: updated.documentName,
+        documentUrl: updated.documentUrl,
+        documentMimeType: updated.documentMimeType,
+        documentSize: updated.documentSize,
         isActive: updated.isActive,
         lastScrapedAt: updated.lastScrapedAt?.toISOString() ?? null,
         createdAt: updated.createdAt.toISOString(),
@@ -112,8 +127,13 @@ async function handler(
       success: true,
       data: {
         id: source.id,
+        sourceType: source.sourceType,
         telegramUsername: source.telegramUsername,
         telegramId: source.telegramId?.toString() ?? null,
+        documentName: source.documentName,
+        documentUrl: source.documentUrl,
+        documentMimeType: source.documentMimeType,
+        documentSize: source.documentSize,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),

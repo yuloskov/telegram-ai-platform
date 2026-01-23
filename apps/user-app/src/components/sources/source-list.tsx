@@ -10,7 +10,10 @@ import { useI18n } from "~/i18n";
 
 interface ContentSource {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document";
+  telegramUsername: string | null;
+  documentName: string | null;
+  documentSize: number | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {

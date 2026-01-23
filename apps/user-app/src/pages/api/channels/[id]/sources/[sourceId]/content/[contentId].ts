@@ -5,7 +5,9 @@ import type { ApiResponse } from "@repo/shared/types";
 
 interface ScrapedContentResponse {
   id: string;
-  telegramMessageId: string;
+  telegramMessageId: string | null;
+  chunkIndex: number | null;
+  sectionTitle: string | null;
   text: string | null;
   mediaUrls: string[];
   views: number;
@@ -14,7 +16,8 @@ interface ScrapedContentResponse {
   scrapedAt: string;
   usedForGeneration: boolean;
   source: {
-    telegramUsername: string;
+    telegramUsername: string | null;
+    documentName: string | null;
   };
 }
 
@@ -47,7 +50,7 @@ async function handler(
       },
       include: {
         source: {
-          select: { telegramUsername: true },
+          select: { telegramUsername: true, documentName: true },
         },
       },
     });
@@ -60,7 +63,9 @@ async function handler(
       success: true,
       data: {
         id: content.id,
-        telegramMessageId: content.telegramMessageId.toString(),
+        telegramMessageId: content.telegramMessageId?.toString() ?? null,
+        chunkIndex: content.chunkIndex,
+        sectionTitle: content.sectionTitle,
         text: content.text,
         mediaUrls: content.mediaUrls,
         views: content.views,
@@ -70,6 +75,7 @@ async function handler(
         usedForGeneration: content.usedForGeneration,
         source: {
           telegramUsername: content.source.telegramUsername,
+          documentName: content.source.documentName,
         },
       },
     });

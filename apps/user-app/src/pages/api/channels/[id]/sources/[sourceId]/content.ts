@@ -5,7 +5,9 @@ import type { PaginatedResponse } from "@repo/shared/types";
 
 interface ScrapedContentResponse {
   id: string;
-  telegramMessageId: string;
+  telegramMessageId: string | null;
+  chunkIndex: number | null;
+  sectionTitle: string | null;
   text: string | null;
   mediaUrls: string[];
   views: number;
@@ -105,13 +107,16 @@ async function handler(
     }
 
     // Build orderBy clause
-    // Use telegramMessageId for date sorting since IDs are sequential (newer = higher)
-    type OrderByField = "telegramMessageId" | "views" | "forwards";
+    // For telegram sources, use telegramMessageId (sequential IDs)
+    // For document sources, use chunkIndex
+    const isDocument = source.sourceType === "document";
+    type OrderByField = "telegramMessageId" | "chunkIndex" | "views" | "forwards";
     const sortField: OrderByField =
       sortBy === "views" ? "views" :
       sortBy === "forwards" ? "forwards" :
-      "telegramMessageId";
-    const sortDirection = sortOrder === "asc" ? "asc" : "desc";
+      isDocument ? "chunkIndex" : "telegramMessageId";
+    // Documents default to ascending order (chunk 1, 2, 3...)
+    const sortDirection = sortOrder === "asc" ? "asc" : isDocument && sortBy === "date" ? "asc" : "desc";
     const orderBy = { [sortField]: sortDirection };
 
     const [content, total] = await Promise.all([
@@ -137,7 +142,9 @@ async function handler(
       success: true,
       data: content.map((item) => ({
         id: item.id,
-        telegramMessageId: item.telegramMessageId.toString(),
+        telegramMessageId: item.telegramMessageId?.toString() ?? null,
+        chunkIndex: item.chunkIndex,
+        sectionTitle: item.sectionTitle,
         text: item.text,
         mediaUrls: item.mediaUrls,
         views: item.views,

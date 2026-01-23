@@ -93,20 +93,30 @@ model Channel {
 }
 
 model ContentSource {
-  id               String   @id @default(cuid())
+  id               String            @id @default(cuid())
   channelId        String
-  channel          Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  telegramUsername String
+  channel          Channel           @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sourceType       ContentSourceType @default(telegram)
+
+  // Telegram source fields (nullable for document sources)
+  telegramUsername String?
   telegramId       BigInt?
+
+  // Document source fields
+  documentName     String?
+  documentUrl      String?           // MinIO path
+  documentMimeType String?
+  documentSize     Int?
+
   isActive         Boolean  @default(true)
   lastScrapedAt    DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  // Scrape settings
+  // Scrape settings (for telegram sources)
   maxScrapePosts    Int      @default(10) // Max posts to scrape per update (1-50)
 
-  // Auto-scrape settings
+  // Auto-scrape settings (for telegram sources)
   autoScrapeEnabled Boolean  @default(false)
   scrapeInterval    String?  // "hourly", "daily", "weekly"
   scrapeJobId       String?  // BullMQ job ID for the repeatable job
@@ -118,14 +128,22 @@ model ContentSource {
   @@unique([channelId, telegramUsername])
   @@index([channelId])
   @@index([autoScrapeEnabled])
+  @@index([sourceType])
 }
 
 model ScrapedContent {
   id                String   @id @default(cuid())
   sourceId          String
   source            ContentSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  telegramMessageId BigInt
+
+  // Telegram content fields (nullable for document chunks)
+  telegramMessageId BigInt?
   telegramGroupedId String?  // For media albums (multiple images in one post)
+
+  // Document chunk fields
+  chunkIndex        Int?           // Order within document
+  sectionTitle      String?        // Extracted section heading
+
   text              String?
   mediaUrls         String[] @default([])
   views             Int      @default(0)
@@ -138,6 +156,7 @@ model ScrapedContent {
   imageAnalysis     ImageAnalysis?
 
   @@unique([sourceId, telegramMessageId])
+  @@unique([sourceId, chunkIndex])
   @@index([sourceId])
   @@index([scrapedAt])
 }
@@ -194,6 +213,11 @@ enum PostGenerationType {
   from_research
   auto_research
   auto_scraped
+}
+
+enum ContentSourceType {
+  telegram
+  document
 }
 
 model Post {

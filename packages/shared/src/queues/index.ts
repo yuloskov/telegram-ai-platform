@@ -5,6 +5,7 @@ export const QUEUE_NAMES = {
   SCHEDULED_POSTS: "scheduled-posts",
   AUTO_GENERATION: "auto-generation",
   CONTENT_PLAN: "content-plan",
+  DOCUMENT_PARSING: "document-parsing",
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -46,6 +47,11 @@ export interface ContentPlanJobPayload {
   contentPlanId: string;
 }
 
+export interface DocumentParsingJobPayload {
+  sourceId: string;
+  documentUrl: string;
+}
+
 // Job options
 export const DEFAULT_JOB_OPTIONS = {
   attempts: 3,
@@ -78,5 +84,14 @@ export const PUBLISHING_JOB_OPTIONS = {
   backoff: {
     type: "exponential" as const,
     delay: 5000,
+  },
+};
+
+export const DOCUMENT_PARSING_JOB_OPTIONS = {
+  ...DEFAULT_JOB_OPTIONS,
+  attempts: 2,
+  backoff: {
+    type: "exponential" as const,
+    delay: 30000, // 30 seconds between retries
   },
 };

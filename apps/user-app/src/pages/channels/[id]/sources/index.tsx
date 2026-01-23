@@ -8,7 +8,8 @@ import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { SourceList } from "~/components/sources/source-list";
 import { AddSourceModal } from "~/components/sources/add-source-modal";
-import { Plus } from "lucide-react";
+import { AddDocumentModal } from "~/components/sources/add-document-modal";
+import { Plus, Upload } from "lucide-react";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -19,7 +20,10 @@ interface Channel {
 
 interface ContentSource {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document";
+  telegramUsername: string | null;
+  documentName: string | null;
+  documentSize: number | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {
@@ -36,6 +40,7 @@ export default function SourcesPage() {
   const { t } = useI18n();
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const { data: channel, isLoading: channelLoading } = useQuery({
     queryKey: ["channel", channelId],
@@ -120,10 +125,16 @@ export default function SourcesPage() {
             { label: t("sources.title") },
           ]}
           actions={
-            <Button onClick={() => setShowAddModal(true)}>
-              <Plus className="h-4 w-4" />
-              {t("sources.addSource")}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setShowUploadModal(true)}>
+                <Upload className="h-4 w-4" />
+                {t("sources.uploadDocument")}
+              </Button>
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4" />
+                {t("sources.addSource")}
+              </Button>
+            </div>
           }
         />
 
@@ -136,6 +147,12 @@ export default function SourcesPage() {
           onOpenChange={setShowAddModal}
           onAdd={(username) => addSourceMutation.mutate(username)}
           isAdding={addSourceMutation.isPending}
+        />
+
+        <AddDocumentModal
+          open={showUploadModal}
+          onOpenChange={setShowUploadModal}
+          channelId={channelId as string}
         />
 
         <PageSection>

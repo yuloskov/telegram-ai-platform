@@ -30,7 +30,8 @@ export interface ContentPlanResponse {
   contentSources: Array<{
     id: string;
     contentSourceId: string;
-    telegramUsername: string;
+    telegramUsername: string | null;
+    documentName: string | null;
   }>;
 }
 
@@ -82,7 +83,7 @@ async function handler(
           contentSources: {
             include: {
               contentSource: {
-                select: { telegramUsername: true },
+                select: { telegramUsername: true, documentName: true },
               },
             },
           },
@@ -141,7 +142,7 @@ async function handler(
         contentSources: {
           include: {
             contentSource: {
-              select: { telegramUsername: true },
+              select: { telegramUsername: true, documentName: true },
             },
           },
         },
@@ -191,10 +192,11 @@ function formatPlanResponse(plan: any, nextRunAt?: number): ContentPlanResponse 
     updatedAt: plan.updatedAt.toISOString(),
     nextRunAt: nextRunAt ? new Date(nextRunAt).toISOString() : null,
     contentSources: plan.contentSources.map(
-      (cs: { id: string; contentSourceId: string; contentSource: { telegramUsername: string } }) => ({
+      (cs: { id: string; contentSourceId: string; contentSource: { telegramUsername: string | null; documentName: string | null } }) => ({
         id: cs.id,
         contentSourceId: cs.contentSourceId,
         telegramUsername: cs.contentSource.telegramUsername,
+        documentName: cs.contentSource.documentName,
       })
     ),
   };

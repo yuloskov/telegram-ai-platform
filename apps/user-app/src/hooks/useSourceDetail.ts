@@ -9,15 +9,22 @@ import type { SortBy, DateRange } from "~/components/sources/content-filters";
 
 interface ContentSource {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document";
+  telegramUsername: string | null;
+  documentName: string | null;
+  documentUrl: string | null;
+  documentSize: number | null;
   isActive: boolean;
   lastScrapedAt: string | null;
+  createdAt: string;
   _count: { scrapedContent: number };
 }
 
 interface ScrapedContent {
   id: string;
-  telegramMessageId: string;
+  telegramMessageId: string | null;
+  chunkIndex: number | null;
+  sectionTitle: string | null;
   text: string | null;
   mediaUrls: string[];
   views: number;
@@ -132,6 +139,22 @@ export function useSourceDetail(
     },
   });
 
+  // Regenerate document chunks (document sources only)
+  const regenerateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/channels/${channelId}/sources/${sourceId}/regenerate`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["source-content", channelId, sourceId] });
+      queryClient.invalidateQueries({ queryKey: ["source", channelId, sourceId] });
+    },
+  });
+
   // Filter handlers that reset to page 1
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -173,5 +196,6 @@ export function useSourceDetail(
     // Mutations
     scrapeMutation,
     deleteMutation,
+    regenerateMutation,
   };
 }

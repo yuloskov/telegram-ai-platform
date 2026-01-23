@@ -36,6 +36,16 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
     throw new Error(`Content source not found: ${sourceId}`);
   }
 
+  if (source.sourceType !== "telegram" || !source.telegramUsername) {
+    await prisma.scrapeLog.update({
+      where: { id: scrapeLog.id },
+      data: { status: "failed", error: "Source is not a telegram source", completedAt: new Date() },
+    });
+    throw new Error(`Source ${sourceId} is not a telegram source`);
+  }
+
+  const telegramUsername = source.telegramUsername;
+
   // Get a session to use for scraping
   let session;
   if (sessionId) {
@@ -62,12 +72,12 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
   try {
     // Get existing message IDs for duplicate detection (single query)
     const existingPosts = await prisma.scrapedContent.findMany({
-      where: { sourceId },
+      where: { sourceId, telegramMessageId: { not: null } },
       select: { telegramMessageId: true },
       orderBy: { telegramMessageId: "desc" },
       take: 100, // Get last 100 for efficient matching
     });
-    const existingIds = new Set(existingPosts.map((p) => p.telegramMessageId.toString()));
+    const existingIds = new Set(existingPosts.map((p) => p.telegramMessageId!.toString()));
 
     const maxPosts = Math.min(Math.max(source.maxScrapePosts, 1), 50); // Clamp to 1-50
     let totalFound = 0;
@@ -81,7 +91,7 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
 
       const messages = await scrapeChannelMessages(
         client,
-        source.telegramUsername,
+        telegramUsername,
         batchSize,
         undefined, // Don't use minId - we want to detect duplicates
         offsetId
@@ -89,7 +99,7 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
 
       if (messages.length === 0) break;
 
-      console.log(`Scraped batch of ${messages.length} messages from ${source.telegramUsername}`);
+      console.log(`Scraped batch of ${messages.length} messages from ${telegramUsername}`);
 
       // Process messages in order (newest first)
       for (const message of messages) {
@@ -159,7 +169,7 @@ export async function handleScrapeJob(data: ScrapingJobPayload): Promise<void> {
       },
     });
 
-    console.log(`Saved ${newCount} new messages from ${source.telegramUsername} (found duplicate: ${foundDuplicate})`);
+    console.log(`Saved ${newCount} new messages from ${telegramUsername} (found duplicate: ${foundDuplicate})`);
   } catch (error) {
     await prisma.scrapeLog.update({
       where: { id: scrapeLog.id },

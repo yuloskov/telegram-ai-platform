@@ -6,8 +6,13 @@ import { CreateContentSourceSchema } from "@repo/shared/types";
 
 interface ContentSourceResponse {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document";
+  telegramUsername: string | null;
   telegramId: string | null;
+  documentName: string | null;
+  documentUrl: string | null;
+  documentMimeType: string | null;
+  documentSize: number | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -51,8 +56,13 @@ async function handler(
       success: true,
       data: sources.map((source) => ({
         id: source.id,
+        sourceType: source.sourceType,
         telegramUsername: source.telegramUsername,
         telegramId: source.telegramId?.toString() ?? null,
+        documentName: source.documentName,
+        documentUrl: source.documentUrl,
+        documentMimeType: source.documentMimeType,
+        documentSize: source.documentSize,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),
@@ -102,8 +112,13 @@ async function handler(
       success: true,
       data: {
         id: source.id,
+        sourceType: source.sourceType,
         telegramUsername: source.telegramUsername,
         telegramId: source.telegramId?.toString() ?? null,
+        documentName: source.documentName,
+        documentUrl: source.documentUrl,
+        documentMimeType: source.documentMimeType,
+        documentSize: source.documentSize,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),

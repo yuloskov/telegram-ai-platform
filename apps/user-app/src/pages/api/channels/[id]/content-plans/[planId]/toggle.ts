@@ -46,7 +46,7 @@ async function handler(
       contentSources: {
         include: {
           contentSource: {
-            select: { telegramUsername: true },
+            select: { telegramUsername: true, documentName: true },
           },
         },
       },
@@ -97,6 +97,7 @@ async function handler(
         id: cs.id,
         contentSourceId: cs.contentSourceId,
         telegramUsername: cs.contentSource.telegramUsername,
+        documentName: cs.contentSource.documentName,
       })),
     },
   });

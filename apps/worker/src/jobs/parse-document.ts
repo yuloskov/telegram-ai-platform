@@ -1,0 +1,161 @@
+import { prisma } from "@repo/database";
+import { getFileBuffer } from "@repo/shared/storage";
+import { parsePdf, chunkDocumentByParagraphs, parseAIChunks } from "@repo/shared/document";
+import { chat } from "@repo/ai";
+import type { DocumentParsingJobPayload } from "@repo/shared/queues";
+
+const CHUNK_SYSTEM_PROMPT = `You are a document analyzer. Your task is to split the provided document text into logical, self-contained sections that can be used as educational content.
+
+Each section should:
+1. Cover one complete topic or rule
+2. Be self-contained and understandable on its own
+3. Be between 300-2000 characters
+4. Have a clear, descriptive title
+
+Return your response as a JSON array with this format:
+[
+  { "title": "Section Title", "content": "Section content here..." },
+  { "title": "Another Section", "content": "Content..." }
+]
+
+Only return the JSON array, no other text.`;
+
+/**
+ * Parse a document and create ScrapedContent chunks
+ */
+export async function handleParseDocumentJob(data: DocumentParsingJobPayload): Promise<void> {
+  const { sourceId, documentUrl } = data;
+
+  const source = await prisma.contentSource.findUnique({
+    where: { id: sourceId },
+  });
+
+  if (!source) {
+    throw new Error(`Content source not found: ${sourceId}`);
+  }
+
+  if (source.sourceType !== "document") {
+    throw new Error(`Source ${sourceId} is not a document source`);
+  }
+
+  // Parse the storage path
+  const pathParts = documentUrl.split("/");
+  const bucket = pathParts[0];
+  const objectName = pathParts.slice(1).join("/");
+
+  if (!bucket || !objectName) {
+    throw new Error(`Invalid document URL: ${documentUrl}`);
+  }
+
+  console.log(`Downloading document from ${bucket}/${objectName}`);
+  const buffer = await getFileBuffer(bucket, objectName);
+
+  console.log(`Parsing PDF (${buffer.length} bytes)`);
+  const parsed = await parsePdf(buffer);
+  console.log(`Extracted ${parsed.numPages} pages, ${parsed.text.length} characters`);
+
+  // Try AI-based chunking first, fall back to paragraph-based
+  let chunks = await chunkWithAI(parsed.text);
+
+  if (chunks.length === 0) {
+    console.log("AI chunking returned no results, falling back to paragraph chunking");
+    chunks = chunkDocumentByParagraphs(parsed.text);
+  }
+
+  console.log(`Created ${chunks.length} chunks`);
+
+  // Delete existing chunks for this source
+  await prisma.scrapedContent.deleteMany({
+    where: { sourceId },
+  });
+
+  // Create ScrapedContent records for each chunk
+  for (const chunk of chunks) {
+    await prisma.scrapedContent.create({
+      data: {
+        sourceId,
+        chunkIndex: chunk.index,
+        sectionTitle: chunk.title,
+        text: chunk.content,
+        scrapedAt: new Date(),
+      },
+    });
+  }
+
+  // Update source with lastScrapedAt
+  await prisma.contentSource.update({
+    where: { id: sourceId },
+    data: { lastScrapedAt: new Date() },
+  });
+
+  console.log(`Document parsing complete: ${chunks.length} chunks saved`);
+}
+
+/**
+ * Use AI to intelligently chunk the document
+ */
+async function chunkWithAI(text: string): Promise<Array<{ index: number; title: string; content: string }>> {
+  // If text is too long, process in parts
+  const MAX_CHARS = 50000;
+
+  if (text.length <= MAX_CHARS) {
+    return await processChunkWithAI(text);
+  }
+
+  // Split long documents into parts and process each
+  const allChunks: Array<{ index: number; title: string; content: string }> = [];
+  let offset = 0;
+  let globalIndex = 0;
+
+  while (offset < text.length) {
+    // Find a good break point (paragraph boundary)
+    let endPos = offset + MAX_CHARS;
+    if (endPos < text.length) {
+      const breakPoint = text.lastIndexOf("\n\n", endPos);
+      if (breakPoint > offset + MAX_CHARS / 2) {
+        endPos = breakPoint;
+      }
+    }
+
+    const part = text.slice(offset, Math.min(endPos, text.length));
+    const partChunks = await processChunkWithAI(part);
+
+    // Re-index chunks with global index
+    for (const chunk of partChunks) {
+      allChunks.push({
+        index: globalIndex++,
+        title: chunk.title,
+        content: chunk.content,
+      });
+    }
+
+    offset = endPos;
+  }
+
+  return allChunks;
+}
+
+/**
+ * Process a single part of document with AI
+ */
+async function processChunkWithAI(
+  text: string
+): Promise<Array<{ index: number; title: string; content: string }>> {
+  try {
+    const response = await chat(
+      [
+        { role: "system", content: CHUNK_SYSTEM_PROMPT },
+        { role: "user", content: `Split this document into logical sections:\n\n${text}` },
+      ],
+      {
+        temperature: 0.3,
+        maxTokens: 8000,
+      }
+    );
+
+    return parseAIChunks(response);
+  } catch (error) {
+    console.error("AI chunking failed:", error);
+    return [];
+  }
+}

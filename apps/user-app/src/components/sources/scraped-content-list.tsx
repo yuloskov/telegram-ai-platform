@@ -14,7 +14,9 @@ function hasVideoContent(mediaUrls: string[]): boolean {
 
 interface ScrapedContent {
   id: string;
-  telegramMessageId: string;
+  telegramMessageId: string | null;
+  chunkIndex: number | null;
+  sectionTitle: string | null;
   text: string | null;
   mediaUrls: string[];
   views: number;

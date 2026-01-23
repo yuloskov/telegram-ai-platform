@@ -51,8 +51,8 @@ interface ScrapedContentWithSource {
   id: string;
   text: string | null;
   mediaUrls: string[];
-  source: { telegramUsername: string };
-  telegramMessageId: bigint;
+  source: { telegramUsername: string | null };
+  telegramMessageId: bigint | null;
 }
 
 interface AIGeneratedPost {

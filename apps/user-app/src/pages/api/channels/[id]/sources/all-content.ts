@@ -13,7 +13,9 @@ interface ScrapedPostResponse {
 
 interface SourceWithContentResponse {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document";
+  telegramUsername: string | null;
+  documentName: string | null;
   isActive: boolean;
   scrapedContent: ScrapedPostResponse[];
 }
@@ -64,7 +66,9 @@ async function handler(
     success: true,
     data: sources.map((source) => ({
       id: source.id,
+      sourceType: source.sourceType,
       telegramUsername: source.telegramUsername,
+      documentName: source.documentName,
       isActive: source.isActive,
       scrapedContent: source.scrapedContent.map((content) => ({
         id: content.id,
