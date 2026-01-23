@@ -1,13 +1,19 @@
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Trash2, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
 
 interface GenerationActionBarProps {
   onGenerate: () => void;
+  onDelete?: () => void;
+  isDeleting?: boolean;
 }
 
-export function GenerationActionBar({ onGenerate }: GenerationActionBarProps) {
+export function GenerationActionBar({
+  onGenerate,
+  onDelete,
+  isDeleting,
+}: GenerationActionBarProps) {
   const { t } = useI18n();
   const { selectedIds, clearSelection } = useContentSelectionStore();
   const count = selectedIds.size;
@@ -33,10 +39,26 @@ export function GenerationActionBar({ onGenerate }: GenerationActionBarProps) {
             {t("sources.clearSelection")}
           </Button>
         </div>
-        <Button onClick={onGenerate}>
-          <Sparkles className="h-4 w-4" />
-          {t("sources.generateFromSelected")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {onDelete && (
+            <Button
+              variant="secondary"
+              onClick={onDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {t("sources.deleteSelected")}
+            </Button>
+          )}
+          <Button onClick={onGenerate}>
+            <Sparkles className="h-4 w-4" />
+            {t("sources.generateFromSelected")}
+          </Button>
+        </div>
       </div>
     </div>
   );

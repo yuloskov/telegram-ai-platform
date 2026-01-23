@@ -107,6 +107,7 @@ model ContentSource {
   documentUrl      String?           // MinIO path
   documentMimeType String?
   documentSize     Int?
+  chunkingPrompt   String?           // Custom AI prompt for document chunking
 
   isActive         Boolean  @default(true)
   lastScrapedAt    DateTime?

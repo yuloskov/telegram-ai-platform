@@ -81,6 +81,46 @@ async function handler(
     });
   }
 
+  if (req.method === "DELETE") {
+    // Verify content exists and belongs to this source/channel
+    const content = await prisma.scrapedContent.findFirst({
+      where: {
+        id: contentId,
+        sourceId,
+        source: { channelId },
+      },
+    });
+
+    if (!content) {
+      return res.status(404).json({ success: false, error: "Content not found" });
+    }
+
+    await prisma.scrapedContent.delete({
+      where: { id: contentId },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: content.id,
+        telegramMessageId: content.telegramMessageId?.toString() ?? null,
+        chunkIndex: content.chunkIndex,
+        sectionTitle: content.sectionTitle,
+        text: content.text,
+        mediaUrls: content.mediaUrls,
+        views: content.views,
+        forwards: content.forwards,
+        reactions: content.reactions,
+        scrapedAt: content.scrapedAt.toISOString(),
+        usedForGeneration: content.usedForGeneration,
+        source: {
+          telegramUsername: null,
+          documentName: null,
+        },
+      },
+    });
+  }
+
   return res.status(405).json({ success: false, error: "Method not allowed" });
 }
 

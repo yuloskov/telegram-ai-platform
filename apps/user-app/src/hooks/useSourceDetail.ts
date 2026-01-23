@@ -14,6 +14,7 @@ interface ContentSource {
   documentName: string | null;
   documentUrl: string | null;
   documentSize: number | null;
+  chunkingPrompt: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -155,6 +156,23 @@ export function useSourceDetail(
     },
   });
 
+  // Update source settings (e.g., chunking prompt)
+  const updateSourceMutation = useMutation({
+    mutationFn: async (data: { chunkingPrompt?: string | null }) => {
+      const res = await fetch(`/api/channels/${channelId}/sources/${sourceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      return json;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["source", channelId, sourceId] });
+    },
+  });
+
   // Filter handlers that reset to page 1
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -197,5 +215,6 @@ export function useSourceDetail(
     scrapeMutation,
     deleteMutation,
     regenerateMutation,
+    updateSourceMutation,
   };
 }

@@ -20,6 +20,7 @@ export const messages = {
       next: "Next",
       previous: "Previous",
       confirm: "Confirm",
+      unsaved: "unsaved",
     },
 
     // Header
@@ -292,6 +293,18 @@ export const messages = {
       chunksCount: "Chunks",
       parsedAt: "Parsed at",
       notParsedYet: "Not parsed yet",
+      // Chunking prompt
+      chunkingPromptTitle: "Chunking Instructions",
+      chunkingPromptDescription: "Customize how the document is split into sections. Leave empty to use the default chunking behavior.",
+      chunkingPromptPlaceholder: "e.g., Split this document into rules. Each section should cover one grammar rule with examples. Keep sections between 300-1500 characters...",
+      // Delete chunk
+      deleteChunk: "Delete chunk",
+      deleteChunkTitle: "Delete Chunk",
+      deleteChunkDescription: "Are you sure you want to delete this chunk? This action cannot be undone.",
+      // Bulk delete
+      deleteSelected: "Delete Selected",
+      deleteSelectedTitle: "Delete Selected Chunks",
+      deleteSelectedDescription: "Are you sure you want to delete {count} selected chunks? This action cannot be undone.",
     },
 
     // Generate Page
@@ -583,6 +596,7 @@ export const messages = {
       next: "Далее",
       previous: "Назад",
       confirm: "Подтвердить",
+      unsaved: "не сохранено",
     },
 
     // Header
@@ -855,6 +869,18 @@ export const messages = {
       chunksCount: "Секций",
       parsedAt: "Обработан",
       notParsedYet: "Ещё не обработан",
+      // Chunking prompt
+      chunkingPromptTitle: "Инструкции разбиения",
+      chunkingPromptDescription: "Настройте, как документ разбивается на секции. Оставьте пустым для использования стандартного разбиения.",
+      chunkingPromptPlaceholder: "напр., Разбей документ на правила. Каждая секция должна содержать одно грамматическое правило с примерами. Секции 300-1500 символов...",
+      // Delete chunk
+      deleteChunk: "Удалить секцию",
+      deleteChunkTitle: "Удаление секции",
+      deleteChunkDescription: "Вы уверены, что хотите удалить эту секцию? Это действие нельзя отменить.",
+      // Bulk delete
+      deleteSelected: "Удалить выбранные",
+      deleteSelectedTitle: "Удаление выбранных секций",
+      deleteSelectedDescription: "Вы уверены, что хотите удалить {count} выбранных секций? Это действие нельзя отменить.",
     },
 
     // Generate Page

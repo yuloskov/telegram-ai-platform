@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileText, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { FileText, RefreshCw, Trash2, Loader2, Settings } from "lucide-react";
 import { PageHeader } from "~/components/layout/header";
 import { PageSection } from "~/components/layout/page-layout";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
 import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { DocumentChunksList } from "~/components/sources/document-chunks-list";
 import { GenerationActionBar } from "~/components/sources/generation-action-bar";
 import { GenerateFromScrapedModal } from "~/components/sources/generate-from-scraped-modal";
+import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
 import type { useSourceDetail } from "~/hooks/useSourceDetail";
 
@@ -39,9 +41,15 @@ export function DocumentSourceDetail({
 }: DocumentSourceDetailProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { selectedIds, clearSelection } = useContentSelectionStore();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [promptExpanded, setPromptExpanded] = useState(false);
+  const [chunkingPrompt, setChunkingPrompt] = useState("");
+  const [promptSaved, setPromptSaved] = useState(true);
 
   const {
     source,
@@ -52,7 +60,54 @@ export function DocumentSourceDetail({
     setPage,
     deleteMutation,
     regenerateMutation,
+    updateSourceMutation,
   } = sourceDetail;
+
+  // Sync prompt with source
+  useEffect(() => {
+    if (source?.chunkingPrompt !== undefined) {
+      setChunkingPrompt(source.chunkingPrompt ?? "");
+    }
+  }, [source?.chunkingPrompt]);
+
+  const handlePromptChange = (value: string) => {
+    setChunkingPrompt(value);
+    setPromptSaved(value === (source?.chunkingPrompt ?? ""));
+  };
+
+  const handleSavePrompt = async () => {
+    await updateSourceMutation.mutateAsync({
+      chunkingPrompt: chunkingPrompt || null,
+    });
+    setPromptSaved(true);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/channels/${channelId}/sources/${sourceId}/content/bulk-delete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        clearSelection();
+        queryClient.invalidateQueries({ queryKey: ["source-content", channelId, sourceId] });
+        queryClient.invalidateQueries({ queryKey: ["source", channelId, sourceId] });
+      }
+    } catch (error) {
+      console.error("Failed to delete chunks:", error);
+    } finally {
+      setIsBulkDeleting(false);
+      setBulkDeleteConfirmOpen(false);
+    }
+  };
 
   // Poll for processing completion
   const isProcessing = source && !source.lastScrapedAt;
@@ -149,6 +204,69 @@ export function DocumentSourceDetail({
           </div>
         </Card>
 
+        {/* Chunking Prompt Settings */}
+        <Card className="p-4 mb-6">
+          <button
+            type="button"
+            onClick={() => setPromptExpanded(!promptExpanded)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4 text-[var(--text-secondary)]" />
+              <span className="text-sm font-medium text-[var(--text-primary)]">
+                {t("sources.chunkingPromptTitle")}
+              </span>
+              {!promptSaved && (
+                <span className="text-xs text-[var(--warning)]">
+                  ({t("common.unsaved")})
+                </span>
+              )}
+            </div>
+            <span className="text-xs text-[var(--text-tertiary)]">
+              {promptExpanded ? "−" : "+"}
+            </span>
+          </button>
+
+          {promptExpanded && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-[var(--text-secondary)]">
+                {t("sources.chunkingPromptDescription")}
+              </p>
+              <Textarea
+                value={chunkingPrompt}
+                onChange={(e) => handlePromptChange(e.target.value)}
+                placeholder={t("sources.chunkingPromptPlaceholder")}
+                rows={6}
+                className="text-sm"
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setChunkingPrompt(source?.chunkingPrompt ?? "");
+                    setPromptSaved(true);
+                  }}
+                  disabled={promptSaved}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSavePrompt}
+                  disabled={promptSaved || updateSourceMutation.isPending}
+                >
+                  {updateSourceMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    t("common.save")
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+
         {/* Processing indicator */}
         {isProcessing && (
           <Card className="p-4 mb-6 border-[var(--primary)] bg-[var(--primary)]/5">
@@ -171,7 +289,12 @@ export function DocumentSourceDetail({
           <DocumentChunksList
             chunks={content}
             isLoading={contentLoading}
+            channelId={channelId}
             sourceId={sourceId}
+            onChunkDeleted={() => {
+              queryClient.invalidateQueries({ queryKey: ["source-content", channelId, sourceId] });
+              queryClient.invalidateQueries({ queryKey: ["source", channelId, sourceId] });
+            }}
           />
 
           {pagination && pagination.totalPages > 1 && (
@@ -200,7 +323,11 @@ export function DocumentSourceDetail({
         </PageSection>
       </div>
 
-      <GenerationActionBar onGenerate={() => setGenerateModalOpen(true)} />
+      <GenerationActionBar
+        onGenerate={() => setGenerateModalOpen(true)}
+        onDelete={() => setBulkDeleteConfirmOpen(true)}
+        isDeleting={isBulkDeleting}
+      />
 
       <GenerateFromScrapedModal
         open={generateModalOpen}
@@ -230,6 +357,17 @@ export function DocumentSourceDetail({
           setRegenerateConfirmOpen(false);
         }}
         isLoading={regenerateMutation.isPending}
+      />
+
+      <ConfirmModal
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={setBulkDeleteConfirmOpen}
+        title={t("sources.deleteSelectedTitle")}
+        description={t("sources.deleteSelectedDescription", { count: selectedIds.size })}
+        confirmLabel={t("common.delete")}
+        onConfirm={handleBulkDelete}
+        isLoading={isBulkDeleting}
+        variant="danger"
       />
     </>
   );

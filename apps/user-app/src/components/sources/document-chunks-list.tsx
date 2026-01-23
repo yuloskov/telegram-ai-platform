@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle, Trash2 } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/ui/spinner";
 import { Checkbox } from "~/components/ui/checkbox";
+import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
 
@@ -17,8 +18,10 @@ interface DocumentChunk {
 interface DocumentChunksListProps {
   chunks: DocumentChunk[];
   isLoading: boolean;
+  channelId: string;
   sourceId: string;
   selectionEnabled?: boolean;
+  onChunkDeleted?: () => void;
 }
 
 const MAX_PREVIEW_LENGTH = 200;
@@ -28,11 +31,13 @@ function ChunkCard({
   selected,
   selectionEnabled,
   onSelect,
+  onDelete,
 }: {
   chunk: DocumentChunk;
   selected: boolean;
   selectionEnabled: boolean;
   onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
@@ -72,6 +77,15 @@ function ChunkCard({
                 {t("sources.usedBadge")}
               </span>
             )}
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => onDelete(chunk.id)}
+              className="p-1 text-[var(--text-tertiary)] hover:text-red-500 transition-colors"
+              title={t("sources.deleteChunk")}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Content */}
@@ -108,16 +122,48 @@ function ChunkCard({
 export function DocumentChunksList({
   chunks,
   isLoading,
+  channelId,
   sourceId,
   selectionEnabled = true,
+  onChunkDeleted,
 }: DocumentChunksListProps) {
   const { t } = useI18n();
   const { selectedIds, toggleSelection, selectAll, setSourceId, isSelected } =
     useContentSelectionStore();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [chunkToDelete, setChunkToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setSourceId(sourceId);
   }, [sourceId, setSourceId]);
+
+  const handleDeleteClick = (chunkId: string) => {
+    setChunkToDelete(chunkId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!chunkToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/channels/${channelId}/sources/${sourceId}/content/${chunkToDelete}`,
+        { method: "DELETE" }
+      );
+      const data = await res.json();
+      if (data.success) {
+        onChunkDeleted?.();
+      }
+    } catch (error) {
+      console.error("Failed to delete chunk:", error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      setChunkToDelete(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -173,9 +219,21 @@ export function DocumentChunksList({
             selected={isSelected(chunk.id)}
             selectionEnabled={selectionEnabled}
             onSelect={toggleSelection}
+            onDelete={handleDeleteClick}
           />
         ))}
       </div>
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title={t("sources.deleteChunkTitle")}
+        description={t("sources.deleteChunkDescription")}
+        confirmLabel={t("common.delete")}
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+        variant="danger"
+      />
     </div>
   );
 }

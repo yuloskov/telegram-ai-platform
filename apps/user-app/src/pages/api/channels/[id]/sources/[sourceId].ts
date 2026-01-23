@@ -13,6 +13,7 @@ interface ContentSourceDetailResponse {
   documentUrl: string | null;
   documentMimeType: string | null;
   documentSize: number | null;
+  chunkingPrompt: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -23,6 +24,7 @@ interface ContentSourceDetailResponse {
 
 const UpdateSourceSchema = z.object({
   isActive: z.boolean().optional(),
+  chunkingPrompt: z.string().nullable().optional(),
 });
 
 async function handler(
@@ -71,6 +73,7 @@ async function handler(
         documentUrl: source.documentUrl,
         documentMimeType: source.documentMimeType,
         documentSize: source.documentSize,
+        chunkingPrompt: source.chunkingPrompt,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),
@@ -110,6 +113,7 @@ async function handler(
         documentUrl: updated.documentUrl,
         documentMimeType: updated.documentMimeType,
         documentSize: updated.documentSize,
+        chunkingPrompt: updated.chunkingPrompt,
         isActive: updated.isActive,
         lastScrapedAt: updated.lastScrapedAt?.toISOString() ?? null,
         createdAt: updated.createdAt.toISOString(),
@@ -134,6 +138,7 @@ async function handler(
         documentUrl: source.documentUrl,
         documentMimeType: source.documentMimeType,
         documentSize: source.documentSize,
+        chunkingPrompt: source.chunkingPrompt,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),

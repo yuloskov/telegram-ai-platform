@@ -4,21 +4,26 @@ import { parsePdf, chunkDocumentByParagraphs, parseAIChunks } from "@repo/shared
 import { chat } from "@repo/ai";
 import type { DocumentParsingJobPayload } from "@repo/shared/queues";
 
-const CHUNK_SYSTEM_PROMPT = `You are a document analyzer. Your task is to split the provided document text into logical, self-contained sections that can be used as educational content.
+const DEFAULT_CHUNK_PROMPT = `You are a document analyzer. Your task is to split the provided document text into logical, self-contained sections that can be used as educational content.
 
 Each section should:
 1. Cover one complete topic or rule
 2. Be self-contained and understandable on its own
 3. Be between 300-2000 characters
-4. Have a clear, descriptive title
+4. Have a clear, descriptive title`;
 
-Return your response as a JSON array with this format:
+const CHUNK_OUTPUT_FORMAT = `Return your response as a JSON array with this format:
 [
   { "title": "Section Title", "content": "Section content here..." },
   { "title": "Another Section", "content": "Content..." }
 ]
 
 Only return the JSON array, no other text.`;
+
+function buildSystemPrompt(customPrompt: string | null): string {
+  const basePrompt = customPrompt || DEFAULT_CHUNK_PROMPT;
+  return `${basePrompt}\n\n${CHUNK_OUTPUT_FORMAT}`;
+}
 
 /**
  * Parse a document and create ScrapedContent chunks
@@ -54,8 +59,12 @@ export async function handleParseDocumentJob(data: DocumentParsingJobPayload): P
   const parsed = await parsePdf(buffer);
   console.log(`Extracted ${parsed.numPages} pages, ${parsed.text.length} characters`);
 
+  // Build system prompt (custom or default)
+  const systemPrompt = buildSystemPrompt(source.chunkingPrompt);
+  console.log(`Using ${source.chunkingPrompt ? "custom" : "default"} chunking prompt`);
+
   // Try AI-based chunking first, fall back to paragraph-based
-  let chunks = await chunkWithAI(parsed.text);
+  let chunks = await chunkWithAI(parsed.text, systemPrompt);
 
   if (chunks.length === 0) {
     console.log("AI chunking returned no results, falling back to paragraph chunking");
@@ -94,12 +103,15 @@ export async function handleParseDocumentJob(data: DocumentParsingJobPayload): P
 /**
  * Use AI to intelligently chunk the document
  */
-async function chunkWithAI(text: string): Promise<Array<{ index: number; title: string; content: string }>> {
+async function chunkWithAI(
+  text: string,
+  systemPrompt: string
+): Promise<Array<{ index: number; title: string; content: string }>> {
   // If text is too long, process in parts
   const MAX_CHARS = 50000;
 
   if (text.length <= MAX_CHARS) {
-    return await processChunkWithAI(text);
+    return await processChunkWithAI(text, systemPrompt);
   }
 
   // Split long documents into parts and process each
@@ -118,7 +130,7 @@ async function chunkWithAI(text: string): Promise<Array<{ index: number; title: 
     }
 
     const part = text.slice(offset, Math.min(endPos, text.length));
-    const partChunks = await processChunkWithAI(part);
+    const partChunks = await processChunkWithAI(part, systemPrompt);
 
     // Re-index chunks with global index
     for (const chunk of partChunks) {
@@ -139,12 +151,13 @@ async function chunkWithAI(text: string): Promise<Array<{ index: number; title: 
  * Process a single part of document with AI
  */
 async function processChunkWithAI(
-  text: string
+  text: string,
+  systemPrompt: string
 ): Promise<Array<{ index: number; title: string; content: string }>> {
   try {
     const response = await chat(
       [
-        { role: "system", content: CHUNK_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: `Split this document into logical sections:\n\n${text}` },
       ],
       {
