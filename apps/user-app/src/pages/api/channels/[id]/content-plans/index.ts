@@ -13,6 +13,8 @@ export interface ContentPlanResponse {
   cronSchedule: string;
   timezone: string;
   publishMode: string;
+  selectionStrategy: string;
+  selectionCount: number;
   imageEnabled: boolean;
   imageType: string;
   svgThemeColor: string;
@@ -41,6 +43,8 @@ const CreateContentPlanSchema = z.object({
   cronSchedule: z.string().default("0 9 * * *"),
   timezone: z.string().default("UTC"),
   publishMode: z.enum(["auto_publish", "review_first", "draft_only"]).default("review_first"),
+  selectionStrategy: z.enum(["recent", "random"]).default("recent"),
+  selectionCount: z.number().int().min(1).max(20).default(5),
   imageEnabled: z.boolean().default(true),
   imageType: z.string().default("svg"),
   svgThemeColor: z.string().default("#3B82F6"),
@@ -177,6 +181,8 @@ function formatPlanResponse(plan: any, nextRunAt?: number): ContentPlanResponse 
     cronSchedule: plan.cronSchedule,
     timezone: plan.timezone,
     publishMode: plan.publishMode,
+    selectionStrategy: plan.selectionStrategy,
+    selectionCount: plan.selectionCount,
     imageEnabled: plan.imageEnabled,
     imageType: plan.imageType,
     svgThemeColor: plan.svgThemeColor,

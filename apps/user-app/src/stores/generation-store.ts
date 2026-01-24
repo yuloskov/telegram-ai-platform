@@ -49,6 +49,7 @@ interface GenerationStore {
   toggleSource: (sourceId: string) => void;
   setPostCount: (sourceId: string, count: number) => void;
   togglePost: (sourceId: string, postId: string) => void;
+  selectRandomPosts: (sourceId: string, allPostIds: string[], count: number) => void;
   initializeSources: (sources: Source[]) => void;
   getSelectedPostIds: () => string[];
 
@@ -191,6 +192,31 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
         newSelections.set(sourceId, {
           ...current,
           selectedPostIds: newSelectedIds,
+        });
+      }
+
+      return { sourceSelections: newSelections };
+    });
+  },
+
+  selectRandomPosts: (sourceId: string, allPostIds: string[], count: number) => {
+    set((state) => {
+      const newSelections = new Map(state.sourceSelections);
+      const current = newSelections.get(sourceId);
+
+      if (current) {
+        // Fisher-Yates shuffle and take first N
+        const shuffled = [...allPostIds];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+        }
+        const randomIds = shuffled.slice(0, count);
+
+        newSelections.set(sourceId, {
+          ...current,
+          enabled: true,
+          selectedPostIds: new Set(randomIds),
         });
       }
 

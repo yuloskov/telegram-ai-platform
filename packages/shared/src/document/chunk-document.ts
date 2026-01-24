@@ -70,20 +70,36 @@ function extractTitle(content: string): string {
 }
 
 /**
+ * Strip markdown code blocks from AI response
+ */
+function stripCodeBlocks(text: string): string {
+  // Remove ```json ... ``` or ``` ... ``` blocks
+  return text
+    .replace(/^```(?:json)?\s*\n?/i, "")
+    .replace(/\n?```\s*$/i, "")
+    .trim();
+}
+
+/**
  * Parse AI response for document chunking into structured chunks
  */
 export function parseAIChunks(aiResponse: string): DocumentChunk[] {
   const chunks: DocumentChunk[] = [];
 
+  // Strip code blocks if present
+  const cleanedResponse = stripCodeBlocks(aiResponse);
+
   // Try to parse JSON array
   try {
-    const parsed = JSON.parse(aiResponse);
+    const parsed = JSON.parse(cleanedResponse);
     if (Array.isArray(parsed)) {
-      return parsed.map((chunk, index) => ({
-        index,
-        title: chunk.title || `Section ${index + 1}`,
-        content: chunk.content || "",
-      }));
+      return parsed
+        .filter((chunk) => chunk.content && chunk.content.trim().length > 0)
+        .map((chunk, index) => ({
+          index,
+          title: chunk.title || `Section ${index + 1}`,
+          content: chunk.content.trim(),
+        }));
     }
   } catch {
     // Not valid JSON, try to parse markdown-style chunks

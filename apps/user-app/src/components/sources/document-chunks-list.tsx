@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, CheckCircle, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle, Trash2, Shuffle } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/ui/spinner";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Button } from "~/components/ui/button";
 import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
 import { useI18n } from "~/i18n";
@@ -128,7 +129,7 @@ export function DocumentChunksList({
   onChunkDeleted,
 }: DocumentChunksListProps) {
   const { t } = useI18n();
-  const { selectedIds, toggleSelection, selectAll, setSourceId, isSelected } =
+  const { selectedIds, toggleSelection, selectAll, selectRandom, setSourceId, isSelected } =
     useContentSelectionStore();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [chunkToDelete, setChunkToDelete] = useState<string | null>(null);
@@ -193,14 +194,25 @@ export function DocumentChunksList({
       {/* Selection controls */}
       {selectionEnabled && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={allSelected ? true : someSelected ? "indeterminate" : false}
-              onCheckedChange={() => selectAll(itemIds)}
-            />
-            <span className="text-sm text-[var(--text-secondary)]">
-              {t("sources.selectAll")}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                onCheckedChange={() => selectAll(itemIds)}
+              />
+              <span className="text-sm text-[var(--text-secondary)]">
+                {t("sources.selectAll")}
+              </span>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => selectRandom(itemIds, 5)}
+              disabled={itemIds.length === 0}
+            >
+              <Shuffle className="h-4 w-4 mr-1" />
+              {t("sources.selectRandom", { count: 5 })}
+            </Button>
           </div>
           {selectedIds.size > 0 && (
             <span className="text-sm text-[var(--text-secondary)]">

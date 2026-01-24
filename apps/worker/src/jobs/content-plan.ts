@@ -68,8 +68,35 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
 
   // Get scraped content from selected sources
   const sourceIds = plan.contentSources.map((s) => s.contentSourceId);
-  const scrapedContent = sourceIds.length > 0
-    ? await prisma.scrapedContent.findMany({
+  let scrapedContent: { id: string; text: string | null; views: number; mediaUrls: string[] }[] = [];
+
+  if (sourceIds.length > 0) {
+    if (plan.selectionStrategy === "random") {
+      // For random selection, fetch more items then randomly select
+      const allContent = await prisma.scrapedContent.findMany({
+        where: {
+          sourceId: { in: sourceIds },
+          usedForGeneration: false,
+        },
+        select: {
+          id: true,
+          text: true,
+          views: true,
+          mediaUrls: true,
+        },
+      });
+
+      // Fisher-Yates shuffle and take selectionCount items
+      const shuffled = [...allContent];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+      }
+      scrapedContent = shuffled.slice(0, plan.selectionCount);
+      console.log(`Randomly selected ${scrapedContent.length} content items from ${allContent.length} available`);
+    } else {
+      // Default: recent selection strategy
+      scrapedContent = await prisma.scrapedContent.findMany({
         where: {
           sourceId: { in: sourceIds },
           usedForGeneration: false,
@@ -82,10 +109,11 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
           views: true,
           mediaUrls: true,
         },
-      })
-    : [];
+      });
+    }
+  }
 
-  console.log(`Found ${scrapedContent.length} scraped content items`);
+  console.log(`Found ${scrapedContent.length} scraped content items (strategy: ${plan.selectionStrategy})`);
 
   // If no scraped content and no custom prompt, skip
   if (scrapedContent.length === 0 && !plan.promptTemplate) {

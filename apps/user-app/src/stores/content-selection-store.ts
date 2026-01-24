@@ -5,6 +5,7 @@ interface ContentSelectionStore {
   sourceId: string | null;
   toggleSelection: (id: string) => void;
   selectAll: (ids: string[]) => void;
+  selectRandom: (ids: string[], count: number) => void;
   clearSelection: () => void;
   setSourceId: (sourceId: string) => void;
   isSelected: (id: string) => boolean;
@@ -28,6 +29,16 @@ export const useContentSelectionStore = create<ContentSelectionStore>((set, get)
 
   selectAll: (ids: string[]) => {
     set({ selectedIds: new Set(ids) });
+  },
+
+  selectRandom: (ids: string[], count: number) => {
+    // Fisher-Yates shuffle and take first N
+    const shuffled = [...ids];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+    }
+    set({ selectedIds: new Set(shuffled.slice(0, count)) });
   },
 
   clearSelection: () => {

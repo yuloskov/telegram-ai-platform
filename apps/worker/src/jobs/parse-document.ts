@@ -4,21 +4,34 @@ import { parsePdf, chunkDocumentByParagraphs, parseAIChunks } from "@repo/shared
 import { chat } from "@repo/ai";
 import type { DocumentParsingJobPayload } from "@repo/shared/queues";
 
-const DEFAULT_CHUNK_PROMPT = `You are a document analyzer. Your task is to split the provided document text into logical, self-contained sections that can be used as educational content.
+const DEFAULT_CHUNK_PROMPT = `You are a document analyzer. Split the provided document into logical, self-contained sections for educational content.
+
+CRITICAL RULES FOR NUMBER OF SECTIONS:
+- Create as MANY sections as the content naturally has - there is NO fixed number
+- Short documents (under 2000 chars) may have 2-5 sections
+- Medium documents (2000-10000 chars) may have 5-20 sections
+- Long documents (10000+ chars) may have 20-50+ sections
+- Each distinct topic, rule, word list, or concept should be its OWN section
+- Word lists and vocabulary should be split into MULTIPLE smaller chunks (10-20 words per chunk)
+- NEVER combine unrelated topics just to reduce the number of sections
 
 Each section should:
-1. Cover one complete topic or rule
+1. Cover ONE complete topic, rule, or small word group
 2. Be self-contained and understandable on its own
-3. Be between 300-2000 characters
-4. Have a clear, descriptive title`;
+3. Be between 200-1500 characters (prefer smaller, focused chunks)
+4. Have a clear, descriptive title in the same language as the content`;
 
-const CHUNK_OUTPUT_FORMAT = `Return your response as a JSON array with this format:
+const CHUNK_OUTPUT_FORMAT = `MANDATORY OUTPUT FORMAT - You MUST return ONLY a valid JSON array:
 [
   { "title": "Section Title", "content": "Section content here..." },
   { "title": "Another Section", "content": "Content..." }
 ]
 
-Only return the JSON array, no other text.`;
+IMPORTANT:
+- Return ONLY the JSON array, no markdown code blocks, no explanations
+- The "content" field should contain PLAIN TEXT, not JSON
+- Every section must have both "title" and "content" fields
+- Do NOT wrap in \`\`\`json\`\`\` code blocks`;
 
 function buildSystemPrompt(customPrompt: string | null): string {
   const basePrompt = customPrompt || DEFAULT_CHUNK_PROMPT;

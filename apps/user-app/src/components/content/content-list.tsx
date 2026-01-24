@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Shuffle } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { EmptyState } from "~/components/telegram/empty-state";
 import { useI18n } from "~/i18n";
@@ -16,6 +17,7 @@ interface ContentListProps {
   emptyDescription: string;
   emptyAction?: ReactNode;
   onSelectAll?: (ids: string[]) => void;
+  onSelectRandom?: (ids: string[], count: number) => void;
 }
 
 export function ContentList({
@@ -28,6 +30,7 @@ export function ContentList({
   emptyDescription,
   emptyAction,
   onSelectAll,
+  onSelectRandom,
 }: ContentListProps) {
   const { t } = useI18n();
 
@@ -71,15 +74,28 @@ export function ContentList({
     <div className="space-y-3">
       {/* Select All Header */}
       {selectionEnabled && itemIds.length > 0 && (
-        <div className="flex items-center gap-3 px-1 py-2">
-          <Checkbox
-            checked={allSelected ? true : someSelected ? "indeterminate" : false}
-            onCheckedChange={handleSelectAll}
-            data-checkbox
-          />
-          <span className="text-sm text-[var(--text-secondary)]">
-            {t("sources.selectAll")}
-          </span>
+        <div className="flex items-center gap-4 px-1 py-2">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={allSelected ? true : someSelected ? "indeterminate" : false}
+              onCheckedChange={handleSelectAll}
+              data-checkbox
+            />
+            <span className="text-sm text-[var(--text-secondary)]">
+              {t("sources.selectAll")}
+            </span>
+          </div>
+          {onSelectRandom && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onSelectRandom(itemIds, 5)}
+              disabled={itemIds.length === 0}
+            >
+              <Shuffle className="h-4 w-4 mr-1" />
+              {t("sources.selectRandom", { count: 5 })}
+            </Button>
+          )}
         </div>
       )}
 

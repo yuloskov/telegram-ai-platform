@@ -79,6 +79,8 @@ async function handler(
       cronSchedule: updated.cronSchedule,
       timezone: updated.timezone,
       publishMode: updated.publishMode,
+      selectionStrategy: updated.selectionStrategy,
+      selectionCount: updated.selectionCount,
       imageEnabled: updated.imageEnabled,
       imageType: updated.imageType,
       svgThemeColor: updated.svgThemeColor,

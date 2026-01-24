@@ -32,6 +32,7 @@ export function SourceSelectionPanel({ sources, isLoading, channelId }: SourceSe
     toggleSource,
     setPostCount,
     togglePost,
+    selectRandomPosts,
   } = useGenerationStore();
 
   if (isLoading) {
@@ -117,6 +118,7 @@ export function SourceSelectionPanel({ sources, isLoading, channelId }: SourceSe
               onToggleSource={() => toggleSource(source.id)}
               onSetPostCount={(count) => setPostCount(source.id, count)}
               onTogglePost={(postId) => togglePost(source.id, postId)}
+              onSelectRandom={(postIds, count) => selectRandomPosts(source.id, postIds, count)}
             />
           );
         })}

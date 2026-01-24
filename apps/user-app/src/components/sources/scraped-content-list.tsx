@@ -43,7 +43,7 @@ export function ScrapedContentList({
 }: ScrapedContentListProps) {
   const { t } = useI18n();
   const router = useRouter();
-  const { selectedIds, toggleSelection, selectAll, setSourceId, isSelected } =
+  const { selectedIds, toggleSelection, selectAll, selectRandom, setSourceId, isSelected } =
     useContentSelectionStore();
 
   useEffect(() => {
@@ -65,6 +65,7 @@ export function ScrapedContentList({
       emptyTitle={t("sources.noContent")}
       emptyDescription={t("sources.noContentDescription")}
       onSelectAll={selectAll}
+      onSelectRandom={selectRandom}
     >
       {content.map((item) => {
         const chips: ChipProps[] = [];

@@ -17,6 +17,8 @@ export interface ContentPlan {
   cronSchedule: string;
   timezone: string;
   publishMode: "auto_publish" | "review_first" | "draft_only";
+  selectionStrategy: "recent" | "random";
+  selectionCount: number;
   imageEnabled: boolean;
   imageType: string;
   svgThemeColor: string;
@@ -40,6 +42,8 @@ export interface CreateContentPlanInput {
   cronSchedule?: string;
   timezone?: string;
   publishMode?: "auto_publish" | "review_first" | "draft_only";
+  selectionStrategy?: "recent" | "random";
+  selectionCount?: number;
   imageEnabled?: boolean;
   imageType?: string;
   svgThemeColor?: string;

@@ -342,6 +342,11 @@ enum ContentPlanPublishMode {
   draft_only
 }
 
+enum ContentSelectionStrategy {
+  recent
+  random
+}
+
 model ContentPlan {
   id                String                  @id @default(cuid())
   channelId         String
@@ -357,6 +362,10 @@ model ContentPlan {
 
   // Publishing
   publishMode       ContentPlanPublishMode  @default(review_first)
+
+  // Content selection
+  selectionStrategy ContentSelectionStrategy @default(recent)
+  selectionCount    Int                      @default(5)
 
   // Image generation
   imageEnabled      Boolean                 @default(true)

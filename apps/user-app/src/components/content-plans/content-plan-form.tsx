@@ -71,6 +71,12 @@ export function ContentPlanForm({
   const [lookbackPostCount, setLookbackPostCount] = useState(
     initialData?.lookbackPostCount ?? 50
   );
+  const [selectionStrategy, setSelectionStrategy] = useState<"recent" | "random">(
+    initialData?.selectionStrategy ?? "recent"
+  );
+  const [selectionCount, setSelectionCount] = useState(
+    initialData?.selectionCount ?? 5
+  );
 
   const updateSvgSetting = <K extends keyof SvgGenerationSettings>(
     key: K,
@@ -88,6 +94,8 @@ export function ContentPlanForm({
       cronSchedule,
       timezone,
       publishMode,
+      selectionStrategy,
+      selectionCount,
       imageEnabled,
       imageType,
       svgThemeColor: svgSettings.themeColor,
@@ -326,6 +334,68 @@ export function ContentPlanForm({
           <p className="text-xs text-[var(--text-tertiary)] mt-2">
             {t("contentPlans.sourcesSelectedCount", { count: selectedSourceIds.length })}
           </p>
+        )}
+
+        {/* Selection Strategy */}
+        {selectedSourceIds.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-[var(--border-primary)]">
+            <h4 className="text-sm font-medium text-[var(--text-primary)] mb-3">
+              {t("contentPlans.selectionStrategy")}
+            </h4>
+            <div className="space-y-3">
+              {(["recent", "random"] as const).map((strategy) => (
+                <label
+                  key={strategy}
+                  className={`flex items-start gap-3 p-3 rounded-[var(--radius-md)] border cursor-pointer transition-colors ${
+                    selectionStrategy === strategy
+                      ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/5"
+                      : "border-[var(--border-primary)] hover:border-[var(--border-secondary)]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="selectionStrategy"
+                    value={strategy}
+                    checked={selectionStrategy === strategy}
+                    onChange={() => setSelectionStrategy(strategy)}
+                    className="mt-1"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
+                      {t(`contentPlans.selectionStrategies.${strategy}` as const)}
+                    </span>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                      {t(`contentPlans.selectionStrategies.${strategy}Description` as const)}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {selectionStrategy === "random" && (
+              <div className="mt-4 space-y-2">
+                <label className="text-sm font-medium text-[var(--text-primary)]">
+                  {t("contentPlans.selectionCount")}
+                </label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={selectionCount}
+                    onChange={(e) => setSelectionCount(Math.min(20, Math.max(1, parseInt(e.target.value) || 5)))}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-[var(--text-secondary)]">
+                    {t("contentPlans.items")}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  {t("contentPlans.selectionCountHint")}
+                </p>
+              </div>
+            )}
+          </div>
         )}
       </Card>
 

@@ -249,6 +249,7 @@ export const messages = {
       dateRangeMonth: "Last month",
       // Selection
       selectAll: "Select all",
+      selectRandom: "Random {count}",
       selected: "{count} selected",
       clearSelection: "Clear",
       generateFromSelected: "Use as Inspiration",
@@ -545,6 +546,17 @@ export const messages = {
       noSourcesSelected: "No sources selected",
       sourcesSelectedCount: "{count} sources selected",
       sourcesHint: "Select inspiration sources to use for content generation",
+      // Selection Strategy
+      selectionStrategy: "Selection Strategy",
+      selectionStrategies: {
+        recent: "Most Recent",
+        recentDescription: "Use the most recently added content from sources",
+        random: "Random Selection",
+        randomDescription: "Randomly select content pieces from sources for variety",
+      },
+      selectionCount: "Number of items to select",
+      selectionCountHint: "How many random content pieces to use for generation",
+      items: "items",
       // Status
       status: {
         active: "Active",
@@ -825,6 +837,7 @@ export const messages = {
       dateRangeMonth: "За месяц",
       // Selection
       selectAll: "Выбрать все",
+      selectRandom: "Случайные {count}",
       selected: "Выбрано: {count}",
       clearSelection: "Очистить",
       generateFromSelected: "Использовать для вдохновения",
@@ -1121,6 +1134,17 @@ export const messages = {
       noSourcesSelected: "Источники не выбраны",
       sourcesSelectedCount: "Выбрано источников: {count}",
       sourcesHint: "Выберите источники вдохновения для генерации контента",
+      // Selection Strategy
+      selectionStrategy: "Стратегия выбора",
+      selectionStrategies: {
+        recent: "Самые новые",
+        recentDescription: "Использовать самый свежий контент из источников",
+        random: "Случайный выбор",
+        randomDescription: "Случайно выбирать контент из источников для разнообразия",
+      },
+      selectionCount: "Количество элементов",
+      selectionCountHint: "Сколько случайных элементов использовать для генерации",
+      items: "элементов",
       // Status
       status: {
         active: "Активен",

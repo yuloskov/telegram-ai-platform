@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Shuffle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useI18n } from "~/i18n";
+import { Button } from "~/components/ui/button";
 import { SourcePostSelector } from "./source-post-selector";
 
 interface ScrapedPost {
@@ -22,6 +23,7 @@ interface SourceItemProps {
   onToggleSource: () => void;
   onSetPostCount: (count: number) => void;
   onTogglePost: (postId: string) => void;
+  onSelectRandom: (postIds: string[], count: number) => void;
 }
 
 export function SourceItem({
@@ -31,6 +33,7 @@ export function SourceItem({
   selectedPostIds,
   onToggleSource,
   onTogglePost,
+  onSelectRandom,
 }: SourceItemProps) {
   const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -102,6 +105,23 @@ export function SourceItem({
       {/* Expanded post selector */}
       {isExpanded && hasContent && (
         <div className="border-t border-[var(--border-secondary)]">
+          <div className="flex items-center justify-between px-3 pt-2">
+            <span className="text-xs text-[var(--text-tertiary)]">
+              {t("generatePage.postsSelected", { selected: selectedCount, total: scrapedContent.length })}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                const postIds = scrapedContent.map((p) => p.id);
+                onSelectRandom(postIds, 5);
+              }}
+            >
+              <Shuffle className="h-3 w-3 mr-1" />
+              {t("sources.selectRandom", { count: 5 })}
+            </Button>
+          </div>
           <SourcePostSelector
             posts={scrapedContent}
             selectedIds={selectedPostIds}
