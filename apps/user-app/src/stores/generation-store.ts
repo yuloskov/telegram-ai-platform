@@ -25,7 +25,11 @@ interface GenerationResult {
 
 interface Source {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document" | "webpage";
+  telegramUsername: string | null;
+  documentName: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
   isActive: boolean;
   scrapedContent: Array<{
     id: string;

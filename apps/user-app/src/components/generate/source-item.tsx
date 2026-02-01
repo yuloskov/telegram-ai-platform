@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Shuffle } from "lucide-react";
+import { ChevronDown, ChevronRight, Shuffle, FileText, Globe } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useI18n } from "~/i18n";
 import { Button } from "~/components/ui/button";
@@ -14,7 +14,11 @@ interface ScrapedPost {
 
 interface SourceItemProps {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document" | "webpage";
+  telegramUsername: string | null;
+  documentName: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
   isActive: boolean;
   scrapedContent: ScrapedPost[];
   enabled: boolean;
@@ -27,7 +31,11 @@ interface SourceItemProps {
 }
 
 export function SourceItem({
+  sourceType,
   telegramUsername,
+  documentName,
+  webpageTitle,
+  webpageDomain,
   scrapedContent,
   enabled,
   selectedPostIds,
@@ -40,6 +48,32 @@ export function SourceItem({
 
   const selectedCount = selectedPostIds.size;
   const hasContent = scrapedContent.length > 0;
+
+  // Get display title based on source type
+  const getSourceTitle = () => {
+    switch (sourceType) {
+      case "telegram":
+        return `@${telegramUsername || ""}`;
+      case "document":
+        return documentName || t("sources.untitledDocument");
+      case "webpage":
+        return webpageTitle || webpageDomain || t("sources.untitledWebpage");
+      default:
+        return t("sources.unknownSource");
+    }
+  };
+
+  // Get icon based on source type
+  const SourceIcon = () => {
+    switch (sourceType) {
+      case "document":
+        return <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />;
+      case "webpage":
+        return <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div
@@ -80,9 +114,12 @@ export function SourceItem({
 
         {/* Source info */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-[var(--text-primary)]">
-            @{telegramUsername}
-          </h4>
+          <div className="flex items-center gap-2">
+            <SourceIcon />
+            <h4 className="text-sm font-medium text-[var(--text-primary)] truncate">
+              {getSourceTitle()}
+            </h4>
+          </div>
           <p className="text-xs text-[var(--text-secondary)]">
             {hasContent
               ? t("generatePage.postsSelected", { selected: selectedCount, total: scrapedContent.length })

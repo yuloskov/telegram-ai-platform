@@ -14,7 +14,11 @@ interface ScrapedPost {
 
 interface Source {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document" | "webpage";
+  telegramUsername: string | null;
+  documentName: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
   isActive: boolean;
   scrapedContent: ScrapedPost[];
 }
@@ -109,7 +113,11 @@ export function SourceSelectionPanel({ sources, isLoading, channelId }: SourceSe
             <SourceItem
               key={source.id}
               id={source.id}
+              sourceType={source.sourceType}
               telegramUsername={source.telegramUsername}
+              documentName={source.documentName}
+              webpageTitle={source.webpageTitle}
+              webpageDomain={source.webpageDomain}
               isActive={source.isActive}
               scrapedContent={source.scrapedContent}
               enabled={selection?.enabled ?? false}

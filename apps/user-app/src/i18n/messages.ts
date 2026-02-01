@@ -319,6 +319,10 @@ export const messages = {
       fetchError: "Failed to fetch page",
       refreshWebpage: "Refresh",
       refreshing: "Refreshing...",
+      // Source display fallbacks
+      untitledDocument: "Untitled Document",
+      untitledWebpage: "Untitled Page",
+      unknownSource: "Unknown Source",
     },
 
     // Generate Page
@@ -920,6 +924,10 @@ export const messages = {
       fetchError: "Не удалось загрузить страницу",
       refreshWebpage: "Обновить",
       refreshing: "Обновление...",
+      // Source display fallbacks
+      untitledDocument: "Документ без названия",
+      untitledWebpage: "Страница без названия",
+      unknownSource: "Неизвестный источник",
     },
 
     // Generate Page
