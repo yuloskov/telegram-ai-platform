@@ -9,6 +9,7 @@ import { QUEUE_NAMES, WEBPAGE_PARSING_JOB_OPTIONS } from "@repo/shared/queues";
 
 const AddWebpageSchema = z.object({
   url: z.string().url("Invalid URL format"),
+  skipChunking: z.boolean().optional().default(false),
 });
 
 interface WebpageSourceResponse {
@@ -17,6 +18,7 @@ interface WebpageSourceResponse {
   webpageUrl: string;
   webpageTitle: string | null;
   webpageDomain: string | null;
+  skipChunking: boolean;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -54,7 +56,7 @@ async function handler(
     });
   }
 
-  const { url } = parseResult.data;
+  const { url, skipChunking } = parseResult.data;
 
   // Validate URL protocol
   try {
@@ -98,6 +100,7 @@ async function handler(
       sourceType: "webpage",
       webpageUrl: url,
       webpageDomain: domain,
+      skipChunking,
     },
   });
 
@@ -123,6 +126,7 @@ async function handler(
       webpageUrl: source.webpageUrl!,
       webpageTitle: source.webpageTitle,
       webpageDomain: source.webpageDomain,
+      skipChunking: source.skipChunking,
       isActive: source.isActive,
       lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
       createdAt: source.createdAt.toISOString(),

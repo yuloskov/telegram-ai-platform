@@ -86,8 +86,10 @@ export async function handleParseWebpageJob(data: WebpageParsingJobPayload): Pro
     throw error;
   }
 
-  console.log(`Extracting content from ${finalUrl}`);
-  const extracted = extractContent(html, finalUrl);
+  // Use full extraction mode when skipChunking is enabled (to capture all content)
+  const useFullExtraction = source.skipChunking === true;
+  console.log(`Extracting content from ${finalUrl} (fullExtraction: ${useFullExtraction})`);
+  const extracted = extractContent(html, finalUrl, { fullExtraction: useFullExtraction });
   console.log(`Extracted ${extracted.content.length} characters, title: "${extracted.title}"`);
 
   if (extracted.content.length < 100) {
@@ -99,16 +101,28 @@ export async function handleParseWebpageJob(data: WebpageParsingJobPayload): Pro
     throw new Error(errorMessage);
   }
 
-  // Build system prompt (custom or default)
-  const systemPrompt = buildSystemPrompt(source.chunkingPrompt);
-  console.log(`Using ${source.chunkingPrompt ? "custom" : "default"} chunking prompt`);
+  let chunks: Array<{ index: number; title: string; content: string }>;
 
-  // Try AI-based chunking first, fall back to paragraph-based
-  let chunks = await chunkWithAI(extracted.content, systemPrompt);
+  if (source.skipChunking) {
+    // Skip chunking - save whole content as single chunk
+    console.log("Skip chunking enabled - saving whole article as single chunk");
+    chunks = [{
+      index: 0,
+      title: extracted.title,
+      content: extracted.content,
+    }];
+  } else {
+    // Build system prompt (custom or default)
+    const systemPrompt = buildSystemPrompt(source.chunkingPrompt);
+    console.log(`Using ${source.chunkingPrompt ? "custom" : "default"} chunking prompt`);
 
-  if (chunks.length === 0) {
-    console.log("AI chunking returned no results, falling back to paragraph chunking");
-    chunks = chunkDocumentByParagraphs(extracted.content);
+    // Try AI-based chunking first, fall back to paragraph-based
+    chunks = await chunkWithAI(extracted.content, systemPrompt);
+
+    if (chunks.length === 0) {
+      console.log("AI chunking returned no results, falling back to paragraph chunking");
+      chunks = chunkDocumentByParagraphs(extracted.content);
+    }
   }
 
   console.log(`Created ${chunks.length} chunks`);

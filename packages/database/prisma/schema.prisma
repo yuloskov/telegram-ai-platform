@@ -114,6 +114,7 @@ model ContentSource {
   webpageTitle     String?           // Extracted page title
   webpageDomain    String?           // Domain for display
   webpageError     String?           // Last fetch error (if any)
+  skipChunking     Boolean @default(false) // If true, keep whole article as single source
 
   isActive         Boolean  @default(true)
   lastScrapedAt    DateTime?

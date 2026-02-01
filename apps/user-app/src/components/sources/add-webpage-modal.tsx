@@ -16,14 +16,15 @@ export function AddWebpageModal({ open, onOpenChange, channelId }: AddWebpageMod
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
+  const [skipChunking, setSkipChunking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const addMutation = useMutation({
-    mutationFn: async (webpageUrl: string) => {
+    mutationFn: async (params: { url: string; skipChunking: boolean }) => {
       const res = await fetch(`/api/channels/${channelId}/sources/add-webpage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: webpageUrl }),
+        body: JSON.stringify({ url: params.url, skipChunking: params.skipChunking }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -40,6 +41,7 @@ export function AddWebpageModal({ open, onOpenChange, channelId }: AddWebpageMod
 
   const handleClose = () => {
     setUrl("");
+    setSkipChunking(false);
     setError(null);
     onOpenChange(false);
   };
@@ -63,7 +65,7 @@ export function AddWebpageModal({ open, onOpenChange, channelId }: AddWebpageMod
     }
 
     setError(null);
-    addMutation.mutate(url);
+    addMutation.mutate({ url, skipChunking });
   };
 
   const isValid = validateUrl(url);
@@ -99,6 +101,21 @@ export function AddWebpageModal({ open, onOpenChange, channelId }: AddWebpageMod
               {t("sources.webpageUrlHint")}
             </p>
           </div>
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={skipChunking}
+              onChange={(e) => setSkipChunking(e.target.checked)}
+              className="h-4 w-4 shrink-0 rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
+            />
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              {t("sources.skipChunking")}
+            </span>
+          </label>
+          <p className="text-xs text-[var(--text-tertiary)] ml-7">
+            {t("sources.skipChunkingHint")}
+          </p>
 
           {error && (
             <div className="text-sm text-red-500">{error}</div>
