@@ -204,8 +204,8 @@ export const messages = {
     sources: {
       title: "Inspiration Sources",
       description: "See what others post and get inspired to create your own content",
-      featureCardTitle: "Get inspired by similar channels",
-      featureCardDescription: "Add channels from your niche to see what content performs well. AI will help you create unique posts based on trending topics.",
+      featureCardTitle: "Build your knowledge base",
+      featureCardDescription: "Add Telegram channels, PDFs, and other documents as sources. AI will use them to create unique posts tailored to your content style.",
       featureCardCta: "Browse Inspiration Sources",
       addSource: "Add Source",
       noSources: "No inspiration sources yet",
@@ -792,8 +792,8 @@ export const messages = {
     sources: {
       title: "Источники вдохновения",
       description: "Смотрите, что публикуют другие, и вдохновляйтесь на создание своего контента",
-      featureCardTitle: "Вдохновляйтесь похожими каналами",
-      featureCardDescription: "Добавьте каналы из вашей ниши, чтобы видеть какой контент работает лучше. AI поможет создать уникальные посты на основе трендовых тем.",
+      featureCardTitle: "Создайте базу знаний",
+      featureCardDescription: "Добавляйте Telegram-каналы, PDF и другие документы как источники. AI будет использовать их для создания уникальных постов в вашем стиле.",
       featureCardCta: "Смотреть источники",
       addSource: "Добавить источник",
       noSources: "Источников пока нет",

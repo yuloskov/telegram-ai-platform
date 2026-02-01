@@ -4,22 +4,31 @@ import { parsePdf, chunkDocumentByParagraphs, parseAIChunks } from "@repo/shared
 import { chat } from "@repo/ai";
 import type { DocumentParsingJobPayload } from "@repo/shared/queues";
 
-const DEFAULT_CHUNK_PROMPT = `You are a document analyzer. Split the provided document into logical, self-contained sections for educational content.
+const DEFAULT_CHUNK_PROMPT = `You are a content strategist preparing source material for Telegram post generation.
 
-CRITICAL RULES FOR NUMBER OF SECTIONS:
-- Create as MANY sections as the content naturally has - there is NO fixed number
-- Short documents (under 2000 chars) may have 2-5 sections
-- Medium documents (2000-10000 chars) may have 5-20 sections
-- Long documents (10000+ chars) may have 20-50+ sections
-- Each distinct topic, rule, word list, or concept should be its OWN section
-- Word lists and vocabulary should be split into MULTIPLE smaller chunks (10-20 words per chunk)
-- NEVER combine unrelated topics just to reduce the number of sections
+YOUR GOAL: Split the document into LARGE, COMPLETE chunks. Each chunk must contain enough context and substance to serve as the SOLE source for generating a full, engaging Telegram post.
 
-Each section should:
-1. Cover ONE complete topic, rule, or small word group
-2. Be self-contained and understandable on its own
-3. Be between 200-1500 characters (prefer smaller, focused chunks)
-4. Have a clear, descriptive title in the same language as the content`;
+CRITICAL RULES:
+- Create FEWER, LARGER chunks - quality over quantity
+- Each chunk should be 1000-4000 characters (aim for the higher end)
+- A chunk must tell a COMPLETE story, idea, or concept - never fragment content
+- If content is related, keep it together in ONE chunk
+- Only split when topics are genuinely distinct and unrelated
+- Short documents (under 3000 chars): often just 1-2 chunks is best
+- Medium documents (3000-10000 chars): typically 2-5 chunks
+- Long documents (10000+ chars): typically 5-15 chunks
+
+EACH CHUNK MUST:
+1. Be completely self-contained - a reader should understand it without any other context
+2. Contain enough substance to generate a full, valuable post (not just a fragment)
+3. Include relevant examples, details, or explanations that support the main point
+4. Have a clear, descriptive title in the document's language
+
+DO NOT create chunks that are:
+- Just lists of words or bullet points without context
+- Incomplete thoughts or fragments
+- Too short to generate meaningful content from
+- Missing necessary background information`;
 
 const CHUNK_OUTPUT_FORMAT = `MANDATORY OUTPUT FORMAT - You MUST return ONLY a valid JSON array:
 [

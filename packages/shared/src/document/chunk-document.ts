@@ -15,8 +15,8 @@ export function chunkDocumentByParagraphs(
     maxChunkSize?: number;
   }
 ): DocumentChunk[] {
-  const minChunkSize = options?.minChunkSize ?? 500;
-  const maxChunkSize = options?.maxChunkSize ?? 3000;
+  const minChunkSize = options?.minChunkSize ?? 1000;
+  const maxChunkSize = options?.maxChunkSize ?? 4000;
 
   // Split by double newlines (paragraphs)
   const paragraphs = text
