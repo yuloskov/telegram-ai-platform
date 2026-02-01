@@ -237,6 +237,7 @@ export const messages = {
       mediaOnly: "Media only",
       videoOnly: "Video only",
       hasVideo: "Video",
+      viewFull: "View full content",
       // Filtering
       search: "Search posts...",
       sortBy: "Sort by",
@@ -842,6 +843,7 @@ export const messages = {
       mediaOnly: "Только медиа",
       videoOnly: "Только видео",
       hasVideo: "Видео",
+      viewFull: "Смотреть полностью",
       // Filtering
       search: "Поиск постов...",
       sortBy: "Сортировка",

@@ -113,6 +113,7 @@ export function SourceSelectionPanel({ sources, isLoading, channelId }: SourceSe
             <SourceItem
               key={source.id}
               id={source.id}
+              channelId={channelId}
               sourceType={source.sourceType}
               telegramUsername={source.telegramUsername}
               documentName={source.documentName}

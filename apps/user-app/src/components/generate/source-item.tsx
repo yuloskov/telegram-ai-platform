@@ -14,6 +14,7 @@ interface ScrapedPost {
 
 interface SourceItemProps {
   id: string;
+  channelId: string;
   sourceType: "telegram" | "document" | "webpage";
   telegramUsername: string | null;
   documentName: string | null;
@@ -31,6 +32,8 @@ interface SourceItemProps {
 }
 
 export function SourceItem({
+  id,
+  channelId,
   sourceType,
   telegramUsername,
   documentName,
@@ -163,6 +166,8 @@ export function SourceItem({
             posts={scrapedContent}
             selectedIds={selectedPostIds}
             onToggle={onTogglePost}
+            channelId={channelId}
+            sourceId={id}
           />
         </div>
       )}

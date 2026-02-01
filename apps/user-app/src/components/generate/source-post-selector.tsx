@@ -1,4 +1,5 @@
-import { Images, Eye } from "lucide-react";
+import { useRouter } from "next/router";
+import { Images, Eye, Maximize2 } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { TelegramHtml } from "~/components/telegram/telegram-html";
@@ -16,10 +17,13 @@ interface SourcePostSelectorProps {
   posts: ScrapedPost[];
   selectedIds: Set<string>;
   onToggle: (postId: string) => void;
+  channelId?: string;
+  sourceId?: string;
 }
 
-export function SourcePostSelector({ posts, selectedIds, onToggle }: SourcePostSelectorProps) {
+export function SourcePostSelector({ posts, selectedIds, onToggle, channelId, sourceId }: SourcePostSelectorProps) {
   const { t } = useI18n();
+  const router = useRouter();
 
   // Filter out video-only posts
   const selectablePosts = posts.filter((post) => !isPostVideoOnly(post));
@@ -95,6 +99,21 @@ export function SourcePostSelector({ posts, selectedIds, onToggle }: SourcePostS
                   </span>
                 </div>
               </div>
+
+              {/* View full button */}
+              {channelId && sourceId && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/channels/${channelId}/sources/${sourceId}/content/${post.id}`);
+                  }}
+                  className="shrink-0 p-2 rounded-[var(--radius-sm)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                  title={t("sources.viewFull")}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </Card>
         );
