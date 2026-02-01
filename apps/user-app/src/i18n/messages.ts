@@ -306,6 +306,19 @@ export const messages = {
       deleteSelected: "Delete Selected",
       deleteSelectedTitle: "Delete Selected Chunks",
       deleteSelectedDescription: "Are you sure you want to delete {count} selected chunks? This action cannot be undone.",
+      // Webpage sources
+      webpage: "Web Page",
+      addWebpage: "Add Web Page",
+      addWebpageDescription: "Add a web page URL to use as a content source. The page will be parsed into sections that can be used for post generation.",
+      webpageUrl: "Web Page URL",
+      webpageUrlPlaceholder: "https://example.com/article",
+      webpageUrlHint: "Enter the full URL of the web page you want to use as a source",
+      invalidUrl: "Please enter a valid URL",
+      addWebpageError: "Failed to add web page",
+      adding: "Adding...",
+      fetchError: "Failed to fetch page",
+      refreshWebpage: "Refresh",
+      refreshing: "Refreshing...",
     },
 
     // Generate Page
@@ -894,6 +907,19 @@ export const messages = {
       deleteSelected: "Удалить выбранные",
       deleteSelectedTitle: "Удаление выбранных секций",
       deleteSelectedDescription: "Вы уверены, что хотите удалить {count} выбранных секций? Это действие нельзя отменить.",
+      // Webpage sources
+      webpage: "Веб-страница",
+      addWebpage: "Добавить веб-страницу",
+      addWebpageDescription: "Добавьте URL веб-страницы для использования в качестве источника контента. Страница будет разбита на секции для генерации постов.",
+      webpageUrl: "URL веб-страницы",
+      webpageUrlPlaceholder: "https://example.com/article",
+      webpageUrlHint: "Введите полный URL веб-страницы, которую хотите использовать как источник",
+      invalidUrl: "Введите корректный URL",
+      addWebpageError: "Не удалось добавить веб-страницу",
+      adding: "Добавление...",
+      fetchError: "Не удалось загрузить страницу",
+      refreshWebpage: "Обновить",
+      refreshing: "Обновление...",
     },
 
     // Generate Page

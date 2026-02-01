@@ -109,6 +109,12 @@ model ContentSource {
   documentSize     Int?
   chunkingPrompt   String?           // Custom AI prompt for document chunking
 
+  // Web page source fields
+  webpageUrl       String?           // URL to fetch
+  webpageTitle     String?           // Extracted page title
+  webpageDomain    String?           // Domain for display
+  webpageError     String?           // Last fetch error (if any)
+
   isActive         Boolean  @default(true)
   lastScrapedAt    DateTime?
   createdAt        DateTime @default(now())
@@ -219,6 +225,7 @@ enum PostGenerationType {
 enum ContentSourceType {
   telegram
   document
+  webpage
 }
 
 model Post {

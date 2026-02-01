@@ -36,6 +36,10 @@
     "./document": {
       "types": "./src/document/index.ts",
       "default": "./src/document/index.ts"
+    },
+    "./webpage": {
+      "types": "./src/webpage/index.ts",
+      "default": "./src/webpage/index.ts"
     }
   },
   "scripts": {
@@ -44,6 +48,7 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.0",
+    "cheerio": "^1.0.0",
     "jose": "^5.9.6",
     "minio": "^8.0.2",
     "nanoid": "^5.0.9",

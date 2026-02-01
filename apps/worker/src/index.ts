@@ -7,6 +7,7 @@ import { handleScrapeJob } from "./jobs/scrape.js";
 import { handleNotificationJob } from "./jobs/notify.js";
 import { handleContentPlanJob } from "./jobs/content-plan.js";
 import { handleParseDocumentJob } from "./jobs/parse-document.js";
+import { handleParseWebpageJob } from "./jobs/parse-webpage.js";
 import { getAutoScrapeScheduler } from "./services/auto-scrape-scheduler.js";
 import { getPostScheduler } from "./services/post-scheduler.js";
 import { getContentPlanScheduler } from "./services/content-plan-scheduler.js";
@@ -181,6 +182,27 @@ documentParsingWorker.on("failed", (job, err) => {
   console.error(`Document parsing job ${job?.id} failed:`, err.message);
 });
 
+// Webpage parsing worker
+const webpageParsingWorker = new Worker(
+  QUEUE_NAMES.WEBPAGE_PARSING,
+  async (job) => {
+    console.log(`Processing webpage parsing job: ${job.id}`);
+    return handleParseWebpageJob(job.data);
+  },
+  {
+    connection,
+    concurrency: 2,
+  }
+);
+
+webpageParsingWorker.on("completed", (job) => {
+  console.log(`Webpage parsing job ${job.id} completed`);
+});
+
+webpageParsingWorker.on("failed", (job, err) => {
+  console.error(`Webpage parsing job ${job?.id} failed:`, err.message);
+});
+
 console.log("Worker started successfully!");
 console.log(`Listening on queues: ${Object.values(QUEUE_NAMES).join(", ")}`);
 
@@ -213,6 +235,7 @@ const shutdown = async () => {
     scheduledPostsWorker.close(),
     contentPlanWorker.close(),
     documentParsingWorker.close(),
+    webpageParsingWorker.close(),
     autoScrapeScheduler.close(),
     postScheduler.close(),
     contentPlanScheduler.close(),

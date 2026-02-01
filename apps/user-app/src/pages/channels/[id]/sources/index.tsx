@@ -9,7 +9,8 @@ import { Spinner } from "~/components/ui/spinner";
 import { SourceList } from "~/components/sources/source-list";
 import { AddSourceModal } from "~/components/sources/add-source-modal";
 import { AddDocumentModal } from "~/components/sources/add-document-modal";
-import { Plus, Upload } from "lucide-react";
+import { AddWebpageModal } from "~/components/sources/add-webpage-modal";
+import { Plus, Upload, Globe } from "lucide-react";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -20,10 +21,14 @@ interface Channel {
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document";
+  sourceType: "telegram" | "document" | "webpage";
   telegramUsername: string | null;
   documentName: string | null;
   documentSize: number | null;
+  webpageUrl: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
+  webpageError: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {
@@ -41,6 +46,7 @@ export default function SourcesPage() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showWebpageModal, setShowWebpageModal] = useState(false);
 
   const { data: channel, isLoading: channelLoading } = useQuery({
     queryKey: ["channel", channelId],
@@ -126,6 +132,10 @@ export default function SourcesPage() {
           ]}
           actions={
             <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setShowWebpageModal(true)}>
+                <Globe className="h-4 w-4" />
+                {t("sources.addWebpage")}
+              </Button>
               <Button variant="secondary" onClick={() => setShowUploadModal(true)}>
                 <Upload className="h-4 w-4" />
                 {t("sources.uploadDocument")}
@@ -152,6 +162,12 @@ export default function SourcesPage() {
         <AddDocumentModal
           open={showUploadModal}
           onOpenChange={setShowUploadModal}
+          channelId={channelId as string}
+        />
+
+        <AddWebpageModal
+          open={showWebpageModal}
+          onOpenChange={setShowWebpageModal}
           channelId={channelId as string}
         />
 

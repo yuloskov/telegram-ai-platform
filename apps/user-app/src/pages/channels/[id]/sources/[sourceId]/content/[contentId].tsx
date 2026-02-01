@@ -18,12 +18,18 @@ interface Channel {
 
 interface ContentSource {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document" | "webpage";
+  telegramUsername: string | null;
+  documentName: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
 }
 
 interface ScrapedContent {
   id: string;
-  telegramMessageId: string;
+  telegramMessageId: string | null;
+  sectionTitle: string | null;
+  chunkIndex: number | null;
   text: string | null;
   mediaUrls: string[];
   views: number;
@@ -88,7 +94,27 @@ export default function ContentDetailPage() {
     );
   }
 
-  const telegramUrl = `https://t.me/${source.telegramUsername.replace(/^@/, "")}/${content.telegramMessageId}`;
+  const isTelegram = source.sourceType === "telegram";
+  const isDocument = source.sourceType === "document";
+  const isWebpage = source.sourceType === "webpage";
+
+  const telegramUrl = isTelegram && source.telegramUsername && content.telegramMessageId
+    ? `https://t.me/${source.telegramUsername.replace(/^@/, "")}/${content.telegramMessageId}`
+    : null;
+
+  // Get source display name for breadcrumbs
+  const getSourceName = () => {
+    if (isTelegram && source.telegramUsername) return `@${source.telegramUsername}`;
+    if (isDocument && source.documentName) return source.documentName;
+    if (isWebpage) return source.webpageTitle || source.webpageDomain || t("sources.webpage");
+    return t("sources.title");
+  };
+
+  // Get content title
+  const getContentTitle = () => {
+    if (isTelegram) return t("sources.postDetail");
+    return content.sectionTitle || `${t("sources.document")} #${(content.chunkIndex ?? 0) + 1}`;
+  };
 
   const chips: ChipProps[] = [];
   if (content.usedForGeneration) {
@@ -98,8 +124,8 @@ export default function ContentDetailPage() {
       variant: "info",
     });
   }
-  // Check if post contains video
-  const hasVideo = content.mediaUrls.some((url) => url.startsWith("skipped:video_or_document"));
+  // Check if post contains video (only for Telegram sources)
+  const hasVideo = isTelegram && content.mediaUrls.some((url) => url.startsWith("skipped:video_or_document"));
   if (hasVideo) {
     chips.push({
       label: t("sources.hasVideo"),
@@ -109,25 +135,27 @@ export default function ContentDetailPage() {
   }
 
   return (
-    <PageLayout title={`Post - @${source.telegramUsername}`}>
+    <PageLayout title={`${getContentTitle()} - ${getSourceName()}`}>
       <AppHeader user={user} onLogout={logout} />
 
       <div className="px-4 md:px-6 lg:px-8 py-6 max-w-3xl mx-auto">
         <PageHeader
-          title={t("sources.postDetail")}
+          title={getContentTitle()}
           breadcrumbs={[
             { label: t("common.home"), href: "/" },
             { label: t("nav.channels"), href: "/channels" },
             { label: channel.title, href: `/channels/${channelId}` },
             { label: t("sources.title"), href: `/channels/${channelId}/sources` },
-            { label: `@${source.telegramUsername}`, href: `/channels/${channelId}/sources/${sourceId}` },
-            { label: t("sources.postDetail") },
+            { label: getSourceName(), href: `/channels/${channelId}/sources/${sourceId}` },
+            { label: getContentTitle() },
           ]}
           actions={
-            <Button variant="ghost" size="sm" onClick={() => window.open(telegramUrl, "_blank")}>
-              <ExternalLink className="h-4 w-4" />
-              {t("sources.openInTelegram")}
-            </Button>
+            telegramUrl ? (
+              <Button variant="ghost" size="sm" onClick={() => window.open(telegramUrl, "_blank")}>
+                <ExternalLink className="h-4 w-4" />
+                {t("sources.openInTelegram")}
+              </Button>
+            ) : undefined
           }
         />
 
@@ -136,11 +164,13 @@ export default function ContentDetailPage() {
           mediaUrls={content.mediaUrls}
           chips={chips}
           metrics={
-            <EngagementMetrics
-              views={content.views}
-              forwards={content.forwards}
-              reactions={content.reactions}
-            />
+            isTelegram ? (
+              <EngagementMetrics
+                views={content.views}
+                forwards={content.forwards}
+                reactions={content.reactions}
+              />
+            ) : undefined
           }
           date={content.scrapedAt}
         />

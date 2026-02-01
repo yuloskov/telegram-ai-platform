@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Trash2, ChevronRight, FileText, Loader2 } from "lucide-react";
+import { RefreshCw, Trash2, ChevronRight, FileText, Globe, Loader2, AlertCircle } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { useScrapeStatus } from "~/hooks/useScrapeStatus";
@@ -9,10 +9,14 @@ import { useI18n } from "~/i18n";
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document";
+  sourceType: "telegram" | "document" | "webpage";
   telegramUsername: string | null;
   documentName: string | null;
   documentSize: number | null;
+  webpageUrl: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
+  webpageError: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {
@@ -32,12 +36,14 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
   const queryClient = useQueryClient();
 
   const isDocument = source.sourceType === "document";
-  const isProcessing = isDocument && !source.lastScrapedAt;
+  const isWebpage = source.sourceType === "webpage";
+  const isProcessing = (isDocument || isWebpage) && !source.lastScrapedAt;
+  const hasError = isWebpage && source.webpageError;
 
   // Track scrape job status from server (only for telegram sources)
   const { isRunning, latestLog } = useScrapeStatus(
     channelId,
-    isDocument ? "" : source.id
+    isDocument || isWebpage ? "" : source.id
   );
   const [prevIsRunning, setPrevIsRunning] = useState(false);
 
@@ -74,6 +80,20 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
     },
   });
 
+  const refreshMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/channels/${channelId}/sources/${source.id}/refresh`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sources", channelId] });
+    },
+  });
+
   const handleCardClick = () => {
     router.push(`/channels/${channelId}/sources/${source.id}`);
   };
@@ -95,7 +115,38 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          {isDocument ? (
+          {isWebpage ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+                  {source.webpageTitle || source.webpageDomain || t("sources.webpage")}
+                </span>
+                {isProcessing && !hasError && (
+                  <span className="text-xs px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {t("sources.processing")}
+                  </span>
+                )}
+                {hasError && (
+                  <span className="text-xs px-2 py-0.5 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {t("sources.fetchError")}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {source._count.scrapedContent} {t("sources.chunks")}
+                </span>
+                {source.webpageDomain && (
+                  <span className="text-xs text-[var(--text-tertiary)]">
+                    {source.webpageDomain}
+                  </span>
+                )}
+              </div>
+            </>
+          ) : isDocument ? (
             <>
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -139,7 +190,30 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {!isDocument && (
+          {isWebpage && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                refreshMutation.mutate();
+              }}
+              disabled={refreshMutation.isPending || isProcessing}
+            >
+              {refreshMutation.isPending ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  {t("sources.refreshing")}
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t("sources.refreshWebpage")}
+                </>
+              )}
+            </Button>
+          )}
+          {!isDocument && !isWebpage && (
             <Button
               size="sm"
               variant="secondary"
