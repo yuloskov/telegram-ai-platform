@@ -25,7 +25,9 @@ function getFontPaths(): string[] {
   ];
 
   for (const fontsDir of possibleFontsDirs) {
-    const firstFont = path.join(fontsDir, fontFiles[0]);
+    const firstFontName = fontFiles[0];
+    if (!firstFontName) continue;
+    const firstFont = path.join(fontsDir, firstFontName);
     if (fs.existsSync(firstFont)) {
       cachedFontPaths = fontFiles
         .map((f) => path.join(fontsDir, f))
