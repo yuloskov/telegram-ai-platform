@@ -55,9 +55,11 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
   const { channel } = plan;
 
   // Get previous posts from THIS content plan for context (to avoid repetition)
+  // Only consider published posts - drafts/pending/failed posts shouldn't be treated as previous content
   const previousPosts = await prisma.post.findMany({
     where: {
       contentPlanId: plan.id,
+      status: "published",
     },
     orderBy: { createdAt: "desc" },
     take: plan.lookbackPostCount,

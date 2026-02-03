@@ -45,6 +45,17 @@ function getFontPath(): string | null {
  * @param options - Optional rendering options
  * @returns PNG image as Buffer
  */
+/**
+ * Normalize font-family in SVG to use exact font name for reliable rendering
+ */
+function normalizeFontFamily(svgString: string): string {
+  // Replace any font-family that contains "Noto Sans" with just "Noto Sans"
+  return svgString.replace(
+    /font-family\s*=\s*["'][^"']*Noto\s*Sans[^"']*["']/gi,
+    'font-family="Noto Sans"'
+  );
+}
+
 export async function svgToPng(
   svgString: string,
   options: SvgToPngOptions = {}
@@ -56,14 +67,21 @@ export async function svgToPng(
 
   const fontPath = getFontPath();
 
-  const resvg = new Resvg(svgString, {
+  // Normalize font-family to exact match for reliable rendering
+  const normalizedSvg = normalizeFontFamily(svgString);
+
+  // Debug: log font-family attributes in SVG
+  const fontFamilyMatches = normalizedSvg.match(/font-family\s*=\s*["'][^"']*["']/gi);
+  console.log("[svgToPng] Font families in SVG:", fontFamilyMatches?.slice(0, 3));
+
+  const resvg = new Resvg(normalizedSvg, {
     fitTo: {
       mode: "width",
       value: width,
     },
     background,
     font: {
-      loadSystemFonts: true,
+      loadSystemFonts: false,
       // Load bundled Noto Sans font with Cyrillic support
       fontFiles: fontPath ? [fontPath] : [],
       defaultFontFamily: "Noto Sans",
