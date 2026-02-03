@@ -10,6 +10,7 @@ COPY packages/database/package.json ./packages/database/
 COPY packages/database/prisma ./packages/database/prisma
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/telegram-bot/package.json ./packages/telegram-bot/
+COPY packages/telegram-mtproto/package.json ./packages/telegram-mtproto/
 COPY apps/admin-app/package.json ./apps/admin-app/
 
 RUN pnpm install --frozen-lockfile
@@ -21,6 +22,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=deps /app/packages/telegram-bot/node_modules ./packages/telegram-bot/node_modules
+COPY --from=deps /app/packages/telegram-mtproto/node_modules ./packages/telegram-mtproto/node_modules
 COPY --from=deps /app/apps/admin-app/node_modules ./apps/admin-app/node_modules
 
 COPY . .
