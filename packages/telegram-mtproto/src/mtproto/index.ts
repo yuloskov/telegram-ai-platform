@@ -101,8 +101,8 @@ export async function scrapeChannelMessages(
   const standaloneMessages: typeof messages = [];
 
   // Debug: log message structure for the first message
-  if (messages.length > 0) {
-    const firstMsg = messages[0];
+  const firstMsg = messages[0];
+  if (firstMsg) {
     const allKeys = Object.keys(firstMsg);
     const protoKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(firstMsg));
     console.log(`[Scrape] First message keys: ${allKeys.join(', ')}`);
