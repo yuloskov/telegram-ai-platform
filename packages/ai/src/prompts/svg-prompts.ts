@@ -58,10 +58,12 @@ export function getSVGSystemPrompt(language: string = "en"): string {
 - Используй text-anchor="middle" для центрирования текста
 - Текст должен быть достаточно крупным для чтения (минимум 36px для основного текста)
 
+ЭМОДЗИ:
+- Используй эмодзи для визуального интереса (😀, 🎯, ✅, 📚, 💡 и т.д.)
+
 РЕКОМЕНДАЦИИ ПО ДИЗАЙНУ:
 - Создавай визуально привлекательные композиции с хорошей иерархией
-- Используй контрастные цвета для читабельности
-- Добавляй декоративные элементы (формы, линии, иконки) для визуального интереса`;
+- Используй контрастные цвета для читабельности`;
   }
 
   return `You are an expert SVG graphics creator for Telegram channels. You create clean, valid SVG images that work perfectly for social media visual content.
@@ -85,10 +87,12 @@ TEXT LAYOUT RULES:
 - Use text-anchor="middle" for center-aligned text
 - Text should be large enough to read (minimum 36px for body text)
 
+EMOJIS:
+- Use emojis for visual interest (😀, 🎯, ✅, 📚, 💡, etc.)
+
 DESIGN GUIDELINES:
 - Create visually appealing compositions with good hierarchy
-- Use contrasting colors for readability
-- Add decorative elements (shapes, lines, icons) for visual interest`;
+- Use contrasting colors for readability`;
 }
 
 export function getSVGUserPrompt(

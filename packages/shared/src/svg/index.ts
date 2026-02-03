@@ -8,16 +8,16 @@ export interface SvgToPngOptions {
   background?: string;
 }
 
-// Cache for font path
-let cachedFontPath: string | null | undefined = undefined;
+// Cache for font paths
+let cachedFontPaths: string[] | undefined = undefined;
 
 /**
- * Get path to bundled Noto Sans font file with Cyrillic support
+ * Get paths to bundled font files (Noto Sans for text, Noto Emoji for emojis)
  */
-function getFontPath(): string | null {
-  if (cachedFontPath !== undefined) return cachedFontPath;
+function getFontPaths(): string[] {
+  if (cachedFontPaths !== undefined) return cachedFontPaths;
 
-  const fontFile = "NotoSans-Regular.ttf";
+  const fontFiles = ["NotoSans-Regular.ttf", "NotoEmoji-Regular.ttf"];
 
   const possibleFontsDirs = [
     path.resolve(__dirname, "../../fonts"),
@@ -25,17 +25,17 @@ function getFontPath(): string | null {
   ];
 
   for (const fontsDir of possibleFontsDirs) {
-    const fontPath = path.join(fontsDir, fontFile);
-    if (fs.existsSync(fontPath)) {
-      console.log("[svgToPng] Found font at:", fontPath);
-      cachedFontPath = fontPath;
-      return fontPath;
+    const firstFont = path.join(fontsDir, fontFiles[0]);
+    if (fs.existsSync(firstFont)) {
+      cachedFontPaths = fontFiles
+        .map((f) => path.join(fontsDir, f))
+        .filter((p) => fs.existsSync(p));
+      return cachedFontPaths;
     }
   }
 
-  console.warn("[svgToPng] Font file not found in:", possibleFontsDirs);
-  cachedFontPath = null;
-  return null;
+  cachedFontPaths = [];
+  return [];
 }
 
 /**
@@ -65,14 +65,10 @@ export async function svgToPng(
   // Dynamic import to avoid webpack bundling the native module
   const { Resvg } = await import("@resvg/resvg-js");
 
-  const fontPath = getFontPath();
-
   // Normalize font-family to exact match for reliable rendering
   const normalizedSvg = normalizeFontFamily(svgString);
 
-  // Debug: log font-family attributes in SVG
-  const fontFamilyMatches = normalizedSvg.match(/font-family\s*=\s*["'][^"']*["']/gi);
-  console.log("[svgToPng] Font families in SVG:", fontFamilyMatches?.slice(0, 3));
+  const fontPaths = getFontPaths();
 
   const resvg = new Resvg(normalizedSvg, {
     fitTo: {
@@ -81,10 +77,10 @@ export async function svgToPng(
     },
     background,
     font: {
-      // Enable system fonts as fallback for symbols (checkmarks, etc.)
-      loadSystemFonts: true,
-      // Load bundled Noto Sans font with Cyrillic support as primary
-      fontFiles: fontPath ? [fontPath] : [],
+      // Disable system fonts - they interfere with Cyrillic rendering
+      loadSystemFonts: false,
+      // Load bundled fonts: Noto Sans (text + Cyrillic) and Noto Emoji
+      fontFiles: fontPaths,
       defaultFontFamily: "Noto Sans",
     },
   });
