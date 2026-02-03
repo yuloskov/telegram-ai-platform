@@ -625,6 +625,55 @@ export const messages = {
       lastRun: "Last run",
       neverRun: "Never run",
       pausedHint: "Enable the plan to schedule the next run",
+      // Generate Now
+      generateNow: "Generate Now",
+      generateNowTitle: "Generate Posts Now",
+      generateNowDescription: "Generate and schedule multiple posts using this plan",
+      postsToGenerate: "Number of posts",
+      scheduledFor: "Posts will be scheduled for:",
+      generating: "Generating posts...",
+      generateSuccess: "{count} posts generated and scheduled",
+      generateError: "Failed to generate posts",
+      // Skipped posts
+      skippedPostsAlert: "{count} posts were skipped while paused",
+      rescheduleSkipped: "Reschedule Skipped",
+    },
+
+    // Calendar
+    calendar: {
+      title: "Content Calendar",
+      noPostsForDay: "No posts scheduled",
+      skippedPosts: "{count} skipped posts",
+      viewCalendar: "View Calendar",
+      today: "Today",
+      monthView: "Month",
+      weekView: "Week",
+      // Status indicators
+      scheduled: "Scheduled",
+      published: "Published",
+      skipped: "Skipped",
+      draft: "Draft",
+      pendingReview: "Pending Review",
+      failed: "Failed",
+      // Actions
+      reschedule: "Reschedule",
+      viewPost: "View Post",
+      // Filters
+      filterByPlan: "Filter by plan",
+      allPlans: "All plans",
+    },
+
+    // Reschedule
+    reschedule: {
+      title: "Reschedule Posts",
+      bulkTitle: "Reschedule {count} Posts",
+      startDate: "First post date",
+      intervalMinutes: "Interval between posts (minutes)",
+      preview: "New schedule preview",
+      confirm: "Reschedule",
+      rescheduling: "Rescheduling...",
+      success: "{count} posts rescheduled",
+      error: "Failed to reschedule posts",
     },
   },
 
@@ -1254,6 +1303,55 @@ export const messages = {
       lastRun: "Последний запуск",
       neverRun: "Никогда не запускался",
       pausedHint: "Включите план, чтобы запланировать следующий запуск",
+      // Generate Now
+      generateNow: "Сгенерировать сейчас",
+      generateNowTitle: "Сгенерировать посты",
+      generateNowDescription: "Сгенерировать и запланировать несколько постов по этому плану",
+      postsToGenerate: "Количество постов",
+      scheduledFor: "Посты будут запланированы на:",
+      generating: "Генерация постов...",
+      generateSuccess: "{count} постов сгенерировано и запланировано",
+      generateError: "Не удалось сгенерировать посты",
+      // Skipped posts
+      skippedPostsAlert: "{count} постов пропущено во время паузы",
+      rescheduleSkipped: "Перепланировать пропущенные",
+    },
+
+    // Calendar
+    calendar: {
+      title: "Календарь контента",
+      noPostsForDay: "Нет запланированных постов",
+      skippedPosts: "{count} пропущенных постов",
+      viewCalendar: "Открыть календарь",
+      today: "Сегодня",
+      monthView: "Месяц",
+      weekView: "Неделя",
+      // Status indicators
+      scheduled: "Запланирован",
+      published: "Опубликован",
+      skipped: "Пропущен",
+      draft: "Черновик",
+      pendingReview: "На проверке",
+      failed: "Ошибка",
+      // Actions
+      reschedule: "Перепланировать",
+      viewPost: "Смотреть пост",
+      // Filters
+      filterByPlan: "Фильтр по плану",
+      allPlans: "Все планы",
+    },
+
+    // Reschedule
+    reschedule: {
+      title: "Перепланировать посты",
+      bulkTitle: "Перепланировать {count} постов",
+      startDate: "Дата первого поста",
+      intervalMinutes: "Интервал между постами (минут)",
+      preview: "Предпросмотр расписания",
+      confirm: "Перепланировать",
+      rescheduling: "Перепланирование...",
+      success: "{count} постов перепланировано",
+      error: "Не удалось перепланировать посты",
     },
   },
 } as const;

@@ -1,18 +1,28 @@
 import { Queue } from "bullmq";
 import { Redis } from "ioredis";
 import { prisma } from "@repo/database";
-import { QUEUE_NAMES, PUBLISHING_JOB_OPTIONS, type PublishingJobPayload } from "@repo/shared/queues";
+import {
+  QUEUE_NAMES,
+  PUBLISHING_JOB_OPTIONS,
+  DEFAULT_JOB_OPTIONS,
+  type PublishingJobPayload,
+  type NotificationJobPayload,
+} from "@repo/shared/queues";
 
 const POLL_INTERVAL_MS = 60 * 1000; // Poll every minute
 
 export class PostScheduler {
   private queue: Queue<PublishingJobPayload>;
+  private notifyQueue: Queue<NotificationJobPayload>;
   private connection: Redis;
   private intervalId: NodeJS.Timeout | null = null;
 
   constructor(redisUrl: string) {
     this.connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
     this.queue = new Queue(QUEUE_NAMES.SCHEDULED_POSTS, {
+      connection: this.connection,
+    });
+    this.notifyQueue = new Queue(QUEUE_NAMES.NOTIFICATIONS, {
       connection: this.connection,
     });
   }
@@ -53,7 +63,12 @@ export class PostScheduler {
         },
       },
       include: {
-        channel: true,
+        channel: {
+          include: {
+            user: true,
+          },
+        },
+        contentPlan: true,
       },
     });
 
@@ -65,6 +80,12 @@ export class PostScheduler {
 
     for (const post of duePosts) {
       try {
+        // Check if content plan exists and is paused
+        if (post.contentPlan && !post.contentPlan.isEnabled) {
+          await this.handleSkippedPost(post, now);
+          continue;
+        }
+
         // Update status to publishing
         await prisma.post.update({
           where: { id: post.id },
@@ -89,6 +110,41 @@ export class PostScheduler {
   }
 
   /**
+   * Mark a post as skipped and notify the user
+   */
+  private async handleSkippedPost(
+    post: {
+      id: string;
+      channel: {
+        title: string;
+        user: { id: string; telegramId: bigint };
+      };
+    },
+    skippedAt: Date
+  ): Promise<void> {
+    // Mark post as skipped
+    await prisma.post.update({
+      where: { id: post.id },
+      data: { skippedAt },
+    });
+
+    // Send notification about skipped post
+    await this.notifyQueue.add(
+      "post-skipped",
+      {
+        userId: post.channel.user.id,
+        telegramId: post.channel.user.telegramId.toString(),
+        type: "post_skipped",
+        title: "Post Skipped",
+        message: `Post for "${post.channel.title}" was skipped because the content plan is paused.`,
+      },
+      DEFAULT_JOB_OPTIONS
+    );
+
+    console.log(`Post ${post.id} skipped - content plan is paused`);
+  }
+
+  /**
    * Stop the scheduler
    */
   async close(): Promise<void> {
@@ -97,6 +153,7 @@ export class PostScheduler {
       this.intervalId = null;
     }
     await this.queue.close();
+    await this.notifyQueue.close();
     await this.connection.quit();
     console.log("Post scheduler stopped");
   }

@@ -65,6 +65,9 @@ const messages = {
     postRegenerated: "Post regenerated successfully!",
     regenerationFailed: "Failed to regenerate post. Please try again.",
     noContentPlan: "Cannot regenerate - this post has no content plan.",
+    // Post skipped notification
+    postSkipped: 'Post for "{channel}" was skipped because the content plan is paused.',
+    postSkippedTitle: "Post Skipped",
   },
   ru: {
     welcome: "Добро пожаловать в AI Telegram Channels Platform!",
@@ -132,6 +135,9 @@ const messages = {
     postRegenerated: "Пост успешно перегенерирован!",
     regenerationFailed: "Не удалось перегенерировать пост. Попробуйте снова.",
     noContentPlan: "Невозможно перегенерировать — у поста нет контент-плана.",
+    // Post skipped notification
+    postSkipped: 'Пост для "{channel}" был пропущен, так как контент-план приостановлен.',
+    postSkippedTitle: "Пост пропущен",
   },
 } as const;
 

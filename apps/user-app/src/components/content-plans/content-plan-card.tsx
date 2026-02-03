@@ -1,13 +1,15 @@
 // Card component for displaying a content plan in a list
 
+import { useState } from "react";
 import { useRouter } from "next/router";
-import { Play, Pause, Trash2, ChevronRight, Calendar, Clock, Timer } from "lucide-react";
+import { Play, Pause, Trash2, ChevronRight, Calendar, Clock, Timer, Zap } from "lucide-react";
 import { CronExpressionParser } from "cron-parser";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useI18n, type Language } from "~/i18n";
 import { cronToHumanReadable } from "./cron-schedule-picker";
+import { GenerateNowModal } from "./generate-now-modal";
 import type { ContentPlan } from "~/hooks/useContentPlan";
 
 function getNextRunFromCron(cronSchedule: string, timezone: string): Date | null {
@@ -61,6 +63,7 @@ interface ContentPlanCardProps {
   onToggle: (planId: string) => void;
   onDelete: (planId: string) => void;
   isToggling?: boolean;
+  onGenerateSuccess?: () => void;
 }
 
 export function ContentPlanCard({
@@ -69,9 +72,11 @@ export function ContentPlanCard({
   onToggle,
   onDelete,
   isToggling = false,
+  onGenerateSuccess,
 }: ContentPlanCardProps) {
   const { t, language } = useI18n();
   const router = useRouter();
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
 
   const handleCardClick = () => {
     router.push(`/channels/${channelId}/content-plans/${plan.id}/edit`);
@@ -84,84 +89,105 @@ export function ContentPlanCard({
   const nextRunDisplay = formatNextRunTime(nextRunDate, language);
 
   return (
-    <Card interactive className="p-4 cursor-pointer" onClick={handleCardClick}>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[var(--text-primary)]">
-              {plan.name}
-            </span>
-            <Badge variant={plan.isEnabled ? "success" : "default"}>
-              {plan.isEnabled
-                ? t("contentPlans.status.active")
-                : t("contentPlans.status.paused")}
-            </Badge>
-            {nextRunDisplay && (
-              <span className="flex items-center gap-1 text-xs text-[var(--accent-primary)]">
-                <Timer className="h-3 w-3" />
-                {nextRunDisplay}
+    <>
+      <Card interactive className="p-4 cursor-pointer" onClick={handleCardClick}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-[var(--text-primary)]">
+                {plan.name}
               </span>
-            )}
+              <Badge variant={plan.isEnabled ? "success" : "default"}>
+                {plan.isEnabled
+                  ? t("contentPlans.status.active")
+                  : t("contentPlans.status.paused")}
+              </Badge>
+              {nextRunDisplay && (
+                <span className="flex items-center gap-1 text-xs text-[var(--accent-primary)]">
+                  <Timer className="h-3 w-3" />
+                  {nextRunDisplay}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-tertiary)]">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {scheduleDisplay}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {plan.timezone}
+              </span>
+              {plan.contentSources.length > 0 && (
+                <span>
+                  {t("contentPlans.sourcesSelectedCount", {
+                    count: plan.contentSources.length,
+                  })}
+                </span>
+              )}
+            </div>
+
+            <p className="mt-1 text-xs text-[var(--text-secondary)] line-clamp-1">
+              {plan.promptTemplate}
+            </p>
           </div>
 
-          <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-tertiary)]">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {scheduleDisplay}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {plan.timezone}
-            </span>
-            {plan.contentSources.length > 0 && (
-              <span>
-                {t("contentPlans.sourcesSelectedCount", {
-                  count: plan.contentSources.length,
-                })}
-              </span>
-            )}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="default"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowGenerateModal(true);
+              }}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              {t("contentPlans.generateNow")}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle(plan.id);
+              }}
+              disabled={isToggling}
+            >
+              {plan.isEnabled ? (
+                <>
+                  <Pause className="h-3.5 w-3.5" />
+                  {t("contentPlans.pause")}
+                </>
+              ) : (
+                <>
+                  <Play className="h-3.5 w-3.5" />
+                  {t("contentPlans.resume")}
+                </>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(plan.id);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+            <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
           </div>
-
-          <p className="mt-1 text-xs text-[var(--text-secondary)] line-clamp-1">
-            {plan.promptTemplate}
-          </p>
         </div>
+      </Card>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle(plan.id);
-            }}
-            disabled={isToggling}
-          >
-            {plan.isEnabled ? (
-              <>
-                <Pause className="h-3.5 w-3.5" />
-                {t("contentPlans.pause")}
-              </>
-            ) : (
-              <>
-                <Play className="h-3.5 w-3.5" />
-                {t("contentPlans.resume")}
-              </>
-            )}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(plan.id);
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-          <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
-        </div>
-      </div>
-    </Card>
+      <GenerateNowModal
+        open={showGenerateModal}
+        onOpenChange={setShowGenerateModal}
+        planId={plan.id}
+        planName={plan.name}
+        onSuccess={onGenerateSuccess}
+      />
+    </>
   );
 }

@@ -77,11 +77,11 @@ async function handler(
   }
 
   if (req.method === "PUT" || req.method === "PATCH") {
-    // Can only edit drafts and failed posts
-    if (!["draft", "failed"].includes(post.status)) {
+    // Can only edit drafts, failed, scheduled, and pending_review posts
+    if (!["draft", "failed", "scheduled", "pending_review"].includes(post.status)) {
       return res.status(400).json({
         success: false,
-        error: "Cannot edit a post that is not a draft or failed",
+        error: "Cannot edit a post that is already published or publishing",
       });
     }
 

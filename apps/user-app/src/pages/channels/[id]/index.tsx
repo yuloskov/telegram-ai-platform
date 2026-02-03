@@ -14,7 +14,7 @@ import { PostList } from "~/components/posts/post-list";
 import { SelectionToolbar } from "~/components/posts/selection-toolbar";
 import { ScheduleModal } from "~/components/posts/schedule-modal";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
-import { Sparkles, Plus, Settings, Lightbulb, ArrowRight, Calendar } from "lucide-react";
+import { Sparkles, Plus, Settings, Lightbulb, ArrowRight, Calendar, CalendarDays } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { useI18n } from "~/i18n";
 import type { PostListItem, PostImage } from "~/types";
@@ -243,7 +243,7 @@ export default function ChannelDetailPage() {
         </Card>
 
         {/* Content Plans Feature Card */}
-        <Card interactive className="mb-6">
+        <Card interactive className="mb-4">
           <Link href={`/channels/${id}/content-plans`} className="block p-4">
             <div className="flex items-center gap-4">
               <div className="shrink-0 w-10 h-10 rounded-full bg-[var(--accent-secondary-subtle)] flex items-center justify-center">
@@ -255,6 +255,26 @@ export default function ChannelDetailPage() {
                 </h3>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
                   {t("contentPlans.featureCardDescription")}
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+            </div>
+          </Link>
+        </Card>
+
+        {/* Calendar Feature Card */}
+        <Card interactive className="mb-6">
+          <Link href={`/channels/${id}/calendar`} className="block p-4">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
+                <CalendarDays className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-[var(--text-primary)]">
+                  {t("calendar.title")}
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+                  View all scheduled, published, and skipped posts in a calendar view
                 </p>
               </div>
               <ArrowRight className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
