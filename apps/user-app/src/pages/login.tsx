@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/");
+      router.push("/app");
     }
   }, [isAuthenticated, router]);
 
@@ -72,7 +72,7 @@ export default function LoginPage() {
         if (data.success && data.data?.authenticated) {
           setIsPolling(false);
           setAuth(data.data.user);
-          router.push("/");
+          router.push("/app");
         }
       } catch {
         // Continue polling on error

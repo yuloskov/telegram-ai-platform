@@ -29,6 +29,27 @@ export const messages = {
       logout: "Logout",
     },
 
+    // Landing Page
+    landing: {
+      pageTitle: "AI Telegram Channels - Automate Your Content",
+      pageDescription: "Create and manage AI-powered Telegram channels with automated content generation",
+      login: "Login",
+      heroTitle: "Automate Your Telegram Channel",
+      heroSubtitle: "Create engaging content for your Telegram channels using AI. Scrape inspiration, generate posts, and publish automatically.",
+      getStarted: "Get Started",
+      featuresTitle: "Everything You Need",
+      feature1Title: "AI Content Generation",
+      feature1Description: "Generate unique posts tailored to your channel's tone and style using advanced AI models.",
+      feature2Title: "Smart Inspiration",
+      feature2Description: "Gather ideas from other channels and documents to fuel your content creation.",
+      feature3Title: "Telegram Integration",
+      feature3Description: "Seamlessly connect your channels and publish directly from the platform.",
+      feature4Title: "Scheduled Publishing",
+      feature4Description: "Set up content plans and let AI generate and publish posts on autopilot.",
+      ctaTitle: "Ready to Get Started?",
+      ctaSubtitle: "Sign in with Telegram and start automating your channel today.",
+    },
+
     // Navigation
     nav: {
       home: "Home",
@@ -635,6 +656,27 @@ export const messages = {
     header: {
       appName: "AI Каналы",
       logout: "Выйти",
+    },
+
+    // Landing Page
+    landing: {
+      pageTitle: "AI Telegram Каналы - Автоматизация контента",
+      pageDescription: "Создавайте и управляйте AI-каналами в Telegram с автоматической генерацией контента",
+      login: "Войти",
+      heroTitle: "Автоматизируйте ваш Telegram канал",
+      heroSubtitle: "Создавайте увлекательный контент для Telegram каналов с помощью AI. Собирайте идеи, генерируйте посты и публикуйте автоматически.",
+      getStarted: "Начать",
+      featuresTitle: "Всё что вам нужно",
+      feature1Title: "AI генерация контента",
+      feature1Description: "Генерируйте уникальные посты, адаптированные к тону и стилю вашего канала.",
+      feature2Title: "Умное вдохновение",
+      feature2Description: "Собирайте идеи из других каналов и документов для создания контента.",
+      feature3Title: "Интеграция с Telegram",
+      feature3Description: "Подключайте каналы и публикуйте посты прямо с платформы.",
+      feature4Title: "Автопубликация",
+      feature4Description: "Настройте контент-планы и AI будет генерировать и публиковать посты автоматически.",
+      ctaTitle: "Готовы начать?",
+      ctaSubtitle: "Войдите через Telegram и начните автоматизировать ваш канал уже сегодня.",
     },
 
     // Navigation
