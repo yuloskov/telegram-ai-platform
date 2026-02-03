@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
@@ -12,7 +13,7 @@ interface CalendarPost {
   skippedAt: string | null;
   contentPlanId: string | null;
   contentPlanName: string | null;
-  mediaFiles?: { id: string; url: string; type: string }[];
+  mediaFiles?: { id: string; url: string; type: string; isGenerated: boolean }[];
 }
 
 interface CalendarDayDetailProps {
@@ -34,6 +35,15 @@ export function CalendarDayDetail({
 }: CalendarDayDetailProps) {
   const { t } = useI18n();
 
+  // Sort posts by time (scheduledAt, publishedAt, or skippedAt)
+  const sortedPosts = useMemo(() => {
+    return [...posts].sort((a, b) => {
+      const timeA = a.scheduledAt || a.publishedAt || a.skippedAt || "";
+      const timeB = b.scheduledAt || b.publishedAt || b.skippedAt || "";
+      return timeA.localeCompare(timeB);
+    });
+  }, [posts]);
+
   if (!date) return null;
 
   const formattedDate = new Date(date).toLocaleDateString(undefined, {
@@ -43,7 +53,7 @@ export function CalendarDayDetail({
     day: "numeric",
   });
 
-  const skippedPosts = posts.filter((p) => p.skippedAt);
+  const skippedPosts = sortedPosts.filter((p) => p.skippedAt);
   const hasSkippedPosts = skippedPosts.length > 0;
 
   const handleRescheduleSkipped = () => {
@@ -67,13 +77,13 @@ export function CalendarDayDetail({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        {posts.length === 0 ? (
+        {sortedPosts.length === 0 ? (
           <div className="text-center py-8 text-[var(--text-secondary)]">
             {t("calendar.noPostsForDay")}
           </div>
         ) : (
           <div className="space-y-3">
-            {posts.map((post) => (
+            {sortedPosts.map((post) => (
               <CalendarPostCard
                 key={post.id}
                 post={post}

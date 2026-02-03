@@ -243,7 +243,7 @@ export function PostEditorModal({
                 {t("postEditor.saving")}
               </>
             ) : (
-              t("postEditor.saveAsDraft")
+              t("common.save")
             )}
           </Button>
         </ModalFooter>

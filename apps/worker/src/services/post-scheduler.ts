@@ -54,13 +54,14 @@ export class PostScheduler {
   private async pollForDuePosts(): Promise<void> {
     const now = new Date();
 
-    // Find all scheduled posts that are due
+    // Find all scheduled posts that are due (exclude already skipped posts)
     const duePosts = await prisma.post.findMany({
       where: {
         status: "scheduled",
         scheduledAt: {
           lte: now,
         },
+        skippedAt: null, // Don't process posts that have already been skipped
       },
       include: {
         channel: {

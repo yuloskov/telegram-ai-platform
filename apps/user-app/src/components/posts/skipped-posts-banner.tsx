@@ -5,9 +5,16 @@ import { useI18n } from "~/i18n";
 interface SkippedPostsBannerProps {
   count: number;
   onReschedule: () => void;
+  onDismiss: () => void;
+  isDismissing?: boolean;
 }
 
-export function SkippedPostsBanner({ count, onReschedule }: SkippedPostsBannerProps) {
+export function SkippedPostsBanner({
+  count,
+  onReschedule,
+  onDismiss,
+  isDismissing,
+}: SkippedPostsBannerProps) {
   const { t } = useI18n();
 
   if (count === 0) return null;
@@ -27,9 +34,14 @@ export function SkippedPostsBanner({ count, onReschedule }: SkippedPostsBannerPr
           </p>
         </div>
       </div>
-      <Button variant="secondary" onClick={onReschedule}>
-        {t("contentPlans.rescheduleSkipped")}
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" onClick={onDismiss} disabled={isDismissing}>
+          {isDismissing ? t("common.loading") : t("contentPlans.dismissSkipped")}
+        </Button>
+        <Button variant="secondary" onClick={onReschedule}>
+          {t("contentPlans.rescheduleSkipped")}
+        </Button>
+      </div>
     </div>
   );
 }

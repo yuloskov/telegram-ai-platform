@@ -19,7 +19,7 @@ interface CalendarPostResponse {
   skippedAt: string | null;
   contentPlanId: string | null;
   contentPlanName: string | null;
-  mediaFiles: { id: string; url: string; type: string }[];
+  mediaFiles: { id: string; url: string; type: string; isGenerated: boolean }[];
 }
 
 interface CalendarResponse {
@@ -110,6 +110,7 @@ async function handler(
           id: true,
           url: true,
           type: true,
+          isGenerated: true,
         },
       },
       contentPlan: {

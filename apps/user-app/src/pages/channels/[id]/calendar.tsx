@@ -31,7 +31,7 @@ interface CalendarPost {
   skippedAt: string | null;
   contentPlanId: string | null;
   contentPlanName: string | null;
-  mediaFiles?: { id: string; url: string; type: string }[];
+  mediaFiles?: { id: string; url: string; type: string; isGenerated: boolean }[];
 }
 
 interface CalendarData {
@@ -144,9 +144,8 @@ export default function CalendarPage() {
     [router, channelId]
   );
 
-  const handleRescheduleAllSkipped = useCallback(() => {
-    if (!calendarData) return;
-    // Collect all skipped post IDs from all dates
+  const getSkippedPostIds = useCallback(() => {
+    if (!calendarData) return [];
     const skippedIds: string[] = [];
     Object.values(calendarData.dates).forEach((posts) => {
       posts.forEach((post) => {
@@ -155,10 +154,41 @@ export default function CalendarPage() {
         }
       });
     });
+    return skippedIds;
+  }, [calendarData]);
+
+  const handleRescheduleAllSkipped = useCallback(() => {
+    const skippedIds = getSkippedPostIds();
     if (skippedIds.length > 0) {
       handleReschedule(skippedIds);
     }
-  }, [calendarData, handleReschedule]);
+  }, [getSkippedPostIds, handleReschedule]);
+
+  // Dismiss skipped posts mutation
+  const dismissSkippedMutation = useMutation({
+    mutationFn: async (postIds: string[]) => {
+      const res = await fetch("/api/posts/bulk-dismiss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postIds }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to dismiss posts");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      refetch();
+    },
+  });
+
+  const handleDismissAllSkipped = useCallback(() => {
+    const skippedIds = getSkippedPostIds();
+    if (skippedIds.length > 0) {
+      dismissSkippedMutation.mutate(skippedIds);
+    }
+  }, [getSkippedPostIds, dismissSkippedMutation]);
 
   // Edit post mutation
   const updatePostMutation = useMutation({
@@ -199,13 +229,15 @@ export default function CalendarPage() {
   const handleEditPost = useCallback((post: CalendarPost) => {
     setEditingPost(post);
     setEditContent(post.content);
-    // Convert existing media to PostImage format
+    // Convert existing media to PostImage format with proper isGenerated
     const images: PostImage[] = (post.mediaFiles || []).map((mf) => ({
       url: mf.url,
-      isGenerated: false, // We don't have this info from calendar API
+      isGenerated: mf.isGenerated,
     }));
     setEditImages(images);
-    setSelectedImages(images);
+    // Default to selecting generated images if available, otherwise all images
+    const generatedImages = images.filter((img) => img.isGenerated);
+    setSelectedImages(generatedImages.length > 0 ? generatedImages : images);
   }, []);
 
   const handleSavePost = useCallback(() => {
@@ -236,12 +268,17 @@ export default function CalendarPage() {
   }, []);
 
   const handleImageRegenerated = useCallback((oldUrl: string, newImage: PostImage) => {
-    setEditImages((prev) =>
-      prev.map((img) => (img.url === oldUrl ? newImage : img))
-    );
-    setSelectedImages((prev) =>
-      prev.map((img) => (img.url === oldUrl ? newImage : img))
-    );
+    // Add new image to available images (like generate page does)
+    setEditImages((prev) => [...prev, newImage]);
+    // Update selected images - replace old with new if selected, otherwise auto-select
+    setSelectedImages((prev) => {
+      const wasSelected = prev.some((img) => img.url === oldUrl);
+      if (wasSelected) {
+        return [...prev.filter((img) => img.url !== oldUrl), newImage];
+      }
+      // Auto-select the new image
+      return [...prev, newImage];
+    });
   }, []);
 
   const handleStatusChange = useCallback(() => {
@@ -311,6 +348,8 @@ export default function CalendarPage() {
             <SkippedPostsBanner
               count={calendarData.skippedCount}
               onReschedule={handleRescheduleAllSkipped}
+              onDismiss={handleDismissAllSkipped}
+              isDismissing={dismissSkippedMutation.isPending}
             />
           </div>
         )}

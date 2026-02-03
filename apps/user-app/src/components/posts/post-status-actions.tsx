@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Send, Clock, FileText, Eye, ChevronDown } from "lucide-react";
+import { Clock, FileText, Eye, ChevronDown } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Spinner } from "~/components/ui/spinner";
 import { ScheduleModal } from "./schedule-modal";
 import { useI18n } from "~/i18n";
 
@@ -46,26 +45,6 @@ export function PostStatusActions({
     },
   });
 
-  const publishMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/posts/${postId}/publish`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to publish");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      onStatusChange();
-    },
-  });
-
-  const handlePublishNow = () => {
-    publishMutation.mutate();
-  };
-
   const handleSchedule = (date: Date) => {
     updateStatusMutation.mutate({
       status: "scheduled",
@@ -90,7 +69,7 @@ export function PostStatusActions({
     }
   };
 
-  const isLoading = updateStatusMutation.isPending || publishMutation.isPending;
+  const isLoading = updateStatusMutation.isPending;
   const canEdit = ["draft", "failed", "scheduled", "pending_review"].includes(currentStatus);
 
   if (!canEdit) return null;
@@ -105,18 +84,6 @@ export function PostStatusActions({
     return (
       <div className="relative">
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={handlePublishNow}
-            disabled={isLoading}
-          >
-            {publishMutation.isPending ? (
-              <Spinner size="sm" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            {t("posts.publishNow")}
-          </Button>
           <div className="relative">
             <Button
               size="sm"
@@ -167,19 +134,6 @@ export function PostStatusActions({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          onClick={handlePublishNow}
-          disabled={isLoading}
-        >
-          {publishMutation.isPending ? (
-            <Spinner size="sm" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-          {t("posts.publishNow")}
-        </Button>
-
         {currentStatus !== "scheduled" && (
           <Button
             size="sm"

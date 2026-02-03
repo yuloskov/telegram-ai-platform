@@ -644,6 +644,9 @@ export const messages = {
       skippedPostsDescription:
         "These posts missed their scheduled time while the content plan was paused.",
       rescheduleSkipped: "Reschedule Skipped",
+      dismissSkipped: "Dismiss",
+      dismissSuccess: "{count} posts dismissed",
+      dismissError: "Failed to dismiss posts",
     },
 
     // Calendar
@@ -1329,6 +1332,9 @@ export const messages = {
       skippedPostsDescription:
         "Эти посты пропустили запланированное время, пока контент-план был приостановлен.",
       rescheduleSkipped: "Перепланировать пропущенные",
+      dismissSkipped: "Забыть",
+      dismissSuccess: "{count} постов удалено",
+      dismissError: "Не удалось удалить посты",
     },
 
     // Calendar

@@ -13,7 +13,7 @@ interface CalendarPost {
   skippedAt: string | null;
   contentPlanId: string | null;
   contentPlanName: string | null;
-  mediaFiles?: { id: string; url: string; type: string }[];
+  mediaFiles?: { id: string; url: string; type: string; isGenerated: boolean }[];
 }
 
 interface CalendarPostCardProps {
@@ -30,7 +30,7 @@ export function CalendarPostCard({ post, onView, onEdit, onReschedule }: Calenda
     if (post.skippedAt) {
       return {
         label: t("calendar.skipped"),
-        color: "bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300",
+        color: "bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-200",
         icon: AlertCircle,
       };
     }
@@ -38,37 +38,37 @@ export function CalendarPostCard({ post, onView, onEdit, onReschedule }: Calenda
       case "published":
         return {
           label: t("calendar.published"),
-          color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300",
+          color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200",
           icon: Check,
         };
       case "scheduled":
         return {
           label: t("calendar.scheduled"),
-          color: "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300",
+          color: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200",
           icon: Clock,
         };
       case "draft":
         return {
           label: t("calendar.draft"),
-          color: "bg-slate-100 text-slate-700 dark:bg-slate-600/30 dark:text-slate-300",
+          color: "bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200",
           icon: FileText,
         };
       case "pending_review":
         return {
           label: t("calendar.pendingReview"),
-          color: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
+          color: "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200",
           icon: Eye,
         };
       case "failed":
         return {
           label: t("calendar.failed"),
-          color: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
+          color: "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200",
           icon: AlertCircle,
         };
       default:
         return {
           label: post.status,
-          color: "bg-slate-100 text-slate-700 dark:bg-slate-600/30 dark:text-slate-300",
+          color: "bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200",
           icon: FileText,
         };
     }

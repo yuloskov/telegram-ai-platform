@@ -104,11 +104,13 @@ export function PostingCalendar({
     const hasSkipped = posts.some((p) => p.skippedAt);
     const hasDraft = posts.some((p) => p.status === "draft");
     const hasFailed = posts.some((p) => p.status === "failed");
+    const hasPendingReview = posts.some((p) => p.status === "pending_review");
 
-    if (hasPublished) colors.push("bg-green-500");
+    if (hasPublished) colors.push("bg-emerald-500");
     if (hasScheduled) colors.push("bg-blue-500");
+    if (hasPendingReview) colors.push("bg-amber-500");
     if (hasSkipped) colors.push("bg-orange-500");
-    if (hasDraft) colors.push("bg-gray-400");
+    if (hasDraft) colors.push("bg-slate-400");
     if (hasFailed) colors.push("bg-red-500");
 
     return colors;
@@ -224,13 +226,17 @@ export function PostingCalendar({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-4 pb-4 text-xs text-[var(--text-secondary)]">
+      <div className="flex items-center gap-4 px-4 pb-4 text-xs text-[var(--text-secondary)] flex-wrap">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-blue-500" />
           {t("calendar.scheduled")}
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          {t("calendar.pendingReview")}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
           {t("calendar.published")}
         </div>
         <div className="flex items-center gap-1">
@@ -238,7 +244,7 @@ export function PostingCalendar({
           {t("calendar.skipped")}
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-gray-400" />
+          <span className="w-2 h-2 rounded-full bg-slate-400" />
           {t("calendar.draft")}
         </div>
       </div>
