@@ -161,6 +161,7 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
     let mediaUrls: string[] = [];
 
     if (plan.imageEnabled) {
+      console.log(`[Content Plan ${contentPlanId}] Image generation enabled, type: ${plan.imageType}`);
       if (plan.imageType === "svg") {
         // Generate SVG image
         const svgStyleConfig: SVGStyleConfig = {
@@ -171,6 +172,7 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
           fontStyle: plan.svgFontStyle as "modern" | "classic" | "playful" | "technical",
         };
 
+        console.log(`[Content Plan ${contentPlanId}] Generating SVG...`);
         const svgResult = await generateSVG(
           generatedPost.content,
           svgStyleConfig,
@@ -178,7 +180,9 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
         );
 
         if (svgResult) {
+          console.log(`[Content Plan ${contentPlanId}] SVG generated, converting to PNG...`);
           const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
+          console.log(`[Content Plan ${contentPlanId}] PNG buffer size: ${pngBuffer.length} bytes`);
           const timestamp = Date.now();
           const pngObjectName = `svg-png/${channel.id}/${timestamp}.png`;
           const svgObjectName = `svg/${channel.id}/${timestamp}.svg`;
@@ -187,31 +191,44 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
             uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
             uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
           ]);
+          console.log(`[Content Plan ${contentPlanId}] Images uploaded to MinIO`);
 
           mediaUrls.push(`/api/media/telegram-platform/${pngObjectName}`);
+        } else {
+          console.warn(`[Content Plan ${contentPlanId}] generateSVG returned null - AI may have failed to generate valid SVG`);
         }
       } else {
         // Generate raster image
+        console.log(`[Content Plan ${contentPlanId}] Generating image prompt...`);
         const imagePrompt = await generateImagePromptFromContent(
           generatedPost.content,
           channelContext.language
         );
 
         if (imagePrompt) {
+          console.log(`[Content Plan ${contentPlanId}] Generating raster image...`);
           const imageData = await generateImage(imagePrompt);
           if (imageData) {
             const buffer = Buffer.from(
               imageData.replace(/^data:image\/\w+;base64,/, ""),
               "base64"
             );
+            console.log(`[Content Plan ${contentPlanId}] Raster image buffer size: ${buffer.length} bytes`);
             const timestamp = Date.now();
             const objectName = `generated/${channel.id}/${timestamp}.jpg`;
             await uploadFile("telegram-platform", objectName, buffer, "image/jpeg");
+            console.log(`[Content Plan ${contentPlanId}] Raster image uploaded to MinIO`);
 
             mediaUrls.push(`/api/media/telegram-platform/${objectName}`);
+          } else {
+            console.warn(`[Content Plan ${contentPlanId}] generateImage returned null`);
           }
+        } else {
+          console.warn(`[Content Plan ${contentPlanId}] generateImagePromptFromContent returned null`);
         }
       }
+    } else {
+      console.log(`[Content Plan ${contentPlanId}] Image generation disabled`);
     }
 
     // Determine initial post status based on publish mode
