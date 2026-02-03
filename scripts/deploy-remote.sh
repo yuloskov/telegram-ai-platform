@@ -27,7 +27,7 @@ docker compose --env-file .env -f docker/docker-compose.prod.yml up -d
 
 # Run database migrations
 log "Running database migrations..."
-docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T user-app sh -c "cd /app && npx prisma db push --skip-generate" || true
+docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T user-app sh -c "cd /app && npx prisma db push" || true
 
 # Cleanup old images
 log "Cleaning up old images..."
