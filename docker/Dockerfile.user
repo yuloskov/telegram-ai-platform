@@ -60,10 +60,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/user-app/.next/static ./apps
 # Copy fonts for SVG rendering
 COPY --from=builder /app/packages/shared/fonts ./packages/shared/fonts
 
-# Copy @resvg/resvg-js native module (required for SVG to PNG conversion)
-# In pnpm, the module is in packages/shared/node_modules (symlink to .pnpm store)
-# Docker COPY follows symlinks, so this should copy the actual files
-COPY --from=builder /app/packages/shared/node_modules/@resvg ./node_modules/@resvg
+# Copy @resvg/resvg-js native module from pnpm store (required for SVG to PNG conversion)
+# pnpm stores actual files in .pnpm directory, symlinks don't work across stages
+COPY --from=builder /app/node_modules/.pnpm/@resvg+resvg-js@2.6.2/node_modules/@resvg/resvg-js ./node_modules/@resvg/resvg-js
+COPY --from=builder /app/node_modules/.pnpm/@resvg+resvg-js-linux-x64-musl@2.6.2/node_modules/@resvg/resvg-js-linux-x64-musl ./node_modules/@resvg/resvg-js-linux-x64-musl
 
 USER nextjs
 
