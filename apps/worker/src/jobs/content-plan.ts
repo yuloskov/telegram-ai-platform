@@ -1,6 +1,7 @@
 import { prisma } from "@repo/database";
 import { Queue } from "bullmq";
 import { Redis } from "ioredis";
+import parser from "cron-parser";
 import {
   generateMultiplePostsWithImages,
   generateSVG,
@@ -53,6 +54,26 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
   }
 
   const { channel } = plan;
+
+  // Check if there's already a post from this plan scheduled at this exact time
+  // This can happen if user used "Generate Now" to pre-generate posts
+  const currentScheduledTime = getCurrentScheduledTime(plan.cronSchedule, plan.timezone);
+  if (currentScheduledTime) {
+    const existingPost = await prisma.post.findFirst({
+      where: {
+        contentPlanId: plan.id,
+        scheduledAt: currentScheduledTime,
+      },
+      select: { id: true },
+    });
+
+    if (existingPost) {
+      console.log(
+        `Content plan ${contentPlanId}: Post already exists for scheduled time ${currentScheduledTime.toISOString()}, skipping generation`
+      );
+      return;
+    }
+  }
 
   // Get previous posts from THIS content plan for context (to avoid repetition)
   // Only consider published posts - drafts/pending/failed posts shouldn't be treated as previous content
@@ -353,5 +374,27 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
   } catch (error) {
     console.error(`Content plan ${contentPlanId} execution failed:`, error);
     throw error;
+  }
+}
+
+/**
+ * Get the current scheduled time based on cron expression.
+ * This determines what time slot triggered the current job execution.
+ */
+function getCurrentScheduledTime(cronSchedule: string, timezone: string): Date | null {
+  try {
+    // Parse cron with current time, then get the previous occurrence
+    // This gives us the scheduled time that triggered this job
+    const interval = parser.parse(cronSchedule, {
+      currentDate: new Date(),
+      tz: timezone,
+    });
+
+    // Get the previous scheduled time (the one that just triggered)
+    const prev = interval.prev();
+    return prev.toDate();
+  } catch (error) {
+    console.error("Failed to parse cron schedule:", error);
+    return null;
   }
 }
