@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/shared/package.json ./packages/shared/
-COPY packages/telegram/package.json ./packages/telegram/
+COPY packages/telegram-bot/package.json ./packages/telegram-bot/
 COPY packages/ai/package.json ./packages/ai/
 COPY apps/user-app/package.json ./apps/user-app/
 
@@ -20,7 +20,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/database/node_modules ./packages/database/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/packages/telegram/node_modules ./packages/telegram/node_modules
+COPY --from=deps /app/packages/telegram-bot/node_modules ./packages/telegram-bot/node_modules
 COPY --from=deps /app/packages/ai/node_modules ./packages/ai/node_modules
 COPY --from=deps /app/apps/user-app/node_modules ./apps/user-app/node_modules
 
