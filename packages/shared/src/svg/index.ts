@@ -81,8 +81,9 @@ export async function svgToPng(
     },
     background,
     font: {
-      loadSystemFonts: false,
-      // Load bundled Noto Sans font with Cyrillic support
+      // Enable system fonts as fallback for symbols (checkmarks, etc.)
+      loadSystemFonts: true,
+      // Load bundled Noto Sans font with Cyrillic support as primary
       fontFiles: fontPath ? [fontPath] : [],
       defaultFontFamily: "Noto Sans",
     },
