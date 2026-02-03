@@ -1,5 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getFileUrl } from "@repo/shared/storage";
+import { getFileBuffer } from "@repo/shared/storage";
+
+// Map file extensions to MIME types
+const mimeTypes: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  mp4: "video/mp4",
+  webm: "video/webm",
+};
 
 export default async function handler(
   req: NextApiRequest,
@@ -25,13 +37,21 @@ export default async function handler(
   }
 
   try {
-    // Generate presigned URL valid for 1 hour
-    const url = await getFileUrl(bucket, objectName, 3600);
+    // Fetch file content from MinIO and proxy to client
+    const buffer = await getFileBuffer(bucket, objectName);
 
-    // Redirect to the presigned URL
-    res.redirect(302, url);
+    // Determine content type from extension
+    const ext = objectName.split(".").pop()?.toLowerCase() ?? "";
+    const contentType = mimeTypes[ext] ?? "application/octet-stream";
+
+    // Set caching headers (1 hour browser cache, 1 day CDN cache)
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Length", buffer.length);
+    res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
+
+    res.status(200).send(buffer);
   } catch (error) {
-    console.error("Failed to get media URL:", error);
+    console.error("Failed to get media:", error);
     res.status(404).json({ error: "Media not found" });
   }
 }
