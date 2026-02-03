@@ -212,15 +212,15 @@ export default function CalendarPage() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setEditingPost(null);
       setEditContent("");
       setEditImages([]);
       setSelectedImages([]);
-      refetch();
-      // Update selected posts if still viewing the same day
-      if (selectedDate && calendarData) {
-        const updatedPosts = calendarData.dates[selectedDate] || [];
+      // Wait for refetch to complete, then update selected posts
+      const result = await refetch();
+      if (selectedDate && result.data) {
+        const updatedPosts = result.data.dates[selectedDate] || [];
         setSelectedPosts(updatedPosts);
       }
     },
