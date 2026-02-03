@@ -29,7 +29,16 @@ export async function ensureBucket(bucketName: string): Promise<void> {
   const client = getMinioClient();
   const exists = await client.bucketExists(bucketName);
   if (!exists) {
-    await client.makeBucket(bucketName);
+    try {
+      await client.makeBucket(bucketName);
+    } catch (error: unknown) {
+      // Handle race condition: bucket was created by another request
+      // S3 error codes: BucketAlreadyOwnedByYou, BucketAlreadyExists
+      const errorCode = (error as { code?: string })?.code;
+      if (errorCode !== "BucketAlreadyOwnedByYou" && errorCode !== "BucketAlreadyExists") {
+        throw error;
+      }
+    }
   }
 }
 
