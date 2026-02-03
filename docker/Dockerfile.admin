@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/database/package.json ./packages/database/
+COPY packages/database/prisma ./packages/database/prisma
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/telegram-bot/package.json ./packages/telegram-bot/
 COPY apps/admin-app/package.json ./apps/admin-app/
