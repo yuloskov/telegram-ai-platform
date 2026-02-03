@@ -124,7 +124,7 @@ export function SourceSelectionPanel({ sources, isLoading, channelId }: SourceSe
               enabled={selection?.enabled ?? false}
               postCount={selection?.postCount ?? 5}
               selectedPostIds={selection?.selectedPostIds ?? new Set()}
-              onToggleSource={() => toggleSource(source.id)}
+              onToggleSource={() => toggleSource(source.id, source.scrapedContent)}
               onSetPostCount={(count) => setPostCount(source.id, count)}
               onTogglePost={(postId) => togglePost(source.id, postId)}
               onSelectRandom={(postIds, count) => selectRandomPosts(source.id, postIds, count)}

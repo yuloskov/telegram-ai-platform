@@ -5,7 +5,7 @@ import { Button } from "~/components/ui/button";
 import { PostEditorModal } from "~/components/posts/post-editor-modal";
 import { GeneratedPostCard } from "./generated-post-card";
 import { RefreshCw, Save } from "lucide-react";
-import type { ImageDecision, PostImage } from "~/stores/generation-store";
+import { useGenerationStore, type ImageDecision, type PostImage } from "~/stores/generation-store";
 
 interface GeneratedPost {
   content: string;
@@ -46,8 +46,9 @@ export function GeneratedPostsGrid({
 }: GeneratedPostsGridProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const { savedPostIndices, updatePost, markPostAsSaved } = useGenerationStore();
 
-  const [editingPost, setEditingPost] = useState<GeneratedPost | null>(null);
+  const [editingPostIndex, setEditingPostIndex] = useState<number | null>(null);
   const [editingSources, setEditingSources] = useState<SourceContent[]>([]);
   const [editPostImages, setEditPostImages] = useState<PostImage[]>([]);
   const [editContent, setEditContent] = useState("");
@@ -72,8 +73,11 @@ export function GeneratedPostsGrid({
 
   const saveAllMutation = useMutation({
     mutationFn: async () => {
-      for (const post of posts) {
+      for (let i = 0; i < posts.length; i++) {
+        const post = posts[i];
+        if (!post) continue;
         await saveMutation.mutateAsync({ content: post.content, images: post.images });
+        markPostAsSaved(i);
       }
     },
     onSuccess: () => {
@@ -85,14 +89,17 @@ export function GeneratedPostsGrid({
     setSavingPostIndex(index);
     try {
       await saveMutation.mutateAsync({ content, images });
+      markPostAsSaved(index);
     } finally {
       setSavingPostIndex(null);
     }
   };
 
-  const handleEditPost = (post: GeneratedPost) => {
+  const handleEditPost = (index: number) => {
+    const post = posts[index];
+    if (!post) return;
     const postSources = sources.filter((s) => post.sourceIds.includes(s.id));
-    setEditingPost(post);
+    setEditingPostIndex(index);
     setEditingSources(postSources);
     setEditPostImages(post.images ?? []);
     setEditContent(post.content);
@@ -102,8 +109,10 @@ export function GeneratedPostsGrid({
   };
 
   const handleSaveFromEditor = async () => {
+    if (editingPostIndex === null) return;
     await saveMutation.mutateAsync({ content: editContent, images: editImages.length > 0 ? editImages : undefined });
-    setEditingPost(null);
+    markPostAsSaved(editingPostIndex);
+    setEditingPostIndex(null);
     setEditContent("");
     setEditPostImages([]);
     setEditImages([]);
@@ -111,23 +120,53 @@ export function GeneratedPostsGrid({
 
   const handleImageRegenerated = (oldUrl: string, newImage: PostImage) => {
     // Update post images - add new image to the list
-    setEditPostImages((prev) => [...prev, newImage]);
+    const newPostImages = [...editPostImages, newImage];
+    setEditPostImages(newPostImages);
     // Update selected images - replace old with new if it was selected
-    setEditImages((prev) => {
-      const wasSelected = prev.some((img) => img.url === oldUrl);
+    const newSelectedImages = (() => {
+      const wasSelected = editImages.some((img) => img.url === oldUrl);
       if (wasSelected) {
-        return [...prev.filter((img) => img.url !== oldUrl), newImage];
+        return [...editImages.filter((img) => img.url !== oldUrl), newImage];
       }
       // Auto-select the new image
-      return [...prev, newImage];
-    });
+      return [...editImages, newImage];
+    })();
+    setEditImages(newSelectedImages);
+    // Persist to store
+    if (editingPostIndex !== null) {
+      updatePost(editingPostIndex, { images: newPostImages });
+    }
   };
 
   const handleNewImageGenerated = (newImage: PostImage) => {
     // Add to available images
-    setEditPostImages((prev) => [...prev, newImage]);
+    const newPostImages = [...editPostImages, newImage];
+    setEditPostImages(newPostImages);
     // Auto-select the new image
     setEditImages((prev) => [...prev, newImage]);
+    // Persist to store
+    if (editingPostIndex !== null) {
+      updatePost(editingPostIndex, { images: newPostImages });
+    }
+  };
+
+  const handleContentChange = (newContent: string) => {
+    setEditContent(newContent);
+    // Persist content to store so it's not lost if modal is closed
+    if (editingPostIndex !== null) {
+      updatePost(editingPostIndex, { content: newContent });
+    }
+  };
+
+  const handleCloseModal = () => {
+    // Persist any changes to the store before closing
+    if (editingPostIndex !== null) {
+      updatePost(editingPostIndex, { content: editContent, images: editPostImages });
+    }
+    setEditingPostIndex(null);
+    setEditContent("");
+    setEditPostImages([]);
+    setEditImages([]);
   };
 
   if (posts.length === 0) {
@@ -176,9 +215,10 @@ export function GeneratedPostsGrid({
               sources={postSources}
               imageDecision={post.imageDecision}
               images={post.images}
-              onEdit={() => handleEditPost(post)}
+              onEdit={() => handleEditPost(index)}
               onSave={() => handleSavePost(index, post.content, post.images)}
               isSaving={savingPostIndex === index}
+              isSaved={savedPostIndices.has(index)}
             />
           );
         })}
@@ -186,12 +226,12 @@ export function GeneratedPostsGrid({
 
       {/* Editor Modal */}
       <PostEditorModal
-        open={!!editingPost}
-        onOpenChange={(open) => !open && setEditingPost(null)}
+        open={editingPostIndex !== null}
+        onOpenChange={(open) => !open && handleCloseModal()}
         content={editContent}
-        onContentChange={setEditContent}
+        onContentChange={handleContentChange}
         onSave={handleSaveFromEditor}
-        onCancel={() => setEditingPost(null)}
+        onCancel={handleCloseModal}
         isSaving={saveMutation.isPending}
         channelName={channelName}
         channelId={channelId}

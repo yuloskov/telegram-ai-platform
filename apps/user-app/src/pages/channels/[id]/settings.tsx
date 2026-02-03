@@ -10,6 +10,8 @@ import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { ChannelSettingsForm, type ChannelSettings } from "~/components/channels/channel-settings-form";
+import { SVGSettingsInline } from "~/components/generate/svg-settings-inline";
+import type { SvgGenerationSettings } from "~/hooks/useSvgSettings";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "~/i18n";
 
@@ -27,6 +29,13 @@ export default function ChannelSettingsPage() {
     language: "en",
     hashtags: "",
   });
+  const [svgSettings, setSvgSettings] = useState<SvgGenerationSettings>({
+    themeColor: "#3B82F6",
+    textColor: "#1F2937",
+    backgroundStyle: "gradient",
+    fontStyle: "modern",
+    stylePrompt: "",
+  });
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: channel, isLoading: channelLoading } = useChannel(id, {
@@ -41,22 +50,34 @@ export default function ChannelSettingsPage() {
         language: channel.language,
         hashtags: channel.hashtags.join(", "),
       });
+      setSvgSettings({
+        themeColor: channel.svgThemeColor,
+        textColor: channel.svgTextColor,
+        backgroundStyle: channel.svgBackgroundStyle as SvgGenerationSettings["backgroundStyle"],
+        fontStyle: channel.svgFontStyle as SvgGenerationSettings["fontStyle"],
+        stylePrompt: channel.svgStylePrompt || "",
+      });
     }
   }, [channel]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: ChannelSettings) => {
+    mutationFn: async (data: { settings: ChannelSettings; svgSettings: SvgGenerationSettings }) => {
       const res = await fetch(`/api/channels/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          niche: data.niche || null,
-          tone: data.tone,
-          language: data.language,
-          hashtags: data.hashtags
+          niche: data.settings.niche || null,
+          tone: data.settings.tone,
+          language: data.settings.language,
+          hashtags: data.settings.hashtags
             .split(",")
             .map((h) => h.trim())
             .filter(Boolean),
+          svgStylePrompt: data.svgSettings.stylePrompt || null,
+          svgThemeColor: data.svgSettings.themeColor,
+          svgTextColor: data.svgSettings.textColor,
+          svgBackgroundStyle: data.svgSettings.backgroundStyle,
+          svgFontStyle: data.svgSettings.fontStyle,
         }),
       });
       const json = await res.json();
@@ -119,11 +140,21 @@ export default function ChannelSettingsPage() {
           <ChannelSettingsForm
             settings={settings}
             onSettingsChange={setSettings}
-            onSave={() => updateMutation.mutate(settings)}
+            onSave={() => updateMutation.mutate({ settings, svgSettings })}
             isSaving={updateMutation.isPending}
             isError={updateMutation.isError}
             errorMessage={updateMutation.error?.message}
             showSuccess={showSuccess}
+          />
+        </Card>
+
+        <Card className="p-6 mt-6">
+          <h3 className="text-lg font-medium text-[var(--text-primary)] mb-4">
+            {t("svg.title")}
+          </h3>
+          <SVGSettingsInline
+            settings={svgSettings}
+            onUpdate={(key, value) => setSvgSettings(prev => ({ ...prev, [key]: value }))}
           />
         </Card>
       </div>

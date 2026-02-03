@@ -89,6 +89,13 @@ export default function NewContentPlanPage() {
             }}
             isSubmitting={createMutation.isPending}
             submitLabel={t("contentPlans.createPlan")}
+            channelDefaults={{
+              svgThemeColor: channel.svgThemeColor,
+              svgTextColor: channel.svgTextColor,
+              svgBackgroundStyle: channel.svgBackgroundStyle,
+              svgFontStyle: channel.svgFontStyle,
+              svgStylePrompt: channel.svgStylePrompt,
+            }}
           />
         </PageSection>
       </div>

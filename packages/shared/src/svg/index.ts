@@ -29,7 +29,9 @@ export async function svgToPng(
     background,
     font: {
       loadSystemFonts: true,
-      defaultFontFamily: "Arial",
+      // Use fonts with excellent Cyrillic support
+      // DejaVu Sans and Noto Sans are widely available on Linux/Docker
+      defaultFontFamily: "DejaVu Sans, Noto Sans, Liberation Sans, Arial",
     },
   });
 

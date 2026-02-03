@@ -50,7 +50,7 @@ interface ChannelPost {
 interface GenerationStore {
   // Source selections
   sourceSelections: Map<string, SourceSelection>;
-  toggleSource: (sourceId: string) => void;
+  toggleSource: (sourceId: string, posts?: Array<{ id: string }>) => void;
   setPostCount: (sourceId: string, count: number) => void;
   togglePost: (sourceId: string, postId: string) => void;
   selectRandomPosts: (sourceId: string, allPostIds: string[], count: number) => void;
@@ -72,7 +72,10 @@ interface GenerationStore {
   // Results
   generatedPosts: GeneratedPost[];
   generatedSources: SourceContent[];
+  savedPostIndices: Set<number>;
   setGenerationResult: (result: GenerationResult) => void;
+  updatePost: (index: number, updates: { content?: string; images?: PostImage[] }) => void;
+  markPostAsSaved: (index: number) => void;
 
   // Reset
   reset: () => void;
@@ -82,36 +85,33 @@ const DEFAULT_POST_COUNT = 5;
 
 export const useGenerationStore = create<GenerationStore>((set, get) => ({
   sourceSelections: new Map(),
-  channelContextEnabled: true,
+  channelContextEnabled: false,
   channelContextSelectedPostIds: new Set(),
   customPrompt: "",
   generatedPosts: [],
   generatedSources: [],
+  savedPostIndices: new Set(),
 
   initializeSources: (sources: Source[]) => {
     const selections = new Map<string, SourceSelection>();
 
     sources.forEach((source) => {
-      // Filter out video-only posts, then select first 5 (most recent, already sorted by API)
-      const selectablePosts = source.scrapedContent.filter((p) => !isPostVideoOnly(p));
-      const topPostIds = selectablePosts.slice(0, DEFAULT_POST_COUNT).map((p) => p.id);
-
+      // Initialize with no posts selected by default
       selections.set(source.id, {
-        enabled: selectablePosts.length > 0,
+        enabled: false,
         postCount: DEFAULT_POST_COUNT,
-        selectedPostIds: new Set(topPostIds),
+        selectedPostIds: new Set(),
       });
     });
 
     set({ sourceSelections: selections });
   },
 
-  initializeChannelContext: (posts: ChannelPost[]) => {
-    // Select all posts by default (up to 10)
-    const topPostIds = posts.slice(0, 10).map((p) => p.id);
+  initializeChannelContext: (_posts: ChannelPost[]) => {
+    // Initialize with no posts selected by default
     set({
-      channelContextEnabled: topPostIds.length > 0,
-      channelContextSelectedPostIds: new Set(topPostIds),
+      channelContextEnabled: false,
+      channelContextSelectedPostIds: new Set(),
     });
   },
 
@@ -146,18 +146,24 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     return Array.from(channelContextSelectedPostIds);
   },
 
-  toggleSource: (sourceId: string) => {
+  toggleSource: (sourceId: string, posts?: Array<{ id: string }>) => {
     set((state) => {
       const newSelections = new Map(state.sourceSelections);
       const current = newSelections.get(sourceId);
 
       if (current) {
         const willBeEnabled = !current.enabled;
+        // When enabling, auto-select first 5 posts if posts are provided
+        const selectedPostIds = willBeEnabled && posts
+          ? new Set(posts.slice(0, DEFAULT_POST_COUNT).map((p) => p.id))
+          : willBeEnabled
+            ? current.selectedPostIds
+            : new Set<string>();
+
         newSelections.set(sourceId, {
           ...current,
           enabled: willBeEnabled,
-          // Clear selections when disabling
-          selectedPostIds: willBeEnabled ? current.selectedPostIds : new Set(),
+          selectedPostIds,
         });
       }
 
@@ -246,17 +252,41 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   },
 
   setGenerationResult: (result: GenerationResult) => {
-    set({ generatedPosts: result.posts, generatedSources: result.sources });
+    set({ generatedPosts: result.posts, generatedSources: result.sources, savedPostIndices: new Set() });
+  },
+
+  updatePost: (index: number, updates: { content?: string; images?: PostImage[] }) => {
+    set((state) => {
+      const newPosts = [...state.generatedPosts];
+      const post = newPosts[index];
+      if (post) {
+        newPosts[index] = {
+          ...post,
+          ...(updates.content !== undefined && { content: updates.content }),
+          ...(updates.images !== undefined && { images: updates.images }),
+        };
+      }
+      return { generatedPosts: newPosts };
+    });
+  },
+
+  markPostAsSaved: (index: number) => {
+    set((state) => {
+      const newSavedIndices = new Set(state.savedPostIndices);
+      newSavedIndices.add(index);
+      return { savedPostIndices: newSavedIndices };
+    });
   },
 
   reset: () => {
     set({
       sourceSelections: new Map(),
-      channelContextEnabled: true,
+      channelContextEnabled: false,
       channelContextSelectedPostIds: new Set(),
       customPrompt: "",
       generatedPosts: [],
       generatedSources: [],
+      savedPostIndices: new Set(),
     });
   },
 }));

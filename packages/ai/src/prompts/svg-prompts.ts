@@ -6,18 +6,19 @@ export interface SVGStyleConfig {
   fontStyle: "modern" | "classic" | "playful" | "technical";
 }
 
+// Use fonts with excellent Cyrillic support: DejaVu Sans, Noto Sans, Liberation Sans
 const fontStyleDescriptions: Record<string, Record<string, string>> = {
   en: {
-    modern: "clean sans-serif fonts like Inter, Roboto, or Arial",
-    classic: "elegant serif fonts like Georgia or Times New Roman",
-    playful: "rounded, friendly fonts with personality",
-    technical: "monospace or technical fonts like Consolas or Fira Code",
+    modern: "clean sans-serif fonts like DejaVu Sans, Noto Sans, or Arial",
+    classic: "elegant serif fonts like DejaVu Serif, Noto Serif, or Georgia",
+    playful: "rounded, friendly fonts - use DejaVu Sans or Noto Sans with softer styling",
+    technical: "monospace fonts like DejaVu Sans Mono, Noto Sans Mono, or Consolas",
   },
   ru: {
-    modern: "чистые шрифты без засечек, как Inter, Roboto или Arial",
-    classic: "элегантные шрифты с засечками, как Georgia или Times New Roman",
-    playful: "округлые, дружелюбные шрифты с характером",
-    technical: "моноширинные или технические шрифты, как Consolas или Fira Code",
+    modern: "чистые шрифты без засечек: DejaVu Sans, Noto Sans или Arial",
+    classic: "элегантные шрифты с засечками: DejaVu Serif, Noto Serif или Georgia",
+    playful: "округлые, дружелюбные шрифты - используй DejaVu Sans или Noto Sans с мягким стилем",
+    technical: "моноширинные шрифты: DejaVu Sans Mono, Noto Sans Mono или Consolas",
   },
 };
 
@@ -43,15 +44,24 @@ export function getSVGSystemPrompt(language: string = "en"): string {
 - НЕ добавляй объяснения, комментарии или markdown-разметку
 - Размеры: ширина 1080px, высота 1080px (квадрат для Telegram)
 - Используй встроенные стили (атрибут style) вместо CSS-классов
-- Все тексты должны использовать стандартные системные шрифты
 - Изображение должно хорошо смотреться на мобильных устройствах
+
+ШРИФТЫ (ОБЯЗАТЕЛЬНО):
+- Для русского текста ВСЕГДА используй font-family="DejaVu Sans, Noto Sans, Arial, sans-serif"
+- ВСЕГДА указывай атрибут font-family на каждом элементе <text>
+- Эти шрифты поддерживают кириллицу и доступны на большинстве систем
+
+ПРАВИЛА РАЗМЕЩЕНИЯ ТЕКСТА:
+- Весь текст должен находиться в безопасной зоне: минимум 100px от всех краёв
+- Максимум 35-40 символов на строку для русского текста
+- Для длинного текста используй несколько элементов <text> или <tspan>
+- Используй text-anchor="middle" для центрирования текста
+- Текст должен быть достаточно крупным для чтения (минимум 36px для основного текста)
 
 РЕКОМЕНДАЦИИ ПО ДИЗАЙНУ:
 - Создавай визуально привлекательные композиции с хорошей иерархией
 - Используй контрастные цвета для читабельности
-- Добавляй декоративные элементы (формы, линии, иконки) для визуального интереса
-- Оставляй достаточно отступов по краям (минимум 60px)
-- Текст должен быть достаточно крупным для чтения (минимум 36px для основного текста)`;
+- Добавляй декоративные элементы (формы, линии, иконки) для визуального интереса`;
   }
 
   return `You are an expert SVG graphics creator for Telegram channels. You create clean, valid SVG images that work perfectly for social media visual content.
@@ -61,15 +71,24 @@ CRITICAL REQUIREMENTS:
 - NO explanations, comments, or markdown formatting
 - Dimensions: 1080px width, 1080px height (square for Telegram)
 - Use inline styles (style attribute) instead of CSS classes
-- All text must use standard system fonts
 - Images must look good on mobile devices
+
+FONT REQUIREMENTS (MANDATORY):
+- For ALL text, use font-family="DejaVu Sans, Noto Sans, Arial, sans-serif"
+- ALWAYS specify the font-family attribute on every <text> element
+- These fonts have excellent Cyrillic support and are widely available
+
+TEXT LAYOUT RULES:
+- Keep ALL text within a 100px safe zone from all edges
+- Maximum 45-50 characters per line for English, 35-40 for Russian/Cyrillic
+- Use multiple <text> or <tspan> elements for long text
+- Use text-anchor="middle" for center-aligned text
+- Text should be large enough to read (minimum 36px for body text)
 
 DESIGN GUIDELINES:
 - Create visually appealing compositions with good hierarchy
 - Use contrasting colors for readability
-- Add decorative elements (shapes, lines, icons) for visual interest
-- Leave adequate padding around edges (minimum 60px)
-- Text should be large enough to read (minimum 36px for body text)`;
+- Add decorative elements (shapes, lines, icons) for visual interest`;
 }
 
 export function getSVGUserPrompt(

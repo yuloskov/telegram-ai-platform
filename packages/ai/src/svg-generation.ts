@@ -42,6 +42,16 @@ export function validateSVG(svg: string): boolean {
 }
 
 /**
+ * Add XML declaration with UTF-8 encoding for proper Cyrillic support
+ */
+function addXmlDeclaration(svg: string): string {
+  if (svg.trim().startsWith("<?xml")) {
+    return svg;
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`;
+}
+
+/**
  * Sanitize SVG to remove potentially harmful elements
  */
 export function sanitizeSVG(svg: string): string {
@@ -73,7 +83,8 @@ export function sanitizeSVG(svg: string): string {
     );
   }
 
-  return sanitized;
+  // Add XML declaration with UTF-8 encoding for Cyrillic support
+  return addXmlDeclaration(sanitized);
 }
 
 /**

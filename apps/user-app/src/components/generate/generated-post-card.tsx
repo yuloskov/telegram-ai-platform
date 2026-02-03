@@ -30,6 +30,7 @@ interface GeneratedPostCardProps {
   onEdit: () => void;
   onSave: () => void;
   isSaving: boolean;
+  isSaved: boolean;
 }
 
 export function GeneratedPostCard({
@@ -41,15 +42,10 @@ export function GeneratedPostCard({
   onEdit,
   onSave,
   isSaving,
+  isSaved,
 }: GeneratedPostCardProps) {
   const { t } = useI18n();
-  const [saved, setSaved] = useState(false);
   const [showSources, setShowSources] = useState(false);
-
-  const handleSave = async () => {
-    await onSave();
-    setSaved(true);
-  };
 
   const validSources = sources.filter((s) => s.text || s.media.length > 0);
   const hasImages = images && images.length > 0;
@@ -129,13 +125,13 @@ export function GeneratedPostCard({
           <Edit2 className="h-4 w-4" />
         </Button>
         <Button
-          variant={saved ? "ghost" : "default"}
+          variant={isSaved ? "ghost" : "default"}
           size="sm"
-          onClick={handleSave}
-          disabled={isSaving || saved}
+          onClick={onSave}
+          disabled={isSaving || isSaved}
           className="min-w-[80px]"
         >
-          {saved ? (
+          {isSaved ? (
             <>
               <Check className="h-4 w-4" />
               {t("generatePage.saved")}

@@ -32,12 +32,22 @@ interface ContentSource {
   webpageDomain: string | null;
 }
 
+interface ChannelSvgDefaults {
+  svgThemeColor: string;
+  svgTextColor: string;
+  svgBackgroundStyle: string;
+  svgFontStyle: string;
+  svgStylePrompt: string | null;
+}
+
 interface ContentPlanFormProps {
   initialData?: ContentPlan;
   availableSources: ContentSource[];
   onSubmit: (data: CreateContentPlanInput) => void;
   isSubmitting: boolean;
   submitLabel?: string;
+  /** Channel's default SVG settings - used when creating a new plan */
+  channelDefaults?: ChannelSvgDefaults;
 }
 
 export function ContentPlanForm({
@@ -46,6 +56,7 @@ export function ContentPlanForm({
   onSubmit,
   isSubmitting,
   submitLabel,
+  channelDefaults,
 }: ContentPlanFormProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -62,12 +73,35 @@ export function ContentPlanForm({
   const [imageType, setImageType] = useState<ImageType>(
     (initialData?.imageType as ImageType) ?? "svg"
   );
-  const [svgSettings, setSvgSettings] = useState<SvgGenerationSettings>({
-    themeColor: initialData?.svgThemeColor ?? "#3B82F6",
-    textColor: "#1F2937", // Not stored in DB but required by type
-    backgroundStyle: (initialData?.svgBackgroundStyle as SvgGenerationSettings["backgroundStyle"]) ?? "gradient",
-    fontStyle: (initialData?.svgFontStyle as SvgGenerationSettings["fontStyle"]) ?? "modern",
-    stylePrompt: initialData?.svgStylePrompt ?? "",
+  const [svgSettings, setSvgSettings] = useState<SvgGenerationSettings>(() => {
+    // For editing: use existing plan data
+    if (initialData) {
+      return {
+        themeColor: initialData.svgThemeColor,
+        textColor: "#1F2937",
+        backgroundStyle: initialData.svgBackgroundStyle as SvgGenerationSettings["backgroundStyle"],
+        fontStyle: initialData.svgFontStyle as SvgGenerationSettings["fontStyle"],
+        stylePrompt: initialData.svgStylePrompt ?? "",
+      };
+    }
+    // For new plans: use channel defaults if available
+    if (channelDefaults) {
+      return {
+        themeColor: channelDefaults.svgThemeColor,
+        textColor: channelDefaults.svgTextColor,
+        backgroundStyle: channelDefaults.svgBackgroundStyle as SvgGenerationSettings["backgroundStyle"],
+        fontStyle: channelDefaults.svgFontStyle as SvgGenerationSettings["fontStyle"],
+        stylePrompt: channelDefaults.svgStylePrompt ?? "",
+      };
+    }
+    // Fallback defaults
+    return {
+      themeColor: "#3B82F6",
+      textColor: "#1F2937",
+      backgroundStyle: "gradient",
+      fontStyle: "modern",
+      stylePrompt: "",
+    };
   });
   const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>(
     initialData?.contentSources.map((s) => s.contentSourceId) ?? []
