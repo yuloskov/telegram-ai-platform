@@ -217,14 +217,18 @@ export async function sendPendingReviewNotification(
   const labels =
     language === "ru"
       ? {
-          title: "Новый пост для проверки",
+          title: "📋 Новый пост для проверки",
+          channel: "Канал",
+          content: "Содержимое поста",
           approve: "Одобрить",
           reject: "Отклонить",
           edit: "Редактировать",
           schedule: "Запланировать",
         }
       : {
-          title: "New post for review",
+          title: "📋 New post for review",
+          channel: "Channel",
+          content: "Post content",
           approve: "Approve",
           reject: "Reject",
           edit: "Edit",
@@ -246,15 +250,19 @@ export async function sendPendingReviewNotification(
 
   console.log(`[v2] sendPendingReviewNotification called with imageBuffer: ${imageBuffer ? `${imageBuffer.length} bytes` : 'undefined'}, content length: ${content.length}`);
 
-  // If there's an image, send as photo with caption
-  if (imageBuffer) {
-    // Photo captions are limited to 1024 chars
-    const header = `<b>${labels.title}</b>\n\n<b>${channelTitle}</b>\n\n`;
-    const maxContentLength = 1024 - header.length - 10; // Reserve space for "..."
+  // Build header with clear structure
+  const buildMessage = (maxTotal: number) => {
+    const header = `<b>${labels.title}</b>\n📢 <b>${labels.channel}:</b> ${channelTitle}\n\n<b>${labels.content}:</b>\n────────────────\n`;
+    const maxContentLength = maxTotal - header.length - 10; // Reserve space for "..."
     const truncatedContent = content.length > maxContentLength
       ? `${content.substring(0, maxContentLength)}...`
       : content;
-    const caption = `${header}${truncatedContent}`;
+    return `${header}${truncatedContent}`;
+  };
+
+  // If there's an image, send as photo with caption (limited to 1024 chars)
+  if (imageBuffer) {
+    const caption = buildMessage(1024);
 
     const result = await bot.api.sendPhoto(telegramId, new InputFile(imageBuffer), {
       caption,
@@ -266,12 +274,7 @@ export async function sendPendingReviewNotification(
   }
 
   // No image - send as text message (up to 4096 chars)
-  const header = `<b>${labels.title}</b>\n\n<b>${channelTitle}</b>\n\n`;
-  const maxContentLength = 4096 - header.length - 10;
-  const truncatedContent = content.length > maxContentLength
-    ? `${content.substring(0, maxContentLength)}...`
-    : content;
-  const message = `${header}${truncatedContent}`;
+  const message = buildMessage(4096);
 
   const result = await bot.api.sendMessage(telegramId, message, {
     parse_mode: "HTML",
