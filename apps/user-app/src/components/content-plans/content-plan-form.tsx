@@ -25,7 +25,11 @@ import type { SvgGenerationSettings } from "~/hooks/useSvgSettings";
 
 interface ContentSource {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document" | "webpage";
+  telegramUsername: string | null;
+  documentName: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
 }
 
 interface ContentPlanFormProps {
@@ -323,7 +327,11 @@ export function ContentPlanForm({
                   onCheckedChange={() => toggleSource(source.id)}
                 />
                 <span className="text-sm text-[var(--text-primary)]">
-                  @{source.telegramUsername}
+                  {source.sourceType === "telegram"
+                    ? `@${source.telegramUsername || ""}`
+                    : source.sourceType === "document"
+                      ? source.documentName || t("sources.untitledDocument")
+                      : source.webpageTitle || source.webpageDomain || t("sources.untitledWebpage")}
                 </span>
               </label>
             ))}

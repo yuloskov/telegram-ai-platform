@@ -41,7 +41,11 @@ function formatNextRunTime(nextDate: Date | null, language: Language): string | 
 
 interface ContentSource {
   id: string;
-  telegramUsername: string;
+  sourceType: "telegram" | "document" | "webpage";
+  telegramUsername: string | null;
+  documentName: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
 }
 
 export default function EditContentPlanPage() {
