@@ -13,17 +13,17 @@ export function SkippedPostsBanner({ count, onReschedule }: SkippedPostsBannerPr
   if (count === 0) return null;
 
   return (
-    <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 flex items-center justify-between">
+    <div className="bg-amber-100 dark:bg-amber-900 border border-amber-300 dark:border-amber-700 rounded-lg p-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-          <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+        <div className="p-2 bg-amber-200 dark:bg-amber-800 rounded-full">
+          <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-200" />
         </div>
         <div>
-          <p className="font-medium text-orange-800 dark:text-orange-200">
+          <p className="font-medium text-amber-900 dark:text-amber-100">
             {t("contentPlans.skippedPostsAlert", { count })}
           </p>
-          <p className="text-sm text-orange-600 dark:text-orange-400">
-            These posts missed their scheduled time while the content plan was paused.
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            {t("contentPlans.skippedPostsDescription")}
           </p>
         </div>
       </div>

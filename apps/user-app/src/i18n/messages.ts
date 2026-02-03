@@ -182,6 +182,11 @@ export const messages = {
       created: "Created",
       published: "Published",
       scheduled: "Scheduled for",
+      publishNow: "Publish Now",
+      schedule: "Schedule",
+      sendToReview: "Send to Review",
+      moveToDraft: "Move to Draft",
+      changeStatus: "Change Status",
     },
 
     // Generate Modal
@@ -636,6 +641,8 @@ export const messages = {
       generateError: "Failed to generate posts",
       // Skipped posts
       skippedPostsAlert: "{count} posts were skipped while paused",
+      skippedPostsDescription:
+        "These posts missed their scheduled time while the content plan was paused.",
       rescheduleSkipped: "Reschedule Skipped",
     },
 
@@ -860,6 +867,11 @@ export const messages = {
       created: "Создан",
       published: "Опубликован",
       scheduled: "Запланирован на",
+      publishNow: "Опубликовать",
+      schedule: "Запланировать",
+      sendToReview: "На проверку",
+      moveToDraft: "В черновики",
+      changeStatus: "Изменить статус",
     },
 
     // Generate Modal
@@ -1314,6 +1326,8 @@ export const messages = {
       generateError: "Не удалось сгенерировать посты",
       // Skipped posts
       skippedPostsAlert: "{count} постов пропущено во время паузы",
+      skippedPostsDescription:
+        "Эти посты пропустили запланированное время, пока контент-план был приостановлен.",
       rescheduleSkipped: "Перепланировать пропущенные",
     },
 

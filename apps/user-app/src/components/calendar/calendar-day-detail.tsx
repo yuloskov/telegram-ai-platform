@@ -21,6 +21,7 @@ interface CalendarDayDetailProps {
   onClose: () => void;
   onReschedule: (postIds: string[]) => void;
   onViewPost: (postId: string) => void;
+  onEditPost: (post: CalendarPost) => void;
 }
 
 export function CalendarDayDetail({
@@ -29,6 +30,7 @@ export function CalendarDayDetail({
   onClose,
   onReschedule,
   onViewPost,
+  onEditPost,
 }: CalendarDayDetailProps) {
   const { t } = useI18n();
 
@@ -76,6 +78,7 @@ export function CalendarDayDetail({
                 key={post.id}
                 post={post}
                 onView={() => onViewPost(post.id)}
+                onEdit={() => onEditPost(post)}
                 onReschedule={() => onReschedule([post.id])}
               />
             ))}
@@ -85,9 +88,9 @@ export function CalendarDayDetail({
 
       {/* Footer with bulk actions */}
       {hasSkippedPosts && (
-        <div className="p-4 border-t border-[var(--border-secondary)] bg-orange-50 dark:bg-orange-950/20">
+        <div className="p-4 border-t border-amber-300 dark:border-amber-700 bg-amber-100 dark:bg-amber-900">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-orange-700 dark:text-orange-300">
+            <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
               {t("calendar.skippedPosts", { count: skippedPosts.length })}
             </span>
             <Button variant="secondary" size="sm" onClick={handleRescheduleSkipped}>

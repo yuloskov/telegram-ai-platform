@@ -39,6 +39,7 @@ interface PostEditorModalProps {
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
   onNewImageGenerated?: (newImage: PostImage) => void;
   existingMedia?: MediaFile[];
+  children?: React.ReactNode;
 }
 
 export function PostEditorModal({
@@ -59,6 +60,7 @@ export function PostEditorModal({
   onImageRegenerated,
   onNewImageGenerated,
   existingMedia,
+  children,
 }: PostEditorModalProps) {
   const { t } = useI18n();
   const [showSources, setShowSources] = useState(false);
@@ -226,6 +228,9 @@ export function PostEditorModal({
             )}
           </div>
         )}
+
+        {/* Custom children content (e.g., status actions) */}
+        {children}
 
         <ModalFooter>
           <Button variant="ghost" onClick={onCancel}>

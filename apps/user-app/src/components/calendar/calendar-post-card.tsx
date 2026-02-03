@@ -1,4 +1,4 @@
-import { Clock, AlertCircle, Check, FileText, Eye, Calendar } from "lucide-react";
+import { Clock, AlertCircle, Check, FileText, Eye, Calendar, Edit2 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
@@ -19,10 +19,11 @@ interface CalendarPost {
 interface CalendarPostCardProps {
   post: CalendarPost;
   onView: () => void;
+  onEdit: () => void;
   onReschedule: () => void;
 }
 
-export function CalendarPostCard({ post, onView, onReschedule }: CalendarPostCardProps) {
+export function CalendarPostCard({ post, onView, onEdit, onReschedule }: CalendarPostCardProps) {
   const { t } = useI18n();
 
   const getStatusInfo = () => {
@@ -89,6 +90,7 @@ export function CalendarPostCard({ post, onView, onReschedule }: CalendarPostCar
     post.content.length > 120 ? post.content.slice(0, 120) + "..." : post.content;
 
   const showReschedule = post.skippedAt || post.status === "draft";
+  const canEdit = ["draft", "failed", "scheduled", "pending_review"].includes(post.status);
 
   return (
     <div className="bg-[var(--bg-secondary)] rounded-lg p-3 border border-[var(--border-secondary)]">
@@ -142,10 +144,18 @@ export function CalendarPostCard({ post, onView, onReschedule }: CalendarPostCar
 
       {/* Actions */}
       <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-secondary)]">
-        <Button variant="ghost" size="sm" onClick={onView} className="flex-1">
-          <Eye className="h-4 w-4 mr-1" />
-          {t("calendar.viewPost")}
-        </Button>
+        {canEdit && (
+          <Button variant="ghost" size="sm" onClick={onEdit} className="flex-1">
+            <Edit2 className="h-4 w-4 mr-1" />
+            {t("common.edit")}
+          </Button>
+        )}
+        {!canEdit && (
+          <Button variant="ghost" size="sm" onClick={onView} className="flex-1">
+            <Eye className="h-4 w-4 mr-1" />
+            {t("calendar.viewPost")}
+          </Button>
+        )}
         {showReschedule && (
           <Button variant="ghost" size="sm" onClick={onReschedule} className="flex-1">
             <Calendar className="h-4 w-4 mr-1" />

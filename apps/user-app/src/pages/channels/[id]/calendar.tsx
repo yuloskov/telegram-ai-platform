@@ -1,7 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/router";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarDays } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
 import { useChannel } from "~/hooks/useChannel";
 import { useContentPlans } from "~/hooks/useContentPlan";
@@ -18,7 +17,10 @@ import {
 import { PostingCalendar, CalendarDayDetail } from "~/components/calendar";
 import { SkippedPostsBanner } from "~/components/posts/skipped-posts-banner";
 import { BulkRescheduleModal } from "~/components/posts/bulk-reschedule-modal";
+import { PostEditorModal } from "~/components/posts/post-editor-modal";
+import { PostStatusActions } from "~/components/posts/post-status-actions";
 import { useI18n } from "~/i18n";
+import type { MediaFile, PostImage } from "~/types";
 
 interface CalendarPost {
   id: string;
@@ -65,6 +67,12 @@ export default function CalendarPage() {
   const [contentPlanFilter, setContentPlanFilter] = useState<string>("");
   const [reschedulePostIds, setReschedulePostIds] = useState<string[]>([]);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+
+  // Edit post state
+  const [editingPost, setEditingPost] = useState<CalendarPost | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editImages, setEditImages] = useState<PostImage[]>([]);
+  const [selectedImages, setSelectedImages] = useState<PostImage[]>([]);
 
   // Current month for API query
   const now = new Date();
@@ -151,6 +159,98 @@ export default function CalendarPage() {
       handleReschedule(skippedIds);
     }
   }, [calendarData, handleReschedule]);
+
+  // Edit post mutation
+  const updatePostMutation = useMutation({
+    mutationFn: async ({
+      postId,
+      content,
+      mediaFiles,
+    }: {
+      postId: string;
+      content: string;
+      mediaFiles?: { url: string; type: string; isGenerated: boolean }[];
+    }) => {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, mediaFiles }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update post");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setEditingPost(null);
+      setEditContent("");
+      setEditImages([]);
+      setSelectedImages([]);
+      refetch();
+      // Update selected posts if still viewing the same day
+      if (selectedDate && calendarData) {
+        const updatedPosts = calendarData.dates[selectedDate] || [];
+        setSelectedPosts(updatedPosts);
+      }
+    },
+  });
+
+  const handleEditPost = useCallback((post: CalendarPost) => {
+    setEditingPost(post);
+    setEditContent(post.content);
+    // Convert existing media to PostImage format
+    const images: PostImage[] = (post.mediaFiles || []).map((mf) => ({
+      url: mf.url,
+      isGenerated: false, // We don't have this info from calendar API
+    }));
+    setEditImages(images);
+    setSelectedImages(images);
+  }, []);
+
+  const handleSavePost = useCallback(() => {
+    if (!editingPost) return;
+    // Convert selected images to media files format for API
+    const mediaFiles = selectedImages.map((img) => ({
+      url: img.url,
+      type: "image",
+      isGenerated: img.isGenerated,
+    }));
+    updatePostMutation.mutate({
+      postId: editingPost.id,
+      content: editContent,
+      mediaFiles,
+    });
+  }, [editingPost, editContent, selectedImages, updatePostMutation]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingPost(null);
+    setEditContent("");
+    setEditImages([]);
+    setSelectedImages([]);
+  }, []);
+
+  const handleNewImageGenerated = useCallback((newImage: PostImage) => {
+    setEditImages((prev) => [...prev, newImage]);
+    setSelectedImages((prev) => [...prev, newImage]);
+  }, []);
+
+  const handleImageRegenerated = useCallback((oldUrl: string, newImage: PostImage) => {
+    setEditImages((prev) =>
+      prev.map((img) => (img.url === oldUrl ? newImage : img))
+    );
+    setSelectedImages((prev) =>
+      prev.map((img) => (img.url === oldUrl ? newImage : img))
+    );
+  }, []);
+
+  const handleStatusChange = useCallback(() => {
+    setEditingPost(null);
+    setEditContent("");
+    setEditImages([]);
+    setSelectedImages([]);
+    refetch();
+  }, [refetch]);
 
   if (authLoading || channelLoading) {
     return (
@@ -241,6 +341,7 @@ export default function CalendarPage() {
             onClose={handleCloseDayDetail}
             onReschedule={handleReschedule}
             onViewPost={handleViewPost}
+            onEditPost={handleEditPost}
           />
         </>
       )}
@@ -252,6 +353,40 @@ export default function CalendarPage() {
         postIds={reschedulePostIds}
         onSuccess={handleRescheduleSuccess}
       />
+
+      {/* Post editor modal with status actions */}
+      {editingPost && (
+        <PostEditorModal
+          open={!!editingPost}
+          onOpenChange={(open) => !open && handleCancelEdit()}
+          content={editContent}
+          onContentChange={setEditContent}
+          onSave={handleSavePost}
+          onCancel={handleCancelEdit}
+          isSaving={updatePostMutation.isPending}
+          channelName={channel?.title || ""}
+          channelId={channelId as string}
+          isGenerated={editImages.length > 0}
+          postImages={editImages}
+          selectedImages={selectedImages}
+          onImagesChange={setSelectedImages}
+          onImageRegenerated={handleImageRegenerated}
+          onNewImageGenerated={handleNewImageGenerated}
+        >
+          {/* Status actions inside the modal */}
+          <div className="border-t border-[var(--border-secondary)] pt-4 mt-4">
+            <p className="text-sm font-medium text-[var(--text-primary)] mb-3">
+              {t("posts.changeStatus")}
+            </p>
+            <PostStatusActions
+              postId={editingPost.id}
+              currentStatus={editingPost.status}
+              scheduledAt={editingPost.scheduledAt}
+              onStatusChange={handleStatusChange}
+            />
+          </div>
+        </PostEditorModal>
+      )}
     </PageLayout>
   );
 }

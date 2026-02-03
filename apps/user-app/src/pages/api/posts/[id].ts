@@ -85,7 +85,28 @@ async function handler(
       });
     }
 
-    const { content, scheduledAt, status } = req.body;
+    const { content, scheduledAt, status, mediaFiles: newMediaFiles } = req.body;
+
+    // Handle media file updates if provided
+    if (newMediaFiles && Array.isArray(newMediaFiles)) {
+      // Delete existing media files
+      await prisma.mediaFile.deleteMany({
+        where: { postId: id },
+      });
+
+      // Create new media files
+      if (newMediaFiles.length > 0) {
+        await prisma.mediaFile.createMany({
+          data: newMediaFiles.map((mf: { url: string; type?: string; isGenerated?: boolean }) => ({
+            postId: id,
+            url: mf.url,
+            type: mf.type || "image",
+            filename: mf.url.split("/").pop() || "image.png",
+            isGenerated: mf.isGenerated ?? false,
+          })),
+        });
+      }
+    }
 
     const updated = await prisma.post.update({
       where: { id },
