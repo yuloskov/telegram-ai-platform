@@ -35,6 +35,28 @@ function getEditKeyboard(lang: Language, hasContentPlan: boolean): InlineKeyboar
 }
 
 /**
+ * Send a temporary notification message that auto-deletes after a delay
+ */
+async function sendTempNotification(
+  ctx: BotContext,
+  text: string,
+  delayMs: number = 3000
+): Promise<void> {
+  try {
+    const msg = await ctx.reply(text);
+    setTimeout(async () => {
+      try {
+        await ctx.api.deleteMessage(msg.chat.id, msg.message_id);
+      } catch {
+        // Ignore deletion errors
+      }
+    }, delayMs);
+  } catch {
+    // Ignore send errors
+  }
+}
+
+/**
  * Edit the existing callback message to show the edit interface
  */
 async function editMessageWithEditInterface(
@@ -232,6 +254,9 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
     if (state.originalMessageId && state.chatId) {
       await editOriginalMessageWithContent(ctx, state.chatId, state.originalMessageId, newContent, !!state.imageUrl, lang, !!state.contentPlanId);
     }
+
+    // Send temporary success notification
+    await sendTempNotification(ctx, `✅ ${t(lang, "editSuccess")}`);
   } catch (error) {
     console.error("Edit error:", error);
     // Delete status message and show error
@@ -339,6 +364,9 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
       },
       { reply_markup: keyboard }
     );
+
+    // Send temporary success notification
+    await sendTempNotification(ctx, `✅ ${t(lang, "imageRegenerated")}`);
   } catch (error) {
     console.error("Image regeneration error:", error);
     // Send error as a reply to keep the edit interface visible for retry
@@ -537,6 +565,9 @@ async function handlePostRegeneration(ctx: BotContext, lang: Language): Promise<
         reply_markup: keyboard,
       });
     }
+
+    // Send temporary success notification
+    await sendTempNotification(ctx, `✅ ${t(lang, "postRegenerated")}`);
   } catch (error) {
     console.error("Post regeneration error:", error);
     await ctx.reply(t(lang, "regenerationFailed"));
