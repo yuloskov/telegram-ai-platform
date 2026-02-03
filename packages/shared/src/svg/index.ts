@@ -1,8 +1,45 @@
+import * as path from "path";
+import * as fs from "fs";
+
 export interface SvgToPngOptions {
   width?: number;
   height?: number;
   fitTo?: "width" | "height" | "zoom";
   background?: string;
+}
+
+/**
+ * Get paths to bundled font files with Cyrillic support
+ * Tries multiple possible locations to handle different runtime environments
+ */
+function getBundledFontPaths(): string[] {
+  const fontFiles = ["NotoSans-Regular.ttf", "NotoSans-Bold.ttf"];
+
+  // Try multiple possible font directory locations
+  const possibleFontsDirs = [
+    // From src/svg/ -> fonts/
+    path.resolve(__dirname, "../../fonts"),
+    // From project root
+    path.resolve(process.cwd(), "packages/shared/fonts"),
+    // From node_modules resolution
+    path.resolve(
+      path.dirname(require.resolve("@repo/shared/package.json")),
+      "fonts"
+    ),
+  ];
+
+  for (const fontsDir of possibleFontsDirs) {
+    const regularFont = path.join(fontsDir, fontFiles[0]);
+    if (fs.existsSync(regularFont)) {
+      return fontFiles.map((f) => path.join(fontsDir, f));
+    }
+  }
+
+  // Log warning if fonts not found
+  console.warn(
+    "Warning: Bundled Noto Sans fonts not found. Text rendering may fail for Cyrillic characters."
+  );
+  return [];
 }
 
 /**
@@ -29,9 +66,10 @@ export async function svgToPng(
     background,
     font: {
       loadSystemFonts: true,
-      // Use fonts with excellent Cyrillic support
-      // DejaVu Sans and Noto Sans are widely available on Linux/Docker
-      defaultFontFamily: "DejaVu Sans, Noto Sans, Liberation Sans, Arial",
+      // Load bundled fonts with Cyrillic support
+      fontFiles: getBundledFontPaths(),
+      // Default to Noto Sans which has excellent Cyrillic support
+      defaultFontFamily: "Noto Sans",
     },
   });
 

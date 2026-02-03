@@ -9,6 +9,10 @@ export interface ReviewEditState {
   currentContent: string;
   imageUrl?: string;
   awaitingInput: "text_edit" | "image_feedback" | null;
+  /** Message ID of the review message for in-place editing */
+  originalMessageId?: number;
+  /** Chat ID for editing the message when not in callback context */
+  chatId?: number;
 }
 
 interface SessionData {

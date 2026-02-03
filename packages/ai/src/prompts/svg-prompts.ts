@@ -6,19 +6,19 @@ export interface SVGStyleConfig {
   fontStyle: "modern" | "classic" | "playful" | "technical";
 }
 
-// Use fonts with excellent Cyrillic support: DejaVu Sans, Noto Sans, Liberation Sans
+// Use Noto Sans - bundled with excellent Cyrillic support
 const fontStyleDescriptions: Record<string, Record<string, string>> = {
   en: {
-    modern: "clean sans-serif fonts like DejaVu Sans, Noto Sans, or Arial",
-    classic: "elegant serif fonts like DejaVu Serif, Noto Serif, or Georgia",
-    playful: "rounded, friendly fonts - use DejaVu Sans or Noto Sans with softer styling",
-    technical: "monospace fonts like DejaVu Sans Mono, Noto Sans Mono, or Consolas",
+    modern: "clean sans-serif using Noto Sans",
+    classic: "elegant styling using Noto Sans with refined spacing",
+    playful: "rounded, friendly styling using Noto Sans",
+    technical: "technical styling using Noto Sans",
   },
   ru: {
-    modern: "чистые шрифты без засечек: DejaVu Sans, Noto Sans или Arial",
-    classic: "элегантные шрифты с засечками: DejaVu Serif, Noto Serif или Georgia",
-    playful: "округлые, дружелюбные шрифты - используй DejaVu Sans или Noto Sans с мягким стилем",
-    technical: "моноширинные шрифты: DejaVu Sans Mono, Noto Sans Mono или Consolas",
+    modern: "чистый sans-serif шрифт Noto Sans",
+    classic: "элегантный стиль с использованием Noto Sans",
+    playful: "округлый, дружелюбный стиль с Noto Sans",
+    technical: "технический стиль с Noto Sans",
   },
 };
 
@@ -47,9 +47,9 @@ export function getSVGSystemPrompt(language: string = "en"): string {
 - Изображение должно хорошо смотреться на мобильных устройствах
 
 ШРИФТЫ (ОБЯЗАТЕЛЬНО):
-- Для русского текста ВСЕГДА используй font-family="DejaVu Sans, Noto Sans, Arial, sans-serif"
+- ВСЕГДА используй font-family="Noto Sans, sans-serif" для всего текста
 - ВСЕГДА указывай атрибут font-family на каждом элементе <text>
-- Эти шрифты поддерживают кириллицу и доступны на большинстве систем
+- Noto Sans полностью поддерживает кириллицу
 
 ПРАВИЛА РАЗМЕЩЕНИЯ ТЕКСТА:
 - Весь текст должен находиться в безопасной зоне: минимум 100px от всех краёв
@@ -74,9 +74,9 @@ CRITICAL REQUIREMENTS:
 - Images must look good on mobile devices
 
 FONT REQUIREMENTS (MANDATORY):
-- For ALL text, use font-family="DejaVu Sans, Noto Sans, Arial, sans-serif"
+- For ALL text, use font-family="Noto Sans, sans-serif"
 - ALWAYS specify the font-family attribute on every <text> element
-- These fonts have excellent Cyrillic support and are widely available
+- Noto Sans has excellent Cyrillic support
 
 TEXT LAYOUT RULES:
 - Keep ALL text within a 100px safe zone from all edges

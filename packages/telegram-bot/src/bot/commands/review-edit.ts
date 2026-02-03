@@ -5,9 +5,10 @@ import type { BotContext } from "../index";
 import { t, type Language } from "../../i18n/index";
 import { prisma } from "@repo/database";
 import { editPostWithPrompt, generateSVG, generateImage, generateImagePromptFromContent, type SVGStyleConfig } from "@repo/ai";
-import { uploadFile, getFileBuffer } from "@repo/shared/storage";
+import { uploadFile } from "@repo/shared/storage";
 import { svgToPng, normalizeSvgDimensions } from "@repo/shared/svg";
 import { QUEUE_NAMES, PUBLISHING_JOB_OPTIONS, type PublishingJobPayload } from "@repo/shared/queues";
+import { editReviewMessage, getReviewKeyboard } from "./pending";
 
 const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
   maxRetriesPerRequest: null,
@@ -26,6 +27,71 @@ function getEditKeyboard(lang: Language): InlineKeyboard {
     .text(t(lang, "cancelEditButton"), "review_edit:cancel");
 }
 
+/**
+ * Edit the existing callback message to show the edit interface
+ */
+async function editMessageWithEditInterface(
+  ctx: BotContext,
+  content: string,
+  lang: Language
+): Promise<void> {
+  const message = ctx.callbackQuery?.message;
+  if (!message) return;
+
+  const keyboard = getEditKeyboard(lang);
+  const hasPhoto = "photo" in message && message.photo;
+
+  // Photo captions limited to 1024 chars, text messages to 4096
+  const maxLength = hasPhoto ? 900 : 3900;
+  const preview = content.length > maxLength ? `${content.substring(0, maxLength)}...` : content;
+  const caption = `<b>${t(lang, "postPreviewTitle")}</b>\n\n${preview}`;
+
+  if (hasPhoto) {
+    await ctx.editMessageCaption({
+      caption,
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+  } else {
+    await ctx.editMessageText(caption, {
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+  }
+}
+
+/**
+ * Edit the original message with updated content (used from text input handler)
+ */
+async function editOriginalMessageWithContent(
+  ctx: BotContext,
+  chatId: number,
+  messageId: number,
+  content: string,
+  hasImage: boolean,
+  lang: Language
+): Promise<void> {
+  const keyboard = getEditKeyboard(lang);
+
+  // Photo captions limited to 1024 chars, text messages to 4096
+  const maxLength = hasImage ? 900 : 3900;
+  const preview = content.length > maxLength ? `${content.substring(0, maxLength)}...` : content;
+  const caption = `<b>${t(lang, "postPreviewTitle")}</b>\n\n${preview}`;
+
+  if (hasImage) {
+    await ctx.api.editMessageCaption(chatId, messageId, {
+      caption,
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+  } else {
+    await ctx.api.editMessageText(chatId, messageId, caption, {
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+  }
+}
+
 export async function enterReviewEditMode(ctx: BotContext, postId: string): Promise<void> {
   console.log(`[v2] enterReviewEditMode called for postId: ${postId}`);
   const lang = (ctx.session.language ?? "en") as Language;
@@ -41,85 +107,40 @@ export async function enterReviewEditMode(ctx: BotContext, postId: string): Prom
 
   if (!post) {
     console.log(`[v2] Post not found: ${postId}`);
-    await ctx.reply(t(lang, "errorOccurred"));
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
     return;
   }
   console.log(`[v2] Found post with ${post.mediaFiles.length} media files`);
 
-  // Get first image buffer if exists
-  let imageBuffer: Buffer | undefined;
+  // Get first image path if exists
   let imagePath: string | undefined;
   if (post.mediaFiles.length > 0) {
     const mediaFile = post.mediaFiles[0];
     if (mediaFile) {
       console.log(`[v2] enterReviewEditMode - mediaFile.url: ${mediaFile.url}`);
-      // Parse URL format: /api/media/{bucket}/{objectName}
-      const match = mediaFile.url.match(/^\/api\/media\/([^/]+)\/(.+)$/);
-      if (match) {
-        const [, bucket, objectName] = match;
-        console.log(`[v2] Fetching image from bucket: ${bucket}, objectName: ${objectName}`);
-        try {
-          imageBuffer = await getFileBuffer(bucket!, objectName!);
-          imagePath = mediaFile.url;
-          console.log(`[v2] Got image buffer: ${imageBuffer.length} bytes`);
-        } catch (err) {
-          console.error(`[v2] Failed to fetch image:`, err);
-        }
-      } else {
-        console.error(`[v2] Failed to parse mediaFile.url: ${mediaFile.url}`);
-      }
+      imagePath = mediaFile.url;
     }
   }
 
   // Store state in session (store path, not buffer)
+  // Also store the message ID and chat ID for editing from text input handlers
+  const message = ctx.callbackQuery?.message;
   ctx.session.reviewEditState = {
     postId: post.id,
     channelId: post.channelId,
     contentPlanId: post.contentPlanId ?? undefined,
     originalContent: post.content,
     currentContent: post.content,
-    imageUrl: imagePath, // Store the path for later reference
+    imageUrl: imagePath,
     awaitingInput: null,
+    originalMessageId: message?.message_id,
+    chatId: message?.chat.id,
   };
 
-  console.log(`[v2] About to call sendEditablePreview`);
-  await sendEditablePreview(ctx, post.content, imageBuffer, lang);
+  // Edit the callback message to show edit interface
+  console.log(`[v2] About to edit message with edit interface`);
+  await editMessageWithEditInterface(ctx, post.content, lang);
   console.log(`[v2] enterReviewEditMode completed successfully`);
-}
-
-async function sendEditablePreview(
-  ctx: BotContext,
-  content: string,
-  imageBuffer: Buffer | undefined,
-  lang: Language
-): Promise<void> {
-  console.log(`[v2] sendEditablePreview called with imageBuffer: ${imageBuffer ? `${imageBuffer.length} bytes` : 'undefined'}`);
-  const keyboard = getEditKeyboard(lang);
-  // Photo captions limited to 1024 chars, text messages to 4096
-  const maxLength = imageBuffer ? 900 : 3900;
-  const preview = content.length > maxLength ? `${content.substring(0, maxLength)}...` : content;
-  const caption = `<b>${t(lang, "postPreviewTitle")}</b>\n\n${preview}`;
-  console.log(`[v2] Caption length: ${caption.length}, sending ${imageBuffer ? 'photo' : 'text'}`);
-
-  try {
-    if (imageBuffer) {
-      await ctx.replyWithPhoto(new InputFile(imageBuffer), {
-        caption,
-        parse_mode: "HTML",
-        reply_markup: keyboard,
-      });
-      console.log(`[v2] Photo sent successfully`);
-    } else {
-      await ctx.reply(caption, {
-        parse_mode: "HTML",
-        reply_markup: keyboard,
-      });
-      console.log(`[v2] Text sent successfully`);
-    }
-  } catch (err) {
-    console.error(`[v2] sendEditablePreview error:`, err);
-    throw err;
-  }
 }
 
 export async function handleReviewEditCallback(ctx: BotContext): Promise<void> {
@@ -168,7 +189,9 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
   if (!instruction) return;
 
   state.awaitingInput = null;
-  await ctx.reply(t(lang, "editingPost"));
+
+  // Send a temporary status message (will be deleted after)
+  const statusMsg = await ctx.reply(t(lang, "editingPost"));
 
   try {
     const newContent = await editPostWithPrompt(state.currentContent, instruction, lang);
@@ -181,37 +204,37 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
 
     state.currentContent = newContent;
 
-    await ctx.reply(t(lang, "editSuccess"));
-
-    // Fetch image buffer from stored path
-    let imageBuffer: Buffer | undefined;
-    if (state.imageUrl) {
-      const match = state.imageUrl.match(/^\/api\/media\/([^/]+)\/(.+)$/);
-      if (match) {
-        try {
-          imageBuffer = await getFileBuffer(match[1]!, match[2]!);
-        } catch (err) {
-          console.error("Failed to fetch image for preview:", err);
-        }
-      }
+    // Delete the status message
+    try {
+      await ctx.api.deleteMessage(statusMsg.chat.id, statusMsg.message_id);
+    } catch {
+      // Ignore deletion errors
     }
-    await sendEditablePreview(ctx, newContent, imageBuffer, lang);
+
+    // Edit the original review message with updated content
+    if (state.originalMessageId && state.chatId) {
+      await editOriginalMessageWithContent(ctx, state.chatId, state.originalMessageId, newContent, !!state.imageUrl, lang);
+    }
   } catch (error) {
     console.error("Edit error:", error);
+    // Delete status message and show error
+    try {
+      await ctx.api.deleteMessage(statusMsg.chat.id, statusMsg.message_id);
+    } catch {
+      // Ignore deletion errors
+    }
     await ctx.reply(t(lang, "editFailed"));
   }
 }
 
 async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise<void> {
-  await ctx.answerCallbackQuery();
+  await ctx.answerCallbackQuery({ text: t(lang, "regeneratingImage") });
 
   const state = ctx.session.reviewEditState;
   if (!state) {
-    await ctx.reply(t(lang, "errorOccurred"));
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
     return;
   }
-
-  await ctx.reply(t(lang, "regeneratingImage"));
 
   try {
     const post = await prisma.post.findUnique({
@@ -220,7 +243,7 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
     });
 
     if (!post) {
-      await ctx.reply(t(lang, "errorOccurred"));
+      await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
       return;
     }
 
@@ -281,9 +304,23 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
     // Store the path for future reference
     state.imageUrl = mediaPath;
 
-    await ctx.reply(t(lang, "imageRegenerated"));
-    // Use the buffer we already have
-    await sendEditablePreview(ctx, state.currentContent, imageBuffer, lang);
+    // Edit the message with new media using editMessageMedia
+    const keyboard = getEditKeyboard(lang);
+    const maxLength = 900; // Photo captions limited to 1024 chars
+    const preview = state.currentContent.length > maxLength
+      ? `${state.currentContent.substring(0, maxLength)}...`
+      : state.currentContent;
+    const caption = `<b>${t(lang, "postPreviewTitle")}</b>\n\n${preview}`;
+
+    await ctx.editMessageMedia(
+      {
+        type: "photo",
+        media: new InputFile(imageBuffer),
+        caption,
+        parse_mode: "HTML",
+      },
+      { reply_markup: keyboard }
+    );
   } catch (error) {
     console.error("Image regeneration error:", error);
     await ctx.reply(t(lang, "imageRegenerationFailed"));
@@ -291,11 +328,11 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
 }
 
 async function handlePublishFromEdit(ctx: BotContext, lang: Language): Promise<void> {
-  await ctx.answerCallbackQuery();
+  await ctx.answerCallbackQuery({ text: t(lang, "postPublished") });
 
   const state = ctx.session.reviewEditState;
   if (!state) {
-    await ctx.reply(t(lang, "errorOccurred"));
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
     return;
   }
 
@@ -306,7 +343,7 @@ async function handlePublishFromEdit(ctx: BotContext, lang: Language): Promise<v
     });
 
     if (!post) {
-      await ctx.reply(t(lang, "errorOccurred"));
+      await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
       return;
     }
 
@@ -334,10 +371,12 @@ async function handlePublishFromEdit(ctx: BotContext, lang: Language): Promise<v
     // Clear session state
     ctx.session.reviewEditState = undefined;
 
-    await ctx.reply(t(lang, "postPublished"));
+    // Edit message in-place to show publish status (no keyboard = removes buttons)
+    const resultText = `✅ <b>${t(lang, "postPublished")}</b>\n\n${post.channel.title}`;
+    await editReviewMessage(ctx, resultText);
   } catch (error) {
     console.error("Publish error:", error);
-    await ctx.reply(t(lang, "errorOccurred"));
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
   }
 }
 
@@ -346,7 +385,7 @@ async function handleCancelEdit(ctx: BotContext, lang: Language): Promise<void> 
 
   const state = ctx.session.reviewEditState;
   if (!state) {
-    await ctx.reply(t(lang, "errorOccurred"));
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
     return;
   }
 
@@ -358,6 +397,29 @@ async function handleCancelEdit(ctx: BotContext, lang: Language): Promise<void> 
     });
   }
 
+  // Get channel title for the message
+  const post = await prisma.post.findUnique({
+    where: { id: state.postId },
+    include: { channel: true },
+  });
+
+  const postId = state.postId;
   ctx.session.reviewEditState = undefined;
-  await ctx.reply(t(lang, "editCancelled"));
+
+  if (!post) {
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
+    return;
+  }
+
+  // Edit message to restore original review view with review buttons
+  const message = ctx.callbackQuery?.message;
+  const hasPhoto = message && "photo" in message && message.photo;
+  const maxLength = hasPhoto ? 900 : 3900;
+  const preview = state.originalContent.length > maxLength
+    ? `${state.originalContent.substring(0, maxLength)}...`
+    : state.originalContent;
+  const text = `<b>${post.channel.title}</b>\n\n${preview}`;
+  const keyboard = getReviewKeyboard(postId, lang);
+
+  await editReviewMessage(ctx, text, keyboard);
 }

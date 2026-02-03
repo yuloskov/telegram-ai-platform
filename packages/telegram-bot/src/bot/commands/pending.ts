@@ -7,6 +7,47 @@ import { prisma } from "@repo/database";
 import { QUEUE_NAMES, PUBLISHING_JOB_OPTIONS, type PublishingJobPayload } from "@repo/shared/queues";
 import { enterReviewEditMode } from "./review-edit";
 
+/**
+ * Creates an inline keyboard with review buttons for a post
+ */
+export function getReviewKeyboard(postId: string, lang: Language): InlineKeyboard {
+  const buttons = getReviewButtons(lang);
+  return new InlineKeyboard()
+    .text(buttons.approve, `review:approve:${postId}`)
+    .text(buttons.reject, `review:reject:${postId}`)
+    .row()
+    .text(buttons.edit, `review:edit:${postId}`)
+    .text(buttons.schedule, `review:schedule:${postId}`);
+}
+
+/**
+ * Helper function to edit the review message in-place
+ * Handles both photo messages (editMessageCaption) and text messages (editMessageText)
+ */
+export async function editReviewMessage(
+  ctx: BotContext,
+  text: string,
+  keyboard?: InlineKeyboard
+): Promise<void> {
+  const message = ctx.callbackQuery?.message;
+  if (!message) return;
+
+  const hasPhoto = "photo" in message && message.photo;
+
+  if (hasPhoto) {
+    await ctx.editMessageCaption({
+      caption: text,
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+  } else {
+    await ctx.editMessageText(text, {
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+    });
+  }
+}
+
 const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
   maxRetriesPerRequest: null,
 });
@@ -61,25 +102,17 @@ export async function handlePending(ctx: BotContext): Promise<void> {
   await ctx.reply(`<b>${t(lang, "pendingPosts")}</b>`, { parse_mode: "HTML" });
 
   // Send each pending post for review
-  const buttons = getReviewButtons(lang);
   for (const post of pendingPosts) {
     const preview =
       post.content.length > 200
         ? `${post.content.substring(0, 200)}...`
         : post.content;
 
-    const keyboard = new InlineKeyboard()
-      .text(buttons.approve, `review:approve:${post.id}`)
-      .text(buttons.reject, `review:reject:${post.id}`)
-      .row()
-      .text(buttons.edit, `review:edit:${post.id}`)
-      .text(buttons.schedule, `review:schedule:${post.id}`);
-
     await ctx.reply(
       `<b>${post.channelTitle}</b>\n\n${preview}`,
       {
         parse_mode: "HTML",
-        reply_markup: keyboard,
+        reply_markup: getReviewKeyboard(post.id, lang),
       }
     );
   }
@@ -124,7 +157,7 @@ async function handleApprove(ctx: BotContext, postId: string, lang: Language): P
   });
 
   if (!post) {
-    await ctx.reply(t(lang, "errorOccurred"));
+    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
     return;
   }
 
@@ -149,7 +182,9 @@ async function handleApprove(ctx: BotContext, postId: string, lang: Language): P
     PUBLISHING_JOB_OPTIONS
   );
 
-  await ctx.reply(`✅ ${t(lang, "approved")}`, { parse_mode: "HTML" });
+  // Edit message in-place to show approval status (no keyboard = removes buttons)
+  const resultText = `✅ <b>${t(lang, "approved")}</b>\n\n${post.channel.title}`;
+  await editReviewMessage(ctx, resultText);
 }
 
 async function handleReject(ctx: BotContext, postId: string, lang: Language): Promise<void> {
@@ -168,7 +203,9 @@ async function handleReject(ctx: BotContext, postId: string, lang: Language): Pr
     where: { postId },
   });
 
-  await ctx.reply(`❌ ${t(lang, "rejected")}`, { parse_mode: "HTML" });
+  // Edit message in-place to show rejection status (no keyboard = removes buttons)
+  const resultText = `❌ <b>${t(lang, "rejected")}</b>`;
+  await editReviewMessage(ctx, resultText);
 }
 
 async function handleEdit(ctx: BotContext, postId: string, lang: Language): Promise<void> {
@@ -205,8 +242,7 @@ async function handleSchedule(ctx: BotContext, postId: string, lang: Language): 
     where: { postId },
   });
 
-  await ctx.reply(
-    `📅 ${t(lang, "scheduled")}\n\nScheduled for: ${scheduledAt.toISOString()}`,
-    { parse_mode: "HTML" }
-  );
+  // Edit message in-place to show schedule status (no keyboard = removes buttons)
+  const resultText = `📅 <b>${t(lang, "scheduled")}</b>\n\n${scheduledAt.toLocaleString()}`;
+  await editReviewMessage(ctx, resultText);
 }

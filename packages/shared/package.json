@@ -40,7 +40,8 @@
     "./webpage": {
       "types": "./src/webpage/index.ts",
       "default": "./src/webpage/index.ts"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
