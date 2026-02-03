@@ -331,7 +331,7 @@ export function getGenerateMultiplePostsPrompt(
 
     const previousContext =
       channelPreviousPosts.length > 0
-        ? `\n\nТвои предыдущие посты (для понимания стиля):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+        ? `\n\nТВОИ ПРЕДЫДУЩИЕ ПОСТЫ (НЕ ПОВТОРЯЙ ЭТИ ТЕМЫ):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
         : "";
 
     let prompt = `На основе этих популярных постов из похожих каналов, создай ${count} РАЗНЫХ оригинальных постов:
@@ -341,6 +341,7 @@ ${scrapedContext}${previousContext}
 
 КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
 - Создай ровно ${count} уникальных постов с разными подходами/углами
+- НЕ повторяй темы, которые уже были в твоих предыдущих постах - каждый новый пост должен раскрывать НОВУЮ тему
 - Каждый пост ДОЛЖЕН использовать минимум один источник (можно больше)
 - Источники можно использовать повторно в разных постах при необходимости
 - Если все источники на одну тему, найди разные углы: факты, мнение, практические советы, вопрос аудитории
@@ -383,7 +384,7 @@ ${scrapedContext}${previousContext}
 
   const previousContext =
     channelPreviousPosts.length > 0
-      ? `\n\nYour previous posts (for style reference):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+      ? `\n\nYOUR PREVIOUS POSTS (DO NOT REPEAT THESE TOPICS):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
       : "";
 
   let prompt = `Based on these trending posts from similar channels, create ${count} DIFFERENT original posts:
@@ -393,6 +394,7 @@ ${scrapedContext}${previousContext}
 
 CRITICAL REQUIREMENTS:
 - Create exactly ${count} unique posts with different angles/approaches
+- DO NOT repeat topics or themes already covered in your previous posts - each new post must explore a NEW topic
 - Each post MUST use at least one source (can use more)
 - Sources can be reused across posts if needed
 - If all sources are about the same topic, find different angles: facts, opinion, practical tips, audience question
@@ -449,7 +451,7 @@ export function getGenerateMultiplePostsWithImagesPrompt(
   if (language === "ru") {
     const previousContext =
       channelPreviousPosts.length > 0
-        ? `\n\nТвои предыдущие посты (для понимания стиля):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+        ? `\n\nТВОИ ПРЕДЫДУЩИЕ ПОСТЫ (НЕ ПОВТОРЯЙ ЭТИ ТЕМЫ):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
         : "";
 
     let prompt: string;
@@ -469,6 +471,7 @@ ${scrapedContext}${previousContext}
 
 КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
 - Создай ровно ${count} уникальных постов с разными подходами/углами
+- НЕ повторяй темы, которые уже были в твоих предыдущих постах - каждый новый пост должен раскрывать НОВУЮ тему
 - Каждый пост ДОЛЖЕН использовать минимум один источник (можно больше)
 - Источники можно использовать повторно в разных постах при необходимости
 
@@ -492,6 +495,7 @@ ${customPrompt || "Создай увлекательные посты на лю�
 
 КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
 - Создай ровно ${count} уникальных постов с разными подходами/углами
+- НЕ повторяй темы, которые уже были в твоих предыдущих постах - каждый новый пост должен раскрывать НОВУЮ тему
 - Каждый пост должен быть уникальным и интересным
 - Пиши контент с нуля, не опираясь на внешние источники
 
@@ -537,7 +541,7 @@ ${hasSources ? '- originalImageSourceIds - только если strategy = "use
   // English (default)
   const previousContext =
     channelPreviousPosts.length > 0
-      ? `\n\nYour previous posts (for style reference):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
+      ? `\n\nYOUR PREVIOUS POSTS (DO NOT REPEAT THESE TOPICS):\n${channelPreviousPosts.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`
       : "";
 
   let prompt: string;
@@ -557,6 +561,7 @@ ${scrapedContext}${previousContext}
 
 CRITICAL REQUIREMENTS:
 - Create exactly ${count} unique posts with different angles/approaches
+- DO NOT repeat topics or themes already covered in your previous posts - each new post must explore a NEW topic
 - Each post MUST use at least one source (can use more)
 - Sources can be reused across posts if needed
 
@@ -580,6 +585,7 @@ ${customPrompt || "Create engaging posts on any topic suitable for the channel"}
 
 CRITICAL REQUIREMENTS:
 - Create exactly ${count} unique posts with different angles/approaches
+- DO NOT repeat topics or themes already covered in your previous posts - each new post must explore a NEW topic
 - Each post should be unique and engaging
 - Write content from scratch, without relying on external sources
 
