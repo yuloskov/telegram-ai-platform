@@ -60,6 +60,11 @@ const messages = {
     editCancelled: "Edit cancelled.",
     noImageToRegenerate: "This post doesn't have an image to regenerate.",
     postPreviewTitle: "Post Preview",
+    regeneratePostButton: "Regenerate",
+    regeneratingPost: "Regenerating post from source...",
+    postRegenerated: "Post regenerated successfully!",
+    regenerationFailed: "Failed to regenerate post. Please try again.",
+    noContentPlan: "Cannot regenerate - this post has no content plan.",
   },
   ru: {
     welcome: "Добро пожаловать в AI Telegram Channels Platform!",
@@ -122,6 +127,11 @@ const messages = {
     editCancelled: "Редактирование отменено.",
     noImageToRegenerate: "У этого поста нет изображения для перегенерации.",
     postPreviewTitle: "Предпросмотр поста",
+    regeneratePostButton: "Заново",
+    regeneratingPost: "Перегенерирую пост из источника...",
+    postRegenerated: "Пост успешно перегенерирован!",
+    regenerationFailed: "Не удалось перегенерировать пост. Попробуйте снова.",
+    noContentPlan: "Невозможно перегенерировать — у поста нет контент-плана.",
   },
 } as const;
 

@@ -17,6 +17,8 @@ export function getAIClient(): OpenAI {
       "HTTP-Referer": process.env.NEXT_PUBLIC_USER_APP_URL ?? "http://localhost:3000",
       "X-Title": "AI Telegram Channels Platform",
     },
+    timeout: 120000, // 2 minute timeout for long-running SVG generation
+    maxRetries: 2, // Retry on transient errors
   });
 
   return clientInstance;

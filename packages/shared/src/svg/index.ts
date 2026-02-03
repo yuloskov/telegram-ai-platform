@@ -8,38 +8,34 @@ export interface SvgToPngOptions {
   background?: string;
 }
 
-/**
- * Get paths to bundled font files with Cyrillic support
- * Tries multiple possible locations to handle different runtime environments
- */
-function getBundledFontPaths(): string[] {
-  const fontFiles = ["NotoSans-Regular.ttf", "NotoSans-Bold.ttf"];
+// Cache for font path
+let cachedFontPath: string | null | undefined = undefined;
 
-  // Try multiple possible font directory locations
+/**
+ * Get path to bundled Noto Sans font file with Cyrillic support
+ */
+function getFontPath(): string | null {
+  if (cachedFontPath !== undefined) return cachedFontPath;
+
+  const fontFile = "NotoSans-Regular.ttf";
+
   const possibleFontsDirs = [
-    // From src/svg/ -> fonts/
     path.resolve(__dirname, "../../fonts"),
-    // From project root
     path.resolve(process.cwd(), "packages/shared/fonts"),
-    // From node_modules resolution
-    path.resolve(
-      path.dirname(require.resolve("@repo/shared/package.json")),
-      "fonts"
-    ),
   ];
 
   for (const fontsDir of possibleFontsDirs) {
-    const regularFont = path.join(fontsDir, fontFiles[0]);
-    if (fs.existsSync(regularFont)) {
-      return fontFiles.map((f) => path.join(fontsDir, f));
+    const fontPath = path.join(fontsDir, fontFile);
+    if (fs.existsSync(fontPath)) {
+      console.log("[svgToPng] Found font at:", fontPath);
+      cachedFontPath = fontPath;
+      return fontPath;
     }
   }
 
-  // Log warning if fonts not found
-  console.warn(
-    "Warning: Bundled Noto Sans fonts not found. Text rendering may fail for Cyrillic characters."
-  );
-  return [];
+  console.warn("[svgToPng] Font file not found in:", possibleFontsDirs);
+  cachedFontPath = null;
+  return null;
 }
 
 /**
@@ -58,6 +54,8 @@ export async function svgToPng(
   // Dynamic import to avoid webpack bundling the native module
   const { Resvg } = await import("@resvg/resvg-js");
 
+  const fontPath = getFontPath();
+
   const resvg = new Resvg(svgString, {
     fitTo: {
       mode: "width",
@@ -66,9 +64,8 @@ export async function svgToPng(
     background,
     font: {
       loadSystemFonts: true,
-      // Load bundled fonts with Cyrillic support
-      fontFiles: getBundledFontPaths(),
-      // Default to Noto Sans which has excellent Cyrillic support
+      // Load bundled Noto Sans font with Cyrillic support
+      fontFiles: fontPath ? [fontPath] : [],
       defaultFontFamily: "Noto Sans",
     },
   });

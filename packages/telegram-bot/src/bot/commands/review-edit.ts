@@ -4,7 +4,7 @@ import Redis from "ioredis";
 import type { BotContext } from "../index";
 import { t, type Language } from "../../i18n/index";
 import { prisma } from "@repo/database";
-import { editPostWithPrompt, generateSVG, generateImage, generateImagePromptFromContent, type SVGStyleConfig } from "@repo/ai";
+import { editPostWithPrompt, generateSVG, generateImage, generateImagePromptFromContent, generateMultiplePostsWithImages, type SVGStyleConfig } from "@repo/ai";
 import { uploadFile } from "@repo/shared/storage";
 import { svgToPng, normalizeSvgDimensions } from "@repo/shared/svg";
 import { QUEUE_NAMES, PUBLISHING_JOB_OPTIONS, type PublishingJobPayload } from "@repo/shared/queues";
@@ -18,13 +18,20 @@ const publishQueue = new Queue<PublishingJobPayload>(QUEUE_NAMES.PUBLISHING, {
   connection: redis,
 });
 
-function getEditKeyboard(lang: Language): InlineKeyboard {
-  return new InlineKeyboard()
+function getEditKeyboard(lang: Language, hasContentPlan: boolean): InlineKeyboard {
+  const keyboard = new InlineKeyboard()
     .text(t(lang, "editTextButton"), "review_edit:text")
-    .text(t(lang, "regenerateImageButton"), "review_edit:image")
-    .row()
+    .text(t(lang, "regenerateImageButton"), "review_edit:image");
+
+  if (hasContentPlan) {
+    keyboard.text(t(lang, "regeneratePostButton"), "review_edit:regenerate");
+  }
+
+  keyboard.row()
     .text(t(lang, "publishNowButton"), "review_edit:publish")
     .text(t(lang, "cancelEditButton"), "review_edit:cancel");
+
+  return keyboard;
 }
 
 /**
@@ -33,12 +40,13 @@ function getEditKeyboard(lang: Language): InlineKeyboard {
 async function editMessageWithEditInterface(
   ctx: BotContext,
   content: string,
-  lang: Language
+  lang: Language,
+  hasContentPlan: boolean
 ): Promise<void> {
   const message = ctx.callbackQuery?.message;
   if (!message) return;
 
-  const keyboard = getEditKeyboard(lang);
+  const keyboard = getEditKeyboard(lang, hasContentPlan);
   const hasPhoto = "photo" in message && message.photo;
 
   // Photo captions limited to 1024 chars, text messages to 4096
@@ -69,9 +77,10 @@ async function editOriginalMessageWithContent(
   messageId: number,
   content: string,
   hasImage: boolean,
-  lang: Language
+  lang: Language,
+  hasContentPlan: boolean
 ): Promise<void> {
-  const keyboard = getEditKeyboard(lang);
+  const keyboard = getEditKeyboard(lang, hasContentPlan);
 
   // Photo captions limited to 1024 chars, text messages to 4096
   const maxLength = hasImage ? 900 : 3900;
@@ -139,7 +148,7 @@ export async function enterReviewEditMode(ctx: BotContext, postId: string): Prom
 
   // Edit the callback message to show edit interface
   console.log(`[v2] About to edit message with edit interface`);
-  await editMessageWithEditInterface(ctx, post.content, lang);
+  await editMessageWithEditInterface(ctx, post.content, lang, !!post.contentPlanId);
   console.log(`[v2] enterReviewEditMode completed successfully`);
 }
 
@@ -151,19 +160,27 @@ export async function handleReviewEditCallback(ctx: BotContext): Promise<void> {
 
   const action = data.split(":")[1];
 
-  switch (action) {
-    case "text":
-      await handleEditTextButton(ctx, lang);
-      break;
-    case "image":
-      await handleImageRegeneration(ctx, lang);
-      break;
-    case "publish":
-      await handlePublishFromEdit(ctx, lang);
-      break;
-    case "cancel":
-      await handleCancelEdit(ctx, lang);
-      break;
+  try {
+    switch (action) {
+      case "text":
+        await handleEditTextButton(ctx, lang);
+        break;
+      case "image":
+        await handleImageRegeneration(ctx, lang);
+        break;
+      case "regenerate":
+        await handlePostRegeneration(ctx, lang);
+        break;
+      case "publish":
+        await handlePublishFromEdit(ctx, lang);
+        break;
+      case "cancel":
+        await handleCancelEdit(ctx, lang);
+        break;
+    }
+  } catch (error) {
+    console.error("Review edit callback error:", error);
+    // Don't send another message - the individual handlers should handle errors
   }
 }
 
@@ -213,7 +230,7 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
 
     // Edit the original review message with updated content
     if (state.originalMessageId && state.chatId) {
-      await editOriginalMessageWithContent(ctx, state.chatId, state.originalMessageId, newContent, !!state.imageUrl, lang);
+      await editOriginalMessageWithContent(ctx, state.chatId, state.originalMessageId, newContent, !!state.imageUrl, lang, !!state.contentPlanId);
     }
   } catch (error) {
     console.error("Edit error:", error);
@@ -228,13 +245,14 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
 }
 
 async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise<void> {
-  await ctx.answerCallbackQuery({ text: t(lang, "regeneratingImage") });
-
   const state = ctx.session.reviewEditState;
   if (!state) {
-    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
+    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
     return;
   }
+
+  // Answer callback with loading message
+  await ctx.answerCallbackQuery({ text: t(lang, "regeneratingImage") });
 
   try {
     const post = await prisma.post.findUnique({
@@ -243,7 +261,7 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
     });
 
     if (!post) {
-      await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
+      await ctx.reply(t(lang, "errorOccurred"));
       return;
     }
 
@@ -305,7 +323,7 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
     state.imageUrl = mediaPath;
 
     // Edit the message with new media using editMessageMedia
-    const keyboard = getEditKeyboard(lang);
+    const keyboard = getEditKeyboard(lang, !!state.contentPlanId);
     const maxLength = 900; // Photo captions limited to 1024 chars
     const preview = state.currentContent.length > maxLength
       ? `${state.currentContent.substring(0, maxLength)}...`
@@ -323,7 +341,205 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
     );
   } catch (error) {
     console.error("Image regeneration error:", error);
+    // Send error as a reply to keep the edit interface visible for retry
     await ctx.reply(t(lang, "imageRegenerationFailed"));
+  }
+}
+
+async function handlePostRegeneration(ctx: BotContext, lang: Language): Promise<void> {
+  const state = ctx.session.reviewEditState;
+  if (!state) {
+    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
+    return;
+  }
+
+  if (!state.contentPlanId) {
+    await ctx.answerCallbackQuery({ text: t(lang, "noContentPlan"), show_alert: true });
+    return;
+  }
+
+  await ctx.answerCallbackQuery({ text: t(lang, "regeneratingPost") });
+
+  try {
+    // Fetch content plan with sources
+    const plan = await prisma.contentPlan.findUnique({
+      where: { id: state.contentPlanId },
+      include: {
+        channel: true,
+        contentSources: {
+          include: { contentSource: true },
+        },
+      },
+    });
+
+    if (!plan) {
+      await ctx.reply(t(lang, "noContentPlan"));
+      return;
+    }
+
+    // Get previous posts for context (exclude current post)
+    const previousPosts = await prisma.post.findMany({
+      where: {
+        contentPlanId: plan.id,
+        id: { not: state.postId },
+      },
+      orderBy: { createdAt: "desc" },
+      take: plan.lookbackPostCount,
+      select: { content: true },
+    });
+
+    // Get scraped content from sources
+    const sourceIds = plan.contentSources.map((s) => s.contentSourceId);
+    let scrapedContent: { id: string; text: string | null; views: number; mediaUrls: string[] }[] = [];
+
+    if (sourceIds.length > 0) {
+      scrapedContent = await prisma.scrapedContent.findMany({
+        where: {
+          sourceId: { in: sourceIds },
+          usedForGeneration: false,
+        },
+        orderBy: { scrapedAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          text: true,
+          views: true,
+          mediaUrls: true,
+        },
+      });
+    }
+
+    // Build channel context
+    const channelContext = {
+      niche: plan.channel.niche ?? undefined,
+      tone: plan.toneOverride ?? plan.channel.tone,
+      language: plan.languageOverride ?? plan.channel.language,
+      hashtags: plan.channel.hashtags,
+    };
+
+    // Generate new content
+    const result = await generateMultiplePostsWithImages(
+      channelContext,
+      scrapedContent.map((c) => ({
+        id: c.id,
+        text: c.text,
+        views: c.views,
+        hasImages: c.mediaUrls.filter((url) => !url.startsWith("skipped:")).length > 0,
+        imageCount: c.mediaUrls.filter((url) => !url.startsWith("skipped:")).length,
+      })),
+      previousPosts.map((p) => p.content),
+      plan.promptTemplate || undefined,
+      1
+    );
+
+    if (result.posts.length === 0) {
+      await ctx.reply(t(lang, "regenerationFailed"));
+      return;
+    }
+
+    const generatedPost = result.posts[0]!;
+
+    // Generate new image if enabled
+    let imageBuffer: Buffer | null = null;
+    let mediaPath: string | undefined;
+
+    if (plan.imageEnabled) {
+      if (plan.imageType === "svg") {
+        const svgStyle: SVGStyleConfig = {
+          themeColor: plan.svgThemeColor,
+          textColor: "#FFFFFF",
+          backgroundStyle: plan.svgBackgroundStyle as SVGStyleConfig["backgroundStyle"],
+          fontStyle: plan.svgFontStyle as SVGStyleConfig["fontStyle"],
+          stylePrompt: plan.svgStylePrompt ?? undefined,
+        };
+
+        const svgResult = await generateSVG(generatedPost.content, svgStyle, channelContext.language);
+        if (svgResult?.svg) {
+          const normalizedSvg = normalizeSvgDimensions(svgResult.svg);
+          imageBuffer = await svgToPng(normalizedSvg, { width: 1080 });
+        }
+      } else {
+        const imagePrompt = await generateImagePromptFromContent(generatedPost.content, channelContext.language);
+        if (imagePrompt) {
+          const imageData = await generateImage(imagePrompt);
+          if (imageData && imageData.startsWith("data:image")) {
+            const base64Data = imageData.split(",")[1];
+            if (base64Data) {
+              imageBuffer = Buffer.from(base64Data, "base64");
+            }
+          }
+        }
+      }
+    }
+
+    if (imageBuffer) {
+      const objectName = `generated/${state.postId}/${Date.now()}.png`;
+      mediaPath = `/api/media/telegram-platform/${objectName}`;
+      await uploadFile("telegram-platform", objectName, imageBuffer, "image/png");
+
+      // Update media files
+      await prisma.mediaFile.deleteMany({ where: { postId: state.postId } });
+      await prisma.mediaFile.create({
+        data: {
+          postId: state.postId,
+          url: mediaPath,
+          type: "photo",
+          filename: `${Date.now()}.png`,
+          mimeType: "image/png",
+          size: imageBuffer.length,
+          isGenerated: true,
+        },
+      });
+    }
+
+    // Update post content
+    await prisma.post.update({
+      where: { id: state.postId },
+      data: { content: generatedPost.content },
+    });
+
+    // Mark scraped content as used
+    if (generatedPost.sourceIds.length > 0) {
+      await prisma.scrapedContent.updateMany({
+        where: { id: { in: generatedPost.sourceIds } },
+        data: { usedForGeneration: true },
+      });
+    }
+
+    // Update session state
+    state.currentContent = generatedPost.content;
+    state.originalContent = generatedPost.content;
+    if (mediaPath) {
+      state.imageUrl = mediaPath;
+    }
+
+    // Edit message with new content
+    const keyboard = getEditKeyboard(lang, true);
+    const maxLength = imageBuffer ? 900 : 3900;
+    const preview = generatedPost.content.length > maxLength
+      ? `${generatedPost.content.substring(0, maxLength)}...`
+      : generatedPost.content;
+    const caption = `<b>${t(lang, "postPreviewTitle")}</b>\n\n${preview}`;
+
+    if (imageBuffer) {
+      await ctx.editMessageMedia(
+        {
+          type: "photo",
+          media: new InputFile(imageBuffer),
+          caption,
+          parse_mode: "HTML",
+        },
+        { reply_markup: keyboard }
+      );
+    } else {
+      await ctx.editMessageText(caption, {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      });
+    }
+  } catch (error) {
+    console.error("Post regeneration error:", error);
+    await ctx.reply(t(lang, "regenerationFailed"));
   }
 }
 
