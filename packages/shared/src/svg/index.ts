@@ -19,9 +19,18 @@ function getFontPaths(): string[] {
 
   const fontFiles = ["NotoSans-Regular.ttf", "NotoEmoji-Regular.ttf"];
 
+  // Try multiple possible locations for fonts
   const possibleFontsDirs = [
+    // Relative to this file (works in monorepo dev)
     path.resolve(__dirname, "../../fonts"),
+    // Relative to process working directory (common patterns)
     path.resolve(process.cwd(), "packages/shared/fonts"),
+    // Docker/standalone: fonts at app root
+    path.resolve("/app/packages/shared/fonts"),
+    // Next.js standalone output: relative to server.js
+    path.resolve(process.cwd(), "../packages/shared/fonts"),
+    // From apps/user-app or apps/worker
+    path.resolve(process.cwd(), "../../packages/shared/fonts"),
   ];
 
   for (const fontsDir of possibleFontsDirs) {
@@ -32,10 +41,12 @@ function getFontPaths(): string[] {
       cachedFontPaths = fontFiles
         .map((f) => path.join(fontsDir, f))
         .filter((p) => fs.existsSync(p));
+      console.log(`[SVG] Found fonts at: ${fontsDir}`);
       return cachedFontPaths;
     }
   }
 
+  console.warn(`[SVG] Fonts not found in any of: ${possibleFontsDirs.join(", ")}`);
   cachedFontPaths = [];
   return [];
 }

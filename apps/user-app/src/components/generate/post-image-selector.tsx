@@ -11,6 +11,7 @@ interface PostImageSelectorProps {
   selectedImages: PostImage[];
   onImagesChange: (images: PostImage[]) => void;
   channelId?: string;
+  postContent?: string;
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
   onPreviewStateChange?: (isPreviewOpen: boolean) => void;
 }
@@ -20,6 +21,7 @@ export function PostImageSelector({
   selectedImages,
   onImagesChange,
   channelId,
+  postContent,
   onImageRegenerated,
   onPreviewStateChange,
 }: PostImageSelectorProps) {
@@ -27,7 +29,7 @@ export function PostImageSelector({
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const { regeneratingUrl, cleaningUrl, regeneratingSvgUrl, regenerateImage, cleanImage, regenerateAsSvg } =
-    useImageGeneration({ channelId, onImageRegenerated });
+    useImageGeneration({ channelId, postContent, onImageRegenerated });
 
   const originalImages = useMemo(
     () => postImages.filter((img) => !img.isGenerated),

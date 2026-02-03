@@ -179,6 +179,7 @@ export function PostEditorModal({
               selectedImages={selectedImages ?? []}
               onImagesChange={onImagesChange}
               channelId={channelId}
+              postContent={content}
               onImageRegenerated={onImageRegenerated}
               onPreviewStateChange={setIsPreviewOpen}
             />

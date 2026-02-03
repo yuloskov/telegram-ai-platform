@@ -28,6 +28,7 @@ interface SVGRegenerateParams {
   channelId: string;
   originalImageUrl?: string;
   sourceStoragePath?: string;
+  postContent?: string;
 }
 
 interface GenerateNewImageParams {
@@ -151,6 +152,7 @@ export function useRegenerateWithSVG(
           channelId: params.channelId,
           originalImageUrl: params.originalImageUrl,
           sourceStoragePath: params.sourceStoragePath,
+          postContent: params.postContent,
           mode: "svg",
         },
       });
@@ -250,6 +252,7 @@ export function useGenerateNewImage(
 
 interface UseImageGenerationOptions {
   channelId?: string;
+  postContent?: string;
   onImageRegenerated?: (oldUrl: string, newImage: PostImage) => void;
 }
 
@@ -259,6 +262,7 @@ interface UseImageGenerationOptions {
  */
 export function useImageGeneration({
   channelId,
+  postContent,
   onImageRegenerated,
 }: UseImageGenerationOptions) {
   const regenerateMutation = useRegenerateImage(onImageRegenerated);
@@ -297,8 +301,10 @@ export function useImageGeneration({
       params: {
         channelId,
         sourceStoragePath,
+        // Use post content directly if available (best for SVG regeneration)
+        postContent,
         // Fall back to URL if no storage path (for backwards compatibility)
-        originalImageUrl: !sourceStoragePath
+        originalImageUrl: !sourceStoragePath && !postContent
           ? (image.isGenerated ? (image.originalUrl ?? image.url) : image.url)
           : undefined,
       },

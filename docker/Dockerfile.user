@@ -57,6 +57,12 @@ COPY --from=builder /app/apps/user-app/public ./apps/user-app/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/user-app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/user-app/.next/static ./apps/user-app/.next/static
 
+# Copy fonts for SVG rendering
+COPY --from=builder /app/packages/shared/fonts ./packages/shared/fonts
+
+# Copy @resvg/resvg-js native module (required for SVG to PNG conversion)
+COPY --from=builder /app/node_modules/@resvg ./node_modules/@resvg
+
 USER nextjs
 
 EXPOSE 3000

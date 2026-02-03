@@ -30,7 +30,7 @@ async function handler(
   }
 
   const { user } = req;
-  const { channelId, prompt, originalImageUrl, sourceStoragePath, mode } = req.body;
+  const { channelId, prompt, originalImageUrl, sourceStoragePath, mode, postContent } = req.body;
 
   if (!channelId) {
     return res.status(400).json({ success: false, error: "Channel ID is required" });
@@ -92,33 +92,41 @@ async function handler(
       });
     }
 
-    // Mode: "svg" - generate SVG from image content
+    // Mode: "svg" - generate SVG from image content or post content
     if (mode === "svg") {
-      if (!sourceStoragePath && !originalImageUrl) {
-        return res.status(400).json({
-          success: false,
-          error: "Either sourceStoragePath or originalImageUrl is required for SVG mode",
-        });
-      }
+      let svgContent: string;
+      let extractedThemeColor: string | undefined;
 
-      // Use sourceStoragePath directly if provided, otherwise convert from URL
-      const storagePath = sourceStoragePath ?? originalImageUrl.replace(/^\/api\/media\//, "");
-      const base64DataUrl = await storagePathToBase64(storagePath);
+      // If postContent is provided, use it directly (best for regeneration)
+      if (postContent) {
+        console.log("Generating SVG with provided post content");
+        svgContent = postContent;
+      } else {
+        // Otherwise, extract content from the source image
+        if (!sourceStoragePath && !originalImageUrl) {
+          return res.status(400).json({
+            success: false,
+            error: "Either postContent, sourceStoragePath, or originalImageUrl is required for SVG mode",
+          });
+        }
 
-      // Extract content from the original image
-      console.log("Extracting content from image for SVG generation:", storagePath);
-      const imageContent = await extractImageContent(base64DataUrl, channel.language);
+        // Use sourceStoragePath directly if provided, otherwise convert from URL
+        const storagePath = sourceStoragePath ?? originalImageUrl.replace(/^\/api\/media\//, "");
+        const base64DataUrl = await storagePathToBase64(storagePath);
 
-      // Build content for SVG generation
-      let svgContent = imageContent.description;
-      if (imageContent.textContent) {
-        svgContent = imageContent.textContent;
+        // Extract content from the original image
+        console.log("Extracting content from image for SVG generation:", storagePath);
+        const imageContent = await extractImageContent(base64DataUrl, channel.language);
+
+        // Build content for SVG generation
+        svgContent = imageContent.textContent ?? imageContent.description;
+        extractedThemeColor = imageContent.colors[0];
       }
 
       // Build style config from channel settings or defaults
       const styleConfig: SVGStyleConfig = {
         stylePrompt: channel.svgStylePrompt ?? undefined,
-        themeColor: channel.svgThemeColor ?? (imageContent.colors[0] || "#3B82F6"),
+        themeColor: channel.svgThemeColor ?? extractedThemeColor ?? "#3B82F6",
         textColor: channel.svgTextColor ?? "#1F2937",
         backgroundStyle: (channel.svgBackgroundStyle as SVGStyleConfig["backgroundStyle"]) ?? "gradient",
         fontStyle: (channel.svgFontStyle as SVGStyleConfig["fontStyle"]) ?? "modern",
