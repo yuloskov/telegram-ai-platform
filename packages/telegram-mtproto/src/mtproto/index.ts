@@ -173,6 +173,7 @@ export async function scrapeChannelMessages(
     groupMessages.sort((a, b) => a.id - b.id);
 
     const firstMessage = groupMessages[0];
+    if (!firstMessage) continue;
     const mediaUrls: string[] = [];
 
     // Get text from the first message that has text (caption)
