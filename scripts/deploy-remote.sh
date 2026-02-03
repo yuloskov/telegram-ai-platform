@@ -22,16 +22,16 @@ git reset --hard origin/main
 
 # Build and restart containers
 log "Building and restarting containers..."
-docker compose -f docker/docker-compose.prod.yml build --no-cache
-docker compose -f docker/docker-compose.prod.yml up -d
+docker compose --env-file .env -f docker/docker-compose.prod.yml build --no-cache
+docker compose --env-file .env -f docker/docker-compose.prod.yml up -d
 
 # Run database migrations
 log "Running database migrations..."
-docker compose -f docker/docker-compose.prod.yml exec -T user-app sh -c "cd /app && npx prisma db push --skip-generate" || true
+docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T user-app sh -c "cd /app && npx prisma db push --skip-generate" || true
 
 # Cleanup old images
 log "Cleaning up old images..."
 docker image prune -f
 
 log "=== Deployment completed ==="
-docker compose -f docker/docker-compose.prod.yml ps
+docker compose --env-file .env -f docker/docker-compose.prod.yml ps
