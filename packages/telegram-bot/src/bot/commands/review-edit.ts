@@ -18,18 +18,51 @@ const publishQueue = new Queue<PublishingJobPayload>(QUEUE_NAMES.PUBLISHING, {
   connection: redis,
 });
 
-function getEditKeyboard(lang: Language, hasContentPlan: boolean): InlineKeyboard {
+/**
+ * Restore session state from database if lost (e.g., after service restart)
+ */
+async function restoreSessionState(ctx: BotContext, postId: string): Promise<boolean> {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: { mediaFiles: true },
+  });
+
+  if (!post) {
+    console.log(`[restoreSessionState] Post not found: ${postId}`);
+    return false;
+  }
+
+  const message = ctx.callbackQuery?.message;
+  const imageUrl = post.mediaFiles[0]?.url;
+
+  ctx.session.reviewEditState = {
+    postId: post.id,
+    channelId: post.channelId,
+    contentPlanId: post.contentPlanId ?? undefined,
+    originalContent: post.content,
+    currentContent: post.content,
+    imageUrl,
+    awaitingInput: null,
+    originalMessageId: message?.message_id,
+    chatId: message?.chat.id,
+  };
+
+  console.log(`[restoreSessionState] Session state restored for post: ${postId}`);
+  return true;
+}
+
+function getEditKeyboard(lang: Language, hasContentPlan: boolean, postId: string): InlineKeyboard {
   const keyboard = new InlineKeyboard()
-    .text(t(lang, "editTextButton"), "review_edit:text")
-    .text(t(lang, "regenerateImageButton"), "review_edit:image");
+    .text(t(lang, "editTextButton"), `review_edit:text:${postId}`)
+    .text(t(lang, "regenerateImageButton"), `review_edit:image:${postId}`);
 
   if (hasContentPlan) {
-    keyboard.text(t(lang, "regeneratePostButton"), "review_edit:regenerate");
+    keyboard.text(t(lang, "regeneratePostButton"), `review_edit:regenerate:${postId}`);
   }
 
   keyboard.row()
-    .text(t(lang, "publishNowButton"), "review_edit:publish")
-    .text(t(lang, "cancelEditButton"), "review_edit:cancel");
+    .text(t(lang, "publishNowButton"), `review_edit:publish:${postId}`)
+    .text(t(lang, "cancelEditButton"), `review_edit:cancel:${postId}`);
 
   return keyboard;
 }
@@ -63,12 +96,13 @@ async function editMessageWithEditInterface(
   ctx: BotContext,
   content: string,
   lang: Language,
-  hasContentPlan: boolean
+  hasContentPlan: boolean,
+  postId: string
 ): Promise<void> {
   const message = ctx.callbackQuery?.message;
   if (!message) return;
 
-  const keyboard = getEditKeyboard(lang, hasContentPlan);
+  const keyboard = getEditKeyboard(lang, hasContentPlan, postId);
   const hasPhoto = "photo" in message && message.photo;
 
   // Photo captions limited to 1024 chars, text messages to 4096
@@ -100,9 +134,10 @@ async function editOriginalMessageWithContent(
   content: string,
   hasImage: boolean,
   lang: Language,
-  hasContentPlan: boolean
+  hasContentPlan: boolean,
+  postId: string
 ): Promise<void> {
-  const keyboard = getEditKeyboard(lang, hasContentPlan);
+  const keyboard = getEditKeyboard(lang, hasContentPlan, postId);
 
   // Photo captions limited to 1024 chars, text messages to 4096
   const maxLength = hasImage ? 900 : 3900;
@@ -170,7 +205,7 @@ export async function enterReviewEditMode(ctx: BotContext, postId: string): Prom
 
   // Edit the callback message to show edit interface
   console.log(`[v2] About to edit message with edit interface`);
-  await editMessageWithEditInterface(ctx, post.content, lang, !!post.contentPlanId);
+  await editMessageWithEditInterface(ctx, post.content, lang, !!post.contentPlanId, post.id);
   console.log(`[v2] enterReviewEditMode completed successfully`);
 }
 
@@ -180,24 +215,30 @@ export async function handleReviewEditCallback(ctx: BotContext): Promise<void> {
 
   if (!data?.startsWith("review_edit:")) return;
 
-  const action = data.split(":")[1];
+  const [, action, postId] = data.split(":");
+
+  if (!action || !postId) {
+    console.error("Invalid review_edit callback data:", data);
+    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
+    return;
+  }
 
   try {
     switch (action) {
       case "text":
-        await handleEditTextButton(ctx, lang);
+        await handleEditTextButton(ctx, lang, postId);
         break;
       case "image":
-        await handleImageRegeneration(ctx, lang);
+        await handleImageRegeneration(ctx, lang, postId);
         break;
       case "regenerate":
-        await handlePostRegeneration(ctx, lang);
+        await handlePostRegeneration(ctx, lang, postId);
         break;
       case "publish":
-        await handlePublishFromEdit(ctx, lang);
+        await handlePublishFromEdit(ctx, lang, postId);
         break;
       case "cancel":
-        await handleCancelEdit(ctx, lang);
+        await handleCancelEdit(ctx, lang, postId);
         break;
     }
   } catch (error) {
@@ -206,15 +247,19 @@ export async function handleReviewEditCallback(ctx: BotContext): Promise<void> {
   }
 }
 
-async function handleEditTextButton(ctx: BotContext, lang: Language): Promise<void> {
+async function handleEditTextButton(ctx: BotContext, lang: Language, postId: string): Promise<void> {
   await ctx.answerCallbackQuery();
 
+  // Restore session state if missing (after restart)
   if (!ctx.session.reviewEditState) {
-    await ctx.reply(t(lang, "errorOccurred"));
-    return;
+    const restored = await restoreSessionState(ctx, postId);
+    if (!restored) {
+      await ctx.reply(t(lang, "errorOccurred"));
+      return;
+    }
   }
 
-  ctx.session.reviewEditState.awaitingInput = "text_edit";
+  ctx.session.reviewEditState!.awaitingInput = "text_edit";
   await ctx.reply(t(lang, "sendEditInstruction"));
 }
 
@@ -252,7 +297,7 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
 
     // Edit the original review message with updated content
     if (state.originalMessageId && state.chatId) {
-      await editOriginalMessageWithContent(ctx, state.chatId, state.originalMessageId, newContent, !!state.imageUrl, lang, !!state.contentPlanId);
+      await editOriginalMessageWithContent(ctx, state.chatId, state.originalMessageId, newContent, !!state.imageUrl, lang, !!state.contentPlanId, state.postId);
     }
 
     // Send temporary success notification
@@ -269,12 +314,17 @@ export async function handleEditTextInput(ctx: BotContext): Promise<void> {
   }
 }
 
-async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise<void> {
-  const state = ctx.session.reviewEditState;
-  if (!state) {
-    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
-    return;
+async function handleImageRegeneration(ctx: BotContext, lang: Language, postId: string): Promise<void> {
+  // Restore session state if missing (after restart)
+  if (!ctx.session.reviewEditState) {
+    const restored = await restoreSessionState(ctx, postId);
+    if (!restored) {
+      await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
+      return;
+    }
   }
+
+  const state = ctx.session.reviewEditState!;
 
   // Answer callback with loading message
   await ctx.answerCallbackQuery({ text: t(lang, "regeneratingImage") });
@@ -348,7 +398,7 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
     state.imageUrl = mediaPath;
 
     // Edit the message with new media using editMessageMedia
-    const keyboard = getEditKeyboard(lang, !!state.contentPlanId);
+    const keyboard = getEditKeyboard(lang, !!state.contentPlanId, postId);
     const maxLength = 900; // Photo captions limited to 1024 chars
     const preview = state.currentContent.length > maxLength
       ? `${state.currentContent.substring(0, maxLength)}...`
@@ -374,12 +424,17 @@ async function handleImageRegeneration(ctx: BotContext, lang: Language): Promise
   }
 }
 
-async function handlePostRegeneration(ctx: BotContext, lang: Language): Promise<void> {
-  const state = ctx.session.reviewEditState;
-  if (!state) {
-    await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
-    return;
+async function handlePostRegeneration(ctx: BotContext, lang: Language, postId: string): Promise<void> {
+  // Restore session state if missing (after restart)
+  if (!ctx.session.reviewEditState) {
+    const restored = await restoreSessionState(ctx, postId);
+    if (!restored) {
+      await ctx.answerCallbackQuery({ text: t(lang, "errorOccurred"), show_alert: true });
+      return;
+    }
   }
+
+  const state = ctx.session.reviewEditState!;
 
   if (!state.contentPlanId) {
     await ctx.answerCallbackQuery({ text: t(lang, "noContentPlan"), show_alert: true });
@@ -542,7 +597,7 @@ async function handlePostRegeneration(ctx: BotContext, lang: Language): Promise<
     }
 
     // Edit message with new content
-    const keyboard = getEditKeyboard(lang, true);
+    const keyboard = getEditKeyboard(lang, true, postId);
     const maxLength = imageBuffer ? 900 : 3900;
     const preview = generatedPost.content.length > maxLength
       ? `${generatedPost.content.substring(0, maxLength)}...`
@@ -574,18 +629,15 @@ async function handlePostRegeneration(ctx: BotContext, lang: Language): Promise<
   }
 }
 
-async function handlePublishFromEdit(ctx: BotContext, lang: Language): Promise<void> {
+async function handlePublishFromEdit(ctx: BotContext, lang: Language, postId: string): Promise<void> {
   await ctx.answerCallbackQuery({ text: t(lang, "postPublished") });
 
+  // For publish, we don't need full session state - just use postId directly
   const state = ctx.session.reviewEditState;
-  if (!state) {
-    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
-    return;
-  }
 
   try {
     const post = await prisma.post.findUnique({
-      where: { id: state.postId },
+      where: { id: postId },
       include: { channel: true },
     });
 
@@ -596,20 +648,20 @@ async function handlePublishFromEdit(ctx: BotContext, lang: Language): Promise<v
 
     // Update post status
     await prisma.post.update({
-      where: { id: state.postId },
+      where: { id: postId },
       data: { status: "publishing" },
     });
 
     // Remove pending review
     await prisma.pendingReview.deleteMany({
-      where: { postId: state.postId },
+      where: { postId },
     });
 
     // Queue publishing job
     await publishQueue.add(
       "publish",
       {
-        postId: state.postId,
+        postId,
         channelTelegramId: post.channel.telegramId.toString(),
       },
       PUBLISHING_JOB_OPTIONS
@@ -627,30 +679,25 @@ async function handlePublishFromEdit(ctx: BotContext, lang: Language): Promise<v
   }
 }
 
-async function handleCancelEdit(ctx: BotContext, lang: Language): Promise<void> {
+async function handleCancelEdit(ctx: BotContext, lang: Language, postId: string): Promise<void> {
   await ctx.answerCallbackQuery();
 
   const state = ctx.session.reviewEditState;
-  if (!state) {
-    await editReviewMessage(ctx, `❌ ${t(lang, "errorOccurred")}`);
-    return;
-  }
 
-  // Restore original content if changed
-  if (state.currentContent !== state.originalContent) {
+  // If we have session state, restore original content if changed
+  if (state && state.currentContent !== state.originalContent) {
     await prisma.post.update({
-      where: { id: state.postId },
+      where: { id: postId },
       data: { content: state.originalContent },
     });
   }
 
-  // Get channel title for the message
+  // Get post with channel title for the message
   const post = await prisma.post.findUnique({
-    where: { id: state.postId },
+    where: { id: postId },
     include: { channel: true },
   });
 
-  const postId = state.postId;
   ctx.session.reviewEditState = undefined;
 
   if (!post) {
@@ -659,12 +706,13 @@ async function handleCancelEdit(ctx: BotContext, lang: Language): Promise<void> 
   }
 
   // Edit message to restore original review view with review buttons
+  // Use post.content from DB (which may have been restored to original above)
   const message = ctx.callbackQuery?.message;
   const hasPhoto = message && "photo" in message && message.photo;
   const maxLength = hasPhoto ? 900 : 3900;
-  const preview = state.originalContent.length > maxLength
-    ? `${state.originalContent.substring(0, maxLength)}...`
-    : state.originalContent;
+  const preview = post.content.length > maxLength
+    ? `${post.content.substring(0, maxLength)}...`
+    : post.content;
   const text = `<b>${post.channel.title}</b>\n\n${preview}`;
   const keyboard = getReviewKeyboard(postId, lang);
 

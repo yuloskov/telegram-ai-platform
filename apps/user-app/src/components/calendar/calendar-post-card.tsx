@@ -1,4 +1,5 @@
-import { Clock, AlertCircle, Check, FileText, Eye, Calendar, Edit2 } from "lucide-react";
+import { useState } from "react";
+import { Clock, AlertCircle, Check, FileText, Eye, Calendar, Edit2, RefreshCw, Send } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
@@ -21,10 +22,34 @@ interface CalendarPostCardProps {
   onView: () => void;
   onEdit: () => void;
   onReschedule: () => void;
+  onRegenerate?: () => Promise<void>;
+  onPublishNow?: () => Promise<void>;
 }
 
-export function CalendarPostCard({ post, onView, onEdit, onReschedule }: CalendarPostCardProps) {
+export function CalendarPostCard({ post, onView, onEdit, onReschedule, onRegenerate, onPublishNow }: CalendarPostCardProps) {
   const { t } = useI18n();
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (!onRegenerate) return;
+    setIsRegenerating(true);
+    try {
+      await onRegenerate();
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handlePublishNow = async () => {
+    if (!onPublishNow) return;
+    setIsPublishing(true);
+    try {
+      await onPublishNow();
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   const getStatusInfo = () => {
     if (post.skippedAt) {
@@ -91,6 +116,8 @@ export function CalendarPostCard({ post, onView, onEdit, onReschedule }: Calenda
 
   const showReschedule = post.skippedAt || post.status === "draft";
   const canEdit = ["draft", "failed", "scheduled", "pending_review"].includes(post.status);
+  const canRegenerate = post.contentPlanId && ["draft", "scheduled", "pending_review"].includes(post.status);
+  const canPublish = ["draft", "failed", "scheduled", "pending_review"].includes(post.status);
 
   return (
     <div className="bg-[var(--bg-secondary)] rounded-lg p-3 border border-[var(--border-secondary)]">
@@ -143,22 +170,46 @@ export function CalendarPostCard({ post, onView, onEdit, onReschedule }: Calenda
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border-secondary)]">
+      <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2 border-t border-[var(--border-secondary)]">
+        {canPublish && onPublishNow && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handlePublishNow}
+            disabled={isPublishing}
+            className="text-xs px-2 h-7"
+          >
+            <Send className={cn("h-3.5 w-3.5 mr-1", isPublishing && "animate-pulse")} />
+            {isPublishing ? t("posts.publishing") : t("posts.publishNow")}
+          </Button>
+        )}
         {canEdit && (
-          <Button variant="ghost" size="sm" onClick={onEdit} className="flex-1">
-            <Edit2 className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={onEdit} className="text-xs px-2 h-7">
+            <Edit2 className="h-3.5 w-3.5 mr-1" />
             {t("common.edit")}
           </Button>
         )}
         {!canEdit && (
-          <Button variant="ghost" size="sm" onClick={onView} className="flex-1">
-            <Eye className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={onView} className="text-xs px-2 h-7">
+            <Eye className="h-3.5 w-3.5 mr-1" />
             {t("calendar.viewPost")}
           </Button>
         )}
+        {canRegenerate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRegenerate}
+            disabled={isRegenerating}
+            className="text-xs px-2 h-7"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5 mr-1", isRegenerating && "animate-spin")} />
+            {isRegenerating ? t("calendar.regenerating") : t("calendar.regenerate")}
+          </Button>
+        )}
         {showReschedule && (
-          <Button variant="ghost" size="sm" onClick={onReschedule} className="flex-1">
-            <Calendar className="h-4 w-4 mr-1" />
+          <Button variant="ghost" size="sm" onClick={onReschedule} className="text-xs px-2 h-7">
+            <Calendar className="h-3.5 w-3.5 mr-1" />
             {t("calendar.reschedule")}
           </Button>
         )}

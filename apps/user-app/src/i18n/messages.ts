@@ -668,6 +668,10 @@ export const messages = {
       // Actions
       reschedule: "Reschedule",
       viewPost: "View Post",
+      regenerate: "Regenerate",
+      regenerating: "Regenerating...",
+      regenerateSuccess: "Post regenerated successfully",
+      regenerateError: "Failed to regenerate post",
       // Filters
       filterByPlan: "Filter by plan",
       allPlans: "All plans",
@@ -1356,6 +1360,10 @@ export const messages = {
       // Actions
       reschedule: "Перепланировать",
       viewPost: "Смотреть пост",
+      regenerate: "Перегенерировать",
+      regenerating: "Перегенерация...",
+      regenerateSuccess: "Пост успешно перегенерирован",
+      regenerateError: "Не удалось перегенерировать пост",
       // Filters
       filterByPlan: "Фильтр по плану",
       allPlans: "Все планы",

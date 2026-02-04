@@ -183,12 +183,65 @@ export default function CalendarPage() {
     },
   });
 
+  // Regenerate post mutation
+  const regeneratePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await fetch(`/api/posts/${postId}/regenerate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || t("calendar.regenerateError"));
+      }
+      return res.json();
+    },
+    onSuccess: async () => {
+      // Refetch and update selected posts
+      const result = await refetch();
+      if (selectedDate && result.data) {
+        const updatedPosts = result.data.dates[selectedDate] || [];
+        setSelectedPosts(updatedPosts);
+      }
+    },
+  });
+
+  // Publish post mutation
+  const publishPostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const res = await fetch(`/api/posts/${postId}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || t("posts.publishError"));
+      }
+      return res.json();
+    },
+    onSuccess: async () => {
+      const result = await refetch();
+      if (selectedDate && result.data) {
+        const updatedPosts = result.data.dates[selectedDate] || [];
+        setSelectedPosts(updatedPosts);
+      }
+    },
+  });
+
   const handleDismissAllSkipped = useCallback(() => {
     const skippedIds = getSkippedPostIds();
     if (skippedIds.length > 0) {
       dismissSkippedMutation.mutate(skippedIds);
     }
   }, [getSkippedPostIds, dismissSkippedMutation]);
+
+  const handleRegeneratePost = useCallback(async (postId: string) => {
+    await regeneratePostMutation.mutateAsync(postId);
+  }, [regeneratePostMutation]);
+
+  const handlePublishPost = useCallback(async (postId: string) => {
+    await publishPostMutation.mutateAsync(postId);
+  }, [publishPostMutation]);
 
   // Edit post mutation
   const updatePostMutation = useMutation({
@@ -381,6 +434,8 @@ export default function CalendarPage() {
             onReschedule={handleReschedule}
             onViewPost={handleViewPost}
             onEditPost={handleEditPost}
+            onRegeneratePost={handleRegeneratePost}
+            onPublishPost={handlePublishPost}
           />
         </>
       )}

@@ -23,6 +23,8 @@ interface CalendarDayDetailProps {
   onReschedule: (postIds: string[]) => void;
   onViewPost: (postId: string) => void;
   onEditPost: (post: CalendarPost) => void;
+  onRegeneratePost: (postId: string) => Promise<void>;
+  onPublishPost: (postId: string) => Promise<void>;
 }
 
 export function CalendarDayDetail({
@@ -32,6 +34,8 @@ export function CalendarDayDetail({
   onReschedule,
   onViewPost,
   onEditPost,
+  onRegeneratePost,
+  onPublishPost,
 }: CalendarDayDetailProps) {
   const { t } = useI18n();
 
@@ -90,6 +94,8 @@ export function CalendarDayDetail({
                 onView={() => onViewPost(post.id)}
                 onEdit={() => onEditPost(post)}
                 onReschedule={() => onReschedule([post.id])}
+                onRegenerate={() => onRegeneratePost(post.id)}
+                onPublishNow={() => onPublishPost(post.id)}
               />
             ))}
           </div>

@@ -42,11 +42,11 @@ async function handler(
     return res.status(404).json({ success: false, error: "Post not found" });
   }
 
-  // Can only publish drafts or reschedule failed posts
-  if (!["draft", "failed"].includes(post.status)) {
+  // Can only publish drafts, scheduled, pending_review, or retry failed posts
+  if (!["draft", "failed", "scheduled", "pending_review"].includes(post.status)) {
     return res.status(400).json({
       success: false,
-      error: "Cannot publish a post that is not a draft or failed",
+      error: "Cannot publish a post that is already published or publishing",
     });
   }
 
