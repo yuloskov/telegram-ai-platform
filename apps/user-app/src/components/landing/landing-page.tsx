@@ -237,7 +237,7 @@ function FeaturesSection() {
 }
 
 interface FeatureCardProps {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   title: string;
   description: string;
   color: string;
@@ -338,31 +338,24 @@ function HowItWorksSection() {
         {/* Steps */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((item, index) => (
-            <div key={index} className="relative group">
-              {/* Connector line */}
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-12 left-full w-full h-px bg-gradient-to-r from-[var(--border-primary)] to-transparent z-0" />
-              )}
-
-              <div className="relative">
-                {/* Step number */}
-                <div className="text-6xl font-bold text-[var(--accent-primary)]/10 mb-4 group-hover:text-[var(--accent-primary)]/20 transition-colors">
-                  {item.step}
-                </div>
-
-                {/* Icon */}
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--accent-primary)]/10 mb-4 group-hover:bg-[var(--accent-primary)]/20 transition-colors">
-                  <item.icon className="w-6 h-6 text-[var(--accent-primary)]" />
-                </div>
-
-                {/* Content */}
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  {item.description}
-                </p>
+            <div key={index} className="relative group text-center lg:text-left">
+              {/* Icon with step number */}
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--accent-primary)] mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-[var(--accent-primary)]/25">
+                <item.icon className="w-8 h-8 text-white" />
               </div>
+
+              {/* Step indicator */}
+              <div className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider mb-2">
+                {item.step}
+              </div>
+
+              {/* Content */}
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+                {item.title}
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                {item.description}
+              </p>
             </div>
           ))}
         </div>
