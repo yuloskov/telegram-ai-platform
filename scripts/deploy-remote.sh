@@ -6,6 +6,7 @@ set -e
 
 APP_DIR="$HOME/telegram-ai-platform"
 LOG_FILE="$APP_DIR/deploy.log"
+COMPOSE_CMD="docker compose --env-file .env -f docker/docker-compose.prod.yml"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -15,23 +16,21 @@ cd "$APP_DIR"
 
 log "=== Starting deployment ==="
 
-# Pull latest changes
-log "Pulling latest changes..."
-git fetch origin
-git reset --hard origin/main
+# Build containers with cache (parallel builds with BuildKit)
+log "Building containers..."
+DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 $COMPOSE_CMD build --parallel
 
-# Build and restart containers
-log "Building and restarting containers..."
-docker compose --env-file .env -f docker/docker-compose.prod.yml build --no-cache
-docker compose --env-file .env -f docker/docker-compose.prod.yml up -d
+# Restart containers
+log "Restarting containers..."
+$COMPOSE_CMD up -d
 
 # Run database migrations
 log "Running database migrations..."
-docker compose --env-file .env -f docker/docker-compose.prod.yml exec -T worker sh -c "cd /app/packages/database && npm exec -- prisma@6.19.2 db push --schema=./prisma/schema.prisma" || true
+$COMPOSE_CMD exec -T worker sh -c "cd /app/packages/database && npm exec -- prisma@6.19.2 db push --schema=./prisma/schema.prisma" || true
 
 # Cleanup old images
 log "Cleaning up old images..."
 docker image prune -f
 
 log "=== Deployment completed ==="
-docker compose --env-file .env -f docker/docker-compose.prod.yml ps
+$COMPOSE_CMD ps
