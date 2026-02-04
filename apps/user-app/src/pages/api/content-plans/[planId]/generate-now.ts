@@ -81,11 +81,36 @@ async function handler(
   const { channel } = plan;
 
   // Calculate next N scheduled times from cron expression
-  const scheduledTimes = calculateNextScheduledTimes(
+  const allScheduledTimes = calculateNextScheduledTimes(
     plan.cronSchedule,
     plan.timezone,
-    count
+    count * 2 // Get extra times in case some slots are already filled
   );
+
+  // Check which time slots already have posts from this content plan
+  const existingPosts = await prisma.post.findMany({
+    where: {
+      contentPlanId: plan.id,
+      scheduledAt: { in: allScheduledTimes },
+    },
+    select: { scheduledAt: true },
+  });
+
+  const existingTimestamps = new Set(
+    existingPosts.map((p) => p.scheduledAt?.getTime()).filter(Boolean)
+  );
+
+  // Filter out times that already have posts
+  const scheduledTimes = allScheduledTimes
+    .filter((t) => !existingTimestamps.has(t.getTime()))
+    .slice(0, count);
+
+  if (scheduledTimes.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: "All upcoming time slots already have posts scheduled. Wait for some to be published or increase the schedule frequency.",
+    });
+  }
 
   // Get scraped content from sources
   const sourceIds = plan.contentSources.map((s) => s.contentSourceId);
