@@ -25,13 +25,13 @@ export const messages = {
 
     // Header
     header: {
-      appName: "AI Channels",
+      appName: "Telegram AI Admin",
       logout: "Logout",
     },
 
     // Landing Page
     landing: {
-      pageTitle: "AI Telegram Channels - Automate Your Content",
+      pageTitle: "Telegram AI Admin - Automate Your Content",
       pageDescription: "Create and manage AI-powered Telegram channels with automated content generation",
       login: "Login",
       heroTitle: "Automate Your Telegram Channel",
@@ -48,6 +48,45 @@ export const messages = {
       feature4Description: "Set up content plans and let AI generate and publish posts on autopilot.",
       ctaTitle: "Ready to Get Started?",
       ctaSubtitle: "Sign in with Telegram and start automating your channel today.",
+      // New landing page translations
+      badge: "AI-Powered Content Automation",
+      seeHowItWorks: "See How It Works",
+      featuresSubtitle: "Powerful tools designed to supercharge your Telegram channel growth",
+      featuresBadge: "Features",
+      learnMore: "Learn more",
+      // How it works section
+      howItWorksBadge: "Simple Process",
+      howItWorksTitle: "How It Works",
+      howItWorksSubtitle: "Get started in minutes, not hours. Our streamlined process makes automation easy.",
+      step1Title: "Connect Your Channel",
+      step1Description: "Add our bot as an admin to your Telegram channel with posting permissions.",
+      step2Title: "Set Up Sources",
+      step2Description: "Add inspiration sources - other channels, documents, or web pages.",
+      step3Title: "Generate Content",
+      step3Description: "Let AI create unique posts tailored to your channel's tone and style.",
+      step4Title: "Publish & Grow",
+      step4Description: "Review, schedule, and publish. Watch your channel engagement soar.",
+      // Stats section
+      statPostsGenerated: "Posts Generated",
+      statActiveChannels: "Active Channels",
+      statUptime: "Uptime",
+      statAiAvailable: "AI Available",
+      // Dashboard preview
+      previewPostsGenerated: "Posts Generated",
+      previewActiveChannels: "Active Channels",
+      previewEngagementRate: "Engagement Rate",
+      previewAiDraft: "AI Generated Draft",
+      previewReadyForReview: "Ready for review",
+      previewGenerateNew: "Generate New",
+      previewCreateAi: "Create AI content",
+      // Trust badges
+      trustFreeToStart: "Free to start",
+      trustNoCreditCard: "No credit card required",
+      trustCancelAnytime: "Cancel anytime",
+      // Footer
+      footerPrivacy: "Privacy",
+      footerTerms: "Terms",
+      footerContact: "Contact",
     },
 
     // Navigation
@@ -60,7 +99,7 @@ export const messages = {
 
     // Auth / Login
     auth: {
-      pageTitle: "Login - AI Telegram Channels",
+      pageTitle: "Login - Telegram AI Admin",
       loginTitle: "Login with Telegram",
       loginDescription: "Authenticate securely via our Telegram bot",
       generateCode: "Generate Login Code",
@@ -717,13 +756,13 @@ export const messages = {
 
     // Header
     header: {
-      appName: "AI Каналы",
+      appName: "Telegram AI Admin",
       logout: "Выйти",
     },
 
     // Landing Page
     landing: {
-      pageTitle: "AI Telegram Каналы - Автоматизация контента",
+      pageTitle: "Telegram AI Admin - Автоматизация контента",
       pageDescription: "Создавайте и управляйте AI-каналами в Telegram с автоматической генерацией контента",
       login: "Войти",
       heroTitle: "Автоматизируйте ваш Telegram канал",
@@ -740,6 +779,45 @@ export const messages = {
       feature4Description: "Настройте контент-планы и AI будет генерировать и публиковать посты автоматически.",
       ctaTitle: "Готовы начать?",
       ctaSubtitle: "Войдите через Telegram и начните автоматизировать ваш канал уже сегодня.",
+      // New landing page translations
+      badge: "AI-автоматизация контента",
+      seeHowItWorks: "Как это работает",
+      featuresSubtitle: "Мощные инструменты для роста вашего Telegram канала",
+      featuresBadge: "Возможности",
+      learnMore: "Подробнее",
+      // How it works section
+      howItWorksBadge: "Простой процесс",
+      howItWorksTitle: "Как это работает",
+      howItWorksSubtitle: "Начните за несколько минут. Наш процесс делает автоматизацию простой.",
+      step1Title: "Подключите канал",
+      step1Description: "Добавьте нашего бота администратором в ваш Telegram канал с правами на публикацию.",
+      step2Title: "Настройте источники",
+      step2Description: "Добавьте источники вдохновения — другие каналы, документы или веб-страницы.",
+      step3Title: "Генерируйте контент",
+      step3Description: "Позвольте AI создавать уникальные посты в тоне и стиле вашего канала.",
+      step4Title: "Публикуйте и растите",
+      step4Description: "Проверяйте, планируйте и публикуйте. Наблюдайте за ростом вовлечённости.",
+      // Stats section
+      statPostsGenerated: "Постов создано",
+      statActiveChannels: "Активных каналов",
+      statUptime: "Аптайм",
+      statAiAvailable: "AI доступен",
+      // Dashboard preview
+      previewPostsGenerated: "Постов создано",
+      previewActiveChannels: "Активных каналов",
+      previewEngagementRate: "Вовлечённость",
+      previewAiDraft: "AI черновик",
+      previewReadyForReview: "Готов к проверке",
+      previewGenerateNew: "Создать новый",
+      previewCreateAi: "Создать AI контент",
+      // Trust badges
+      trustFreeToStart: "Бесплатный старт",
+      trustNoCreditCard: "Без банковской карты",
+      trustCancelAnytime: "Отмена в любое время",
+      // Footer
+      footerPrivacy: "Конфиденциальность",
+      footerTerms: "Условия",
+      footerContact: "Контакты",
     },
 
     // Navigation
@@ -752,7 +830,7 @@ export const messages = {
 
     // Auth / Login
     auth: {
-      pageTitle: "Вход - AI Telegram Каналы",
+      pageTitle: "Вход - Telegram AI Admin",
       loginTitle: "Вход через Telegram",
       loginDescription: "Безопасная авторизация через нашего Telegram бота",
       generateCode: "Получить код входа",

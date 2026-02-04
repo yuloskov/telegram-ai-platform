@@ -18,7 +18,7 @@ export function PageLayout({
   return (
     <>
       <Head>
-        <title>{title} - AI Telegram Channels</title>
+        <title>{title} - Telegram AI Admin</title>
         {description && <meta name="description" content={description} />}
       </Head>
       <div className="min-h-screen bg-[var(--bg-secondary)]">
