@@ -9,6 +9,6 @@ APP_DIR="telegram-ai-platform"
 
 echo "Deploying to $VM_HOST..."
 
-ssh "$VM_HOST" "cd ~/$APP_DIR && git fetch origin && git reset --hard origin/main && bash scripts/deploy-remote.sh"
+ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 "$VM_HOST" "cd ~/$APP_DIR && git fetch origin && git reset --hard origin/main && bash scripts/deploy-remote.sh"
 
 echo "Done!"
