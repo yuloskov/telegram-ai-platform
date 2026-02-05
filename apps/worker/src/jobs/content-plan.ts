@@ -58,12 +58,19 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
   // Check if there's already a post from this plan scheduled at this time slot
   // This can happen if user used "Generate Now" to pre-generate posts
   const currentScheduledTime = getCurrentScheduledTime(plan.cronSchedule, plan.timezone);
+  const now = new Date();
+
+  console.log(`[Content Plan ${contentPlanId}] Duplicate check:`);
+  console.log(`  - Now: ${now.toISOString()}`);
+  console.log(`  - Calculated scheduled time: ${currentScheduledTime?.toISOString() ?? 'null'}`);
+  console.log(`  - Cron: ${plan.cronSchedule}, TZ: ${plan.timezone}`);
+
+  // Check 1: Look for posts at the calculated scheduled time (±30 seconds)
   if (currentScheduledTime) {
-    // Use a time window (±30 seconds) to handle any millisecond differences
     const windowStart = new Date(currentScheduledTime.getTime() - 30000);
     const windowEnd = new Date(currentScheduledTime.getTime() + 30000);
 
-    const existingPost = await prisma.post.findFirst({
+    const existingAtScheduledTime = await prisma.post.findFirst({
       where: {
         contentPlanId: plan.id,
         scheduledAt: {
@@ -71,16 +78,60 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
           lte: windowEnd,
         },
       },
-      select: { id: true },
+      select: { id: true, scheduledAt: true, status: true },
     });
 
-    if (existingPost) {
-      console.log(
-        `Content plan ${contentPlanId}: Post already exists for scheduled time ${currentScheduledTime.toISOString()}, skipping generation`
-      );
+    console.log(`  - Check 1 (scheduled time window ${windowStart.toISOString()} - ${windowEnd.toISOString()}): ${existingAtScheduledTime ? `FOUND post ${existingAtScheduledTime.id}` : 'none'}`);
+
+    if (existingAtScheduledTime) {
+      console.log(`Content plan ${contentPlanId}: Post already exists for scheduled time, skipping generation`);
       return;
     }
   }
+
+  // Check 2: Look for posts scheduled around NOW (±5 minutes)
+  // This catches cases where the cron time calculation might be off
+  const nowWindowStart = new Date(now.getTime() - 5 * 60 * 1000);
+  const nowWindowEnd = new Date(now.getTime() + 5 * 60 * 1000);
+
+  const existingAroundNow = await prisma.post.findFirst({
+    where: {
+      contentPlanId: plan.id,
+      scheduledAt: {
+        gte: nowWindowStart,
+        lte: nowWindowEnd,
+      },
+    },
+    select: { id: true, scheduledAt: true, status: true },
+  });
+
+  console.log(`  - Check 2 (around now ${nowWindowStart.toISOString()} - ${nowWindowEnd.toISOString()}): ${existingAroundNow ? `FOUND post ${existingAroundNow.id}` : 'none'}`);
+
+  if (existingAroundNow) {
+    console.log(`Content plan ${contentPlanId}: Post already exists around current time, skipping generation`);
+    return;
+  }
+
+  // Check 3: Look for posts that were created very recently for this plan (within last 5 min)
+  // This catches race conditions where multiple jobs might run simultaneously
+  const recentPost = await prisma.post.findFirst({
+    where: {
+      contentPlanId: plan.id,
+      createdAt: {
+        gte: new Date(now.getTime() - 5 * 60 * 1000),
+      },
+    },
+    select: { id: true, createdAt: true, status: true },
+  });
+
+  console.log(`  - Check 3 (recently created): ${recentPost ? `FOUND post ${recentPost.id} created at ${recentPost.createdAt.toISOString()}` : 'none'}`);
+
+  if (recentPost) {
+    console.log(`Content plan ${contentPlanId}: Post was recently created, skipping to avoid duplicate`);
+    return;
+  }
+
+  console.log(`  - All checks passed, proceeding with generation`);
 
   // Get previous posts from THIS content plan for context (to avoid repetition)
   // Only consider published posts - drafts/pending/failed posts shouldn't be treated as previous content
