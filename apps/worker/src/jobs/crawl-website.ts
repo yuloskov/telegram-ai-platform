@@ -36,6 +36,14 @@ export async function handleCrawlWebsiteJob(data: WebsiteCrawlJobPayload): Promi
     // Step 1: Discover pages
     await updateCrawlStatus(sourceId, "discovering");
 
+    // On full re-crawl, reset all existing pages to "discovered" so they get re-scored
+    if (!isIncremental) {
+      await prisma.websitePage.updateMany({
+        where: { sourceId },
+        data: { status: "discovered", relevanceScore: null },
+      });
+    }
+
     const existingPages = await prisma.websitePage.findMany({
       where: { sourceId },
       select: { url: true },

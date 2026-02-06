@@ -205,7 +205,7 @@ webpageParsingWorker.on("failed", (job, err) => {
   console.error(`Webpage parsing job ${job?.id} failed:`, err.message);
 });
 
-// Website crawl worker
+// Website crawl worker (5 minute timeout for discovery + scoring)
 const websiteCrawlWorker = new Worker(
   QUEUE_NAMES.WEBSITE_CRAWL,
   async (job) => {
@@ -215,6 +215,7 @@ const websiteCrawlWorker = new Worker(
   {
     connection,
     concurrency: 1,
+    lockDuration: 5 * 60 * 1000,
   }
 );
 
@@ -243,8 +244,17 @@ websitePageParseWorker.on("completed", (job) => {
   console.log(`Website page parse job ${job.id} completed`);
 });
 
-websitePageParseWorker.on("failed", (job, err) => {
+websitePageParseWorker.on("failed", async (job, err) => {
   console.error(`Website page parse job ${job?.id} failed:`, err.message);
+  // Ensure finalization is attempted even when the job handler throws
+  if (job?.data?.sourceId) {
+    try {
+      const { checkAndFinalizeCrawl } = await import("./jobs/crawl-website-finalize.js");
+      await checkAndFinalizeCrawl(job.data.sourceId);
+    } catch (e) {
+      console.error("Finalize after page parse failure failed:", e);
+    }
+  }
 });
 
 console.log("Worker started successfully!");

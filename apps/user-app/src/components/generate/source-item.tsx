@@ -15,11 +15,13 @@ interface ScrapedPost {
 interface SourceItemProps {
   id: string;
   channelId: string;
-  sourceType: "telegram" | "document" | "webpage";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   documentName: string | null;
   webpageTitle: string | null;
   webpageDomain: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
   isActive: boolean;
   scrapedContent: ScrapedPost[];
   enabled: boolean;
@@ -39,6 +41,8 @@ export function SourceItem({
   documentName,
   webpageTitle,
   webpageDomain,
+  websiteTitle,
+  websiteDomain,
   scrapedContent,
   enabled,
   selectedPostIds,
@@ -61,6 +65,8 @@ export function SourceItem({
         return documentName || t("sources.untitledDocument");
       case "webpage":
         return webpageTitle || webpageDomain || t("sources.untitledWebpage");
+      case "website":
+        return websiteTitle || websiteDomain || t("sources.untitledWebpage");
       default:
         return t("sources.unknownSource");
     }
@@ -72,6 +78,7 @@ export function SourceItem({
       case "document":
         return <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />;
       case "webpage":
+      case "website":
         return <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />;
       default:
         return null;

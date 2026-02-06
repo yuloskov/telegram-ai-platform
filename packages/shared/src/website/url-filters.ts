@@ -36,6 +36,47 @@ const EXCLUDED_EXTENSIONS = [
 ];
 
 /**
+ * Score how likely a URL is to be a content/article page (vs category/navigation).
+ * Higher score = more likely to be an article.
+ */
+export function scoreContentLikelihood(url: string): number {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname;
+    const segments = path.split("/").filter((s) => s.length > 0);
+    let score = 0;
+
+    // Has numeric segment (article IDs like /77009/)
+    if (segments.some((s) => /^\d+$/.test(s))) score += 3;
+
+    // Has long slug segment (>20 chars with hyphens, like article titles)
+    if (segments.some((s) => s.includes("-") && s.length > 20)) score += 2;
+
+    // Has .html/.htm extension
+    if (/\.html?$/i.test(path)) score += 1;
+
+    // Has 4+ path segments (deep = likely article)
+    if (segments.length >= 4) score += 1;
+
+    // Only 1-2 segments (likely navigational/category)
+    if (segments.length <= 2) score -= 2;
+
+    return score;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Sort URLs by content likelihood score (highest first).
+ */
+export function sortByContentLikelihood(urls: string[]): string[] {
+  return [...urls].sort(
+    (a, b) => scoreContentLikelihood(b) - scoreContentLikelihood(a)
+  );
+}
+
+/**
  * Filter URLs to keep only likely content pages.
  * Removes non-content URLs like about, contact, login, tags, etc.
  */

@@ -26,6 +26,10 @@ interface ContentSource {
   websiteCrawlStatus: string | null;
   websitePagesTotal: number;
   websitePagesScraped: number;
+  websiteMaxPages: number;
+  websiteStalenessDays: number;
+  websiteFilterPatterns: string[];
+  skipChunking: boolean;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -167,9 +171,15 @@ export function useSourceDetail(
     },
   });
 
-  // Update source settings (e.g., chunking prompt)
+  // Update source settings (e.g., chunking prompt, website settings)
   const updateSourceMutation = useMutation({
-    mutationFn: async (data: { chunkingPrompt?: string | null }) => {
+    mutationFn: async (data: {
+      chunkingPrompt?: string | null;
+      websiteMaxPages?: number;
+      websiteStalenessDays?: number;
+      websiteFilterPatterns?: string[];
+      skipChunking?: boolean;
+    }) => {
       const res = await fetch(`/api/channels/${channelId}/sources/${sourceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

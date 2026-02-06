@@ -24,6 +24,10 @@ interface ContentSourceDetailResponse {
   websiteCrawlStatus: string | null;
   websitePagesTotal: number;
   websitePagesScraped: number;
+  websiteMaxPages: number;
+  websiteStalenessDays: number;
+  websiteFilterPatterns: string[];
+  skipChunking: boolean;
   chunkingPrompt: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
@@ -36,6 +40,10 @@ interface ContentSourceDetailResponse {
 const UpdateSourceSchema = z.object({
   isActive: z.boolean().optional(),
   chunkingPrompt: z.string().nullable().optional(),
+  websiteMaxPages: z.number().int().min(1).max(500).optional(),
+  websiteStalenessDays: z.number().int().min(1).max(365).optional(),
+  websiteFilterPatterns: z.array(z.string()).optional(),
+  skipChunking: z.boolean().optional(),
 });
 
 function formatSource(source: {
@@ -58,6 +66,10 @@ function formatSource(source: {
   websiteCrawlStatus: string | null;
   websitePagesTotal: number;
   websitePagesScraped: number;
+  websiteMaxPages: number;
+  websiteStalenessDays: number;
+  websiteFilterPatterns: string[];
+  skipChunking: boolean;
   chunkingPrompt: string | null;
   isActive: boolean;
   lastScrapedAt: Date | null;
@@ -84,6 +96,10 @@ function formatSource(source: {
     websiteCrawlStatus: source.websiteCrawlStatus,
     websitePagesTotal: source.websitePagesTotal,
     websitePagesScraped: source.websitePagesScraped,
+    websiteMaxPages: source.websiteMaxPages,
+    websiteStalenessDays: source.websiteStalenessDays,
+    websiteFilterPatterns: source.websiteFilterPatterns,
+    skipChunking: source.skipChunking,
     chunkingPrompt: source.chunkingPrompt,
     isActive: source.isActive,
     lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,

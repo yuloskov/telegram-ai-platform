@@ -1,6 +1,6 @@
 import { parseSitemap } from "./parse-sitemap.js";
 import { crawlLinks } from "./crawl-links.js";
-import { filterContentPages } from "./url-filters.js";
+import { filterContentPages, sortByContentLikelihood } from "./url-filters.js";
 
 export interface DiscoverPagesOptions {
   maxPages: number;
@@ -39,7 +39,7 @@ export async function discoverPages(
   } else {
     // Fallback to link crawling
     console.log("Sitemap insufficient, falling back to link crawling");
-    const crawledUrls = await crawlLinks(rootUrl, maxPages * 2);
+    const crawledUrls = await crawlLinks(rootUrl, maxPages);
     console.log(`Link crawling yielded ${crawledUrls.length} URLs`);
 
     // Merge and deduplicate
@@ -51,8 +51,11 @@ export async function discoverPages(
   const filteredUrls = filterContentPages(allUrls, domain, filterPatterns);
   console.log(`After filtering: ${filteredUrls.length} content pages`);
 
+  // Sort by content likelihood (articles first, categories last)
+  const sortedUrls = sortByContentLikelihood(filteredUrls);
+
   // Limit to maxPages
-  const limitedUrls = filteredUrls.slice(0, maxPages);
+  const limitedUrls = sortedUrls.slice(0, maxPages);
 
   // Mark new vs existing
   return limitedUrls.map((url) => ({

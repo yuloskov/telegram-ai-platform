@@ -2,27 +2,30 @@ import * as cheerio from "cheerio";
 import { fetchWebpage } from "../webpage/fetch-webpage.js";
 
 const MAX_DEPTH = 3;
-const RATE_LIMIT_MS = 1000; // 1 request per second
+const MAX_VISITED_PAGES_CAP = 150; // Hard cap on pages to visit during discovery
+const RATE_LIMIT_MS = 500; // 0.5 second between requests
 
 /**
  * BFS link crawl from root page, extracting internal links.
- * Same-domain only, limited depth and page count.
+ * Same-domain only, limited depth and visited page count.
+ * Collects ALL discovered URLs but only visits up to maxVisitedPages.
  */
 export async function crawlLinks(
   rootUrl: string,
-  maxPages: number
+  maxVisitedPages: number
 ): Promise<string[]> {
   const parsed = new URL(rootUrl);
   const domain = parsed.hostname.replace(/^www\./, "");
   const baseOrigin = parsed.origin;
 
+  const cappedMaxPages = Math.min(maxVisitedPages, MAX_VISITED_PAGES_CAP);
   const discovered = new Set<string>();
   const queue: Array<{ url: string; depth: number }> = [{ url: rootUrl, depth: 0 }];
   const visited = new Set<string>();
 
   discovered.add(rootUrl);
 
-  while (queue.length > 0 && discovered.size < maxPages) {
+  while (queue.length > 0 && visited.size < cappedMaxPages) {
     const item = queue.shift();
     if (!item) break;
     if (visited.has(item.url)) continue;
@@ -35,8 +38,6 @@ export async function crawlLinks(
       const $ = cheerio.load(result.html);
 
       $("a[href]").each((_, el) => {
-        if (discovered.size >= maxPages) return false;
-
         const href = $(el).attr("href");
         if (!href) return;
 

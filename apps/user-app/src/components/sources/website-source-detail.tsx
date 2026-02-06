@@ -8,6 +8,7 @@ import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ConfirmModal } from "~/components/ui/confirm-modal";
 import { WebsitePagesList } from "~/components/sources/website-pages-list";
+import { WebsiteSettingsCard } from "~/components/sources/website-settings-card";
 import { useI18n } from "~/i18n";
 import type { useSourceDetail } from "~/hooks/useSourceDetail";
 
@@ -33,7 +34,7 @@ export function WebsiteSourceDetail({
   const queryClient = useQueryClient();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  const { source, deleteMutation } = sourceDetail;
+  const { source, deleteMutation, updateSourceMutation } = sourceDetail;
 
   const refreshMutation = useMutation({
     mutationFn: async (fullRecrawl: boolean) => {
@@ -164,6 +165,17 @@ export function WebsiteSourceDetail({
             </div>
           </Card>
         )}
+
+        {/* Settings */}
+        <WebsiteSettingsCard
+          maxPages={source.websiteMaxPages ?? 50}
+          stalenessDays={source.websiteStalenessDays ?? 30}
+          filterPatterns={source.websiteFilterPatterns ?? []}
+          skipChunking={source.skipChunking ?? false}
+          onSave={(settings) => updateSourceMutation.mutate(settings)}
+          isSaving={updateSourceMutation.isPending}
+          isCrawling={!!isCrawling}
+        />
 
         {/* Pages List */}
         <PageSection title={t("sources.websitePages")}>

@@ -426,6 +426,13 @@ export const messages = {
       },
       filterByStatus: "Filter by status",
       allStatuses: "All",
+      // Website settings
+      websiteSettings: "Crawl Settings",
+      websiteSettingsHint: "Adjust settings and re-crawl to discover more pages",
+      saveSettings: "Save Settings",
+      savingSettings: "Saving...",
+      settingsSaved: "Settings saved",
+      settingsSavedRecrawlHint: "Re-crawl to apply changes",
       // Source display fallbacks
       untitledDocument: "Untitled Document",
       untitledWebpage: "Untitled Page",
@@ -1196,6 +1203,13 @@ export const messages = {
       },
       filterByStatus: "Фильтр по статусу",
       allStatuses: "Все",
+      // Website settings
+      websiteSettings: "Настройки обхода",
+      websiteSettingsHint: "Измените настройки и запустите обход, чтобы обнаружить больше страниц",
+      saveSettings: "Сохранить настройки",
+      savingSettings: "Сохранение...",
+      settingsSaved: "Настройки сохранены",
+      settingsSavedRecrawlHint: "Запустите повторный обход для применения изменений",
       // Source display fallbacks
       untitledDocument: "Документ без названия",
       untitledWebpage: "Страница без названия",

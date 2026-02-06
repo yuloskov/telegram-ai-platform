@@ -25,11 +25,13 @@ import type { SvgGenerationSettings } from "~/hooks/useSvgSettings";
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document" | "webpage";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   documentName: string | null;
   webpageTitle: string | null;
   webpageDomain: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
 }
 
 interface ChannelSvgDefaults {
@@ -365,7 +367,9 @@ export function ContentPlanForm({
                     ? `@${source.telegramUsername || ""}`
                     : source.sourceType === "document"
                       ? source.documentName || t("sources.untitledDocument")
-                      : source.webpageTitle || source.webpageDomain || t("sources.untitledWebpage")}
+                      : source.sourceType === "website"
+                        ? source.websiteTitle || source.websiteDomain || t("sources.untitledWebpage")
+                        : source.webpageTitle || source.webpageDomain || t("sources.untitledWebpage")}
                 </span>
               </label>
             ))}
