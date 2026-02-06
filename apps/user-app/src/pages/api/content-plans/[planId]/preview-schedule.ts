@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import parser from "cron-parser";
+import { CronExpressionParser } from "cron-parser";
 
 const PreviewScheduleSchema = z.object({
   count: z.number().int().min(1).max(10).default(3),
@@ -60,7 +60,7 @@ async function handler(
   const scheduledTimes: string[] = [];
 
   try {
-    const interval = parser.parse(plan.cronSchedule, {
+    const interval = CronExpressionParser.parse(plan.cronSchedule, {
       currentDate: new Date(),
       tz: plan.timezone,
     });

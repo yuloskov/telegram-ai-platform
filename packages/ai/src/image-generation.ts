@@ -1,7 +1,7 @@
 import { getAIClient, chat, type ChatMessage } from "./client";
 
 const IMAGE_GENERATION_MODEL =
-  process.env.IMAGE_GENERATION_MODEL ?? "google/gemini-2.0-flash-exp:free";
+  process.env.IMAGE_GENERATION_MODEL ?? "google/gemini-2.5-flash-image";
 
 const IMAGE_PROMPT_MODEL =
   process.env.IMAGE_PROMPT_MODEL ?? "google/gemini-2.0-flash-001";

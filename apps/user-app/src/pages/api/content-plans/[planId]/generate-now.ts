@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import parser from "cron-parser";
+import { CronExpressionParser } from "cron-parser";
 import {
   generateMultiplePostsWithImages,
   generateSVG,
@@ -326,7 +326,7 @@ function calculateNextScheduledTimes(
   const times: Date[] = [];
 
   try {
-    const interval = parser.parse(cronSchedule, {
+    const interval = CronExpressionParser.parse(cronSchedule, {
       currentDate: new Date(),
       tz: timezone,
     });

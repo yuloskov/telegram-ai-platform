@@ -1,7 +1,7 @@
 import { prisma } from "@repo/database";
 import { Queue } from "bullmq";
 import { Redis } from "ioredis";
-import parser from "cron-parser";
+import { CronExpressionParser } from "cron-parser";
 import {
   generateMultiplePostsWithImages,
   generateSVG,
@@ -446,7 +446,7 @@ function getCurrentScheduledTime(cronSchedule: string, timezone: string): Date |
   try {
     // Parse cron with current time, then get the previous occurrence
     // This gives us the scheduled time that triggered this job
-    const interval = parser.parse(cronSchedule, {
+    const interval = CronExpressionParser.parse(cronSchedule, {
       currentDate: new Date(),
       tz: timezone,
     });

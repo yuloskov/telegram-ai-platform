@@ -73,6 +73,10 @@ services:
       - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-google/gemini-2.0-flash-001}
+      - IMAGE_GENERATION_MODEL=${IMAGE_GENERATION_MODEL:-google/gemini-2.5-flash-image}
+      - IMAGE_EDITING_MODEL=${IMAGE_EDITING_MODEL:-google/gemini-2.5-flash-image}
+      - IMAGE_ANALYSIS_MODEL=${IMAGE_ANALYSIS_MODEL:-google/gemini-2.5-flash-image}
+      - IMAGE_PROMPT_MODEL=${IMAGE_PROMPT_MODEL:-google/gemini-2.0-flash-001}
       - NEXT_PUBLIC_USER_APP_URL=${NEXT_PUBLIC_USER_APP_URL:-http://localhost:3000}
       - NEXT_PUBLIC_ADMIN_APP_URL=${NEXT_PUBLIC_ADMIN_APP_URL:-http://localhost:3001}
       - NODE_ENV=production
@@ -127,6 +131,10 @@ services:
       - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-google/gemini-2.0-flash-001}
+      - IMAGE_GENERATION_MODEL=${IMAGE_GENERATION_MODEL:-google/gemini-2.5-flash-image}
+      - IMAGE_EDITING_MODEL=${IMAGE_EDITING_MODEL:-google/gemini-2.5-flash-image}
+      - IMAGE_ANALYSIS_MODEL=${IMAGE_ANALYSIS_MODEL:-google/gemini-2.5-flash-image}
+      - IMAGE_PROMPT_MODEL=${IMAGE_PROMPT_MODEL:-google/gemini-2.0-flash-001}
       - NODE_ENV=production
     depends_on:
       postgres:
