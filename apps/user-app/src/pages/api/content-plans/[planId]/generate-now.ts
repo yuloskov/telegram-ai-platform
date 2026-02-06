@@ -7,6 +7,8 @@ import { CronExpressionParser } from "cron-parser";
 import {
   generateMultiplePostsWithImages,
   generateSVG,
+  generateImagePromptFromContent,
+  generateImage,
   type SVGStyleConfig,
 } from "@repo/ai";
 import { svgToPng } from "@repo/shared/svg";
@@ -197,33 +199,55 @@ async function handler(
       // Generate image if enabled
       let mediaUrls: string[] = [];
 
-      if (plan.imageEnabled && plan.imageType === "svg") {
-        const svgStyleConfig: SVGStyleConfig = {
-          stylePrompt: plan.svgStylePrompt || undefined,
-          themeColor: plan.svgThemeColor,
-          textColor: "#1F2937",
-          backgroundStyle: plan.svgBackgroundStyle as "solid" | "gradient" | "transparent",
-          fontStyle: plan.svgFontStyle as "modern" | "classic" | "playful" | "technical",
-        };
+      if (plan.imageEnabled) {
+        if (plan.imageType === "svg") {
+          const svgStyleConfig: SVGStyleConfig = {
+            stylePrompt: plan.svgStylePrompt || undefined,
+            themeColor: plan.svgThemeColor,
+            textColor: "#1F2937",
+            backgroundStyle: plan.svgBackgroundStyle as "solid" | "gradient" | "transparent",
+            fontStyle: plan.svgFontStyle as "modern" | "classic" | "playful" | "technical",
+          };
 
-        const svgResult = await generateSVG(
-          generatedPost.content,
-          svgStyleConfig,
-          channelContext.language
-        );
+          const svgResult = await generateSVG(
+            generatedPost.content,
+            svgStyleConfig,
+            channelContext.language
+          );
 
-        if (svgResult) {
-          const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
-          const timestamp = Date.now() + i;
-          const pngObjectName = `svg-png/${channel.id}/${timestamp}.png`;
-          const svgObjectName = `svg/${channel.id}/${timestamp}.svg`;
+          if (svgResult) {
+            const pngBuffer = await svgToPng(svgResult.svg, { width: 1080, height: 1080 });
+            const timestamp = Date.now() + i;
+            const pngObjectName = `svg-png/${channel.id}/${timestamp}.png`;
+            const svgObjectName = `svg/${channel.id}/${timestamp}.svg`;
 
-          await Promise.all([
-            uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
-            uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
-          ]);
+            await Promise.all([
+              uploadFile("telegram-platform", pngObjectName, pngBuffer, "image/png"),
+              uploadFile("telegram-platform", svgObjectName, Buffer.from(svgResult.svg, "utf-8"), "image/svg+xml"),
+            ]);
 
-          mediaUrls.push(`/api/media/telegram-platform/${pngObjectName}`);
+            mediaUrls.push(`/api/media/telegram-platform/${pngObjectName}`);
+          }
+        } else {
+          // Generate raster image
+          const imagePrompt = await generateImagePromptFromContent(
+            generatedPost.content,
+            channelContext.language
+          );
+
+          if (imagePrompt) {
+            const imageData = await generateImage(imagePrompt);
+            if (imageData) {
+              const buffer = Buffer.from(
+                imageData.replace(/^data:image\/\w+;base64,/, ""),
+                "base64"
+              );
+              const timestamp = Date.now() + i;
+              const objectName = `generated/${channel.id}/${timestamp}.jpg`;
+              await uploadFile("telegram-platform", objectName, buffer, "image/jpeg");
+              mediaUrls.push(`/api/media/telegram-platform/${objectName}`);
+            }
+          }
         }
       }
 
