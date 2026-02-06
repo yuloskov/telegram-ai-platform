@@ -7,6 +7,8 @@ export const QUEUE_NAMES = {
   CONTENT_PLAN: "content-plan",
   DOCUMENT_PARSING: "document-parsing",
   WEBPAGE_PARSING: "webpage-parsing",
+  WEBSITE_CRAWL: "website-crawl",
+  WEBSITE_PAGE_PARSE: "website-page-parse",
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -58,6 +60,19 @@ export interface WebpageParsingJobPayload {
   webpageUrl: string;
 }
 
+export interface WebsiteCrawlJobPayload {
+  sourceId: string;
+  websiteUrl: string;
+  isIncremental?: boolean;
+}
+
+export interface WebsitePageParseJobPayload {
+  sourceId: string;
+  pageId: string;
+  pageUrl: string;
+  previousHash?: string;
+}
+
 // Job options
 export const DEFAULT_JOB_OPTIONS = {
   attempts: 3,
@@ -103,6 +118,24 @@ export const DOCUMENT_PARSING_JOB_OPTIONS = {
 };
 
 export const WEBPAGE_PARSING_JOB_OPTIONS = {
+  ...DEFAULT_JOB_OPTIONS,
+  attempts: 2,
+  backoff: {
+    type: "exponential" as const,
+    delay: 30000, // 30 seconds between retries
+  },
+};
+
+export const WEBSITE_CRAWL_JOB_OPTIONS = {
+  ...DEFAULT_JOB_OPTIONS,
+  attempts: 2,
+  backoff: {
+    type: "exponential" as const,
+    delay: 60000, // 60 seconds between retries
+  },
+};
+
+export const WEBSITE_PAGE_PARSE_JOB_OPTIONS = {
   ...DEFAULT_JOB_OPTIONS,
   attempts: 2,
   backoff: {

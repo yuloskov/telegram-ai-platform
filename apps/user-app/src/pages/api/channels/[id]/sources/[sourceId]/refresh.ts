@@ -8,6 +8,7 @@ import {
   QUEUE_NAMES,
   WEBPAGE_PARSING_JOB_OPTIONS,
   DOCUMENT_PARSING_JOB_OPTIONS,
+  WEBSITE_CRAWL_JOB_OPTIONS,
 } from "@repo/shared/queues";
 
 async function handler(
@@ -25,7 +26,6 @@ async function handler(
     return res.status(400).json({ success: false, error: "Invalid parameters" });
   }
 
-  // Verify channel ownership
   const channel = await prisma.channel.findFirst({
     where: { id: channelId, userId: user.id },
   });
@@ -34,7 +34,6 @@ async function handler(
     return res.status(404).json({ success: false, error: "Channel not found" });
   }
 
-  // Get the source
   const source = await prisma.contentSource.findFirst({
     where: { id: sourceId, channelId },
   });
@@ -43,18 +42,34 @@ async function handler(
     return res.status(404).json({ success: false, error: "Source not found" });
   }
 
-  // Only webpage and document sources can be refreshed
-  if (source.sourceType !== "webpage" && source.sourceType !== "document") {
+  if (!["webpage", "document", "website"].includes(source.sourceType)) {
     return res.status(400).json({
       success: false,
-      error: "Only webpage and document sources can be refreshed",
+      error: "Only webpage, document, and website sources can be refreshed",
     });
   }
 
   const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
   const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
-  if (source.sourceType === "webpage") {
+  if (source.sourceType === "website") {
+    if (!source.websiteUrl) {
+      return res.status(400).json({ success: false, error: "Source has no URL" });
+    }
+
+    const isFullRecrawl = req.body?.fullRecrawl === true;
+    const queue = new Queue(QUEUE_NAMES.WEBSITE_CRAWL, { connection });
+    await queue.add(
+      "crawl-website",
+      {
+        sourceId: source.id,
+        websiteUrl: source.websiteUrl,
+        isIncremental: !isFullRecrawl,
+      },
+      WEBSITE_CRAWL_JOB_OPTIONS
+    );
+    await queue.close();
+  } else if (source.sourceType === "webpage") {
     if (!source.webpageUrl) {
       return res.status(400).json({ success: false, error: "Source has no URL" });
     }
@@ -67,7 +82,6 @@ async function handler(
     );
     await queue.close();
   } else {
-    // Document source
     if (!source.documentUrl) {
       return res.status(400).json({ success: false, error: "Source has no document" });
     }

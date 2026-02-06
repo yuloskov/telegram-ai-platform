@@ -133,7 +133,7 @@ export default function ChannelsPage() {
                           <div className="flex items-center gap-2 mt-3">
                             <Badge>{channel.tone}</Badge>
                             {channel.niche && (
-                              <Badge variant="primary">{channel.niche}</Badge>
+                              <Badge variant="info">{channel.niche}</Badge>
                             )}
                           </div>
                         </div>

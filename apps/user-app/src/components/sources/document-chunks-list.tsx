@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, CheckCircle, Trash2, Shuffle } from "lucide-react";
 import { Card } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import { Spinner } from "~/components/ui/spinner";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
@@ -73,10 +74,9 @@ function ChunkCard({
               </span>
             )}
             {chunk.usedForGeneration && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-xs text-blue-500">
-                <CheckCircle className="h-3 w-3" />
+              <Badge variant="info" icon={<CheckCircle className="h-3 w-3" />}>
                 {t("sources.usedBadge")}
-              </span>
+              </Badge>
             )}
             <div className="flex-1" />
             <button

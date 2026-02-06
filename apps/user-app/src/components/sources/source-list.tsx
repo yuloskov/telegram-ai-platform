@@ -10,7 +10,7 @@ import { useI18n } from "~/i18n";
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document" | "webpage";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   documentName: string | null;
   documentSize: number | null;
@@ -18,6 +18,13 @@ interface ContentSource {
   webpageTitle: string | null;
   webpageDomain: string | null;
   webpageError: string | null;
+  websiteUrl: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
+  websiteCrawlStatus: string | null;
+  websitePagesTotal: number;
+  websitePagesScraped: number;
+  websiteError: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {

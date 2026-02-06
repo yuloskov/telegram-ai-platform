@@ -1,13 +1,10 @@
-// Post status utilities - consolidated from post-list.tsx and post-detail page
-
 import type { ReactNode } from "react";
 import type { PostStatus } from "~/types";
 import type { ChipProps } from "~/components/content/content-list-item";
+import type { BadgeVariant } from "~/components/ui/badge";
 
-// Translation function type that accepts any valid key
 type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
 
-// Status translation keys
 const statusTranslationKeys: Record<PostStatus, string> = {
   draft: "posts.status.draft",
   scheduled: "posts.status.scheduled",
@@ -17,9 +14,6 @@ const statusTranslationKeys: Record<PostStatus, string> = {
   pending_review: "posts.status.pending_review",
 };
 
-/**
- * Get the translated status label for a post status.
- */
 export function getStatusLabel(
   status: PostStatus,
   t: TranslateFn
@@ -28,24 +22,16 @@ export function getStatusLabel(
   return t(key);
 }
 
-/**
- * Configuration for post status display (variant and icon).
- * Icons are passed in rather than created here to avoid dependency issues.
- */
 export interface StatusConfigItem {
-  variant: ChipProps["variant"];
+  variant: BadgeVariant;
   icon: ReactNode;
 }
 
-/**
- * Get the status chip configuration (variant and icon).
- * Pass icon components to avoid importing them here.
- */
 export function getStatusConfig(
   status: PostStatus,
   icons: Record<PostStatus, ReactNode>
 ): StatusConfigItem {
-  const variants: Record<PostStatus, ChipProps["variant"]> = {
+  const variants: Record<PostStatus, BadgeVariant> = {
     draft: "default",
     scheduled: "info",
     publishing: "warning",
@@ -60,10 +46,6 @@ export function getStatusConfig(
   };
 }
 
-/**
- * Create status icons object from icon components.
- * Use this in components to generate the icons map.
- */
 export function createStatusIcons(components: {
   Clock: ReactNode;
   Loader: ReactNode;
@@ -81,9 +63,6 @@ export function createStatusIcons(components: {
   };
 }
 
-/**
- * Build a chip configuration for a post status.
- */
 export function buildStatusChip(
   status: PostStatus,
   t: TranslateFn,

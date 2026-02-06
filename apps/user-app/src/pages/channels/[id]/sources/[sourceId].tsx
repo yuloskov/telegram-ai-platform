@@ -6,6 +6,7 @@ import { PageLayout } from "~/components/layout/page-layout";
 import { Spinner } from "~/components/ui/spinner";
 import { TelegramSourceDetail } from "~/components/sources/telegram-source-detail";
 import { DocumentSourceDetail } from "~/components/sources/document-source-detail";
+import { WebsiteSourceDetail } from "~/components/sources/website-source-detail";
 import { useI18n } from "~/i18n";
 
 export default function SourceDetailPage() {
@@ -42,13 +43,24 @@ export default function SourceDetailPage() {
   const pageTitle =
     source.sourceType === "document"
       ? source.documentName ?? t("sources.document")
-      : `@${source.telegramUsername}`;
+      : source.sourceType === "webpage"
+        ? source.webpageTitle ?? source.webpageDomain ?? t("sources.webpage")
+        : source.sourceType === "website"
+          ? source.websiteTitle ?? source.websiteDomain ?? t("sources.website")
+          : `@${source.telegramUsername}`;
 
   return (
     <PageLayout title={`${pageTitle} - ${channel.title}`}>
       <AppHeader user={user} onLogout={logout} />
 
-      {source.sourceType === "document" ? (
+      {source.sourceType === "website" ? (
+        <WebsiteSourceDetail
+          channel={channel}
+          channelId={channelId as string}
+          sourceId={sourceId as string}
+          sourceDetail={sourceDetail}
+        />
+      ) : source.sourceType === "document" || source.sourceType === "webpage" ? (
         <DocumentSourceDetail
           channel={channel}
           channelId={channelId as string}

@@ -9,12 +9,23 @@ import type { SortBy, DateRange } from "~/components/sources/content-filters";
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   documentName: string | null;
   documentUrl: string | null;
   documentSize: number | null;
   chunkingPrompt: string | null;
+  webpageUrl: string | null;
+  webpageTitle: string | null;
+  webpageDomain: string | null;
+  webpageError: string | null;
+  websiteUrl: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
+  websiteError: string | null;
+  websiteCrawlStatus: string | null;
+  websitePagesTotal: number;
+  websitePagesScraped: number;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;

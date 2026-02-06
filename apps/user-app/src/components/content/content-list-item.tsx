@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Images } from "lucide-react";
 import { Card } from "~/components/ui/card";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
@@ -9,7 +10,7 @@ import { getMediaSrc, isVideoOnly } from "~/lib/media";
 export interface ChipProps {
   label: string;
   icon?: ReactNode;
-  variant?: "default" | "success" | "warning" | "error" | "info";
+  variant?: BadgeVariant;
 }
 
 interface ContentListItemProps {
@@ -25,25 +26,6 @@ interface ContentListItemProps {
   onSelect?: (id: string) => void;
   onClick?: (id: string) => void;
   mediaUrls?: string[];
-}
-
-const chipVariantStyles: Record<NonNullable<ChipProps["variant"]>, string> = {
-  default: "bg-[var(--bg-tertiary)] text-[var(--text-secondary)]",
-  success: "bg-[var(--status-success-subtle)] text-[var(--status-success)]",
-  warning: "bg-[var(--status-warning-subtle)] text-[var(--status-warning)]",
-  error: "bg-[var(--status-error-subtle)] text-[var(--status-error)]",
-  info: "bg-[var(--accent-primary-subtle)] text-[var(--accent-primary)]",
-};
-
-export function Chip({ label, icon, variant = "default" }: ChipProps) {
-  return (
-    <span
-      className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${chipVariantStyles[variant]}`}
-    >
-      {icon}
-      {label}
-    </span>
-  );
 }
 
 export function ContentListItem({
@@ -136,7 +118,9 @@ export function ContentListItem({
             {chips.length > 0 && (
               <div className="flex items-center gap-1 shrink-0">
                 {chips.map((chip, idx) => (
-                  <Chip key={idx} {...chip} />
+                  <Badge key={idx} variant={chip.variant} icon={chip.icon}>
+                    {chip.label}
+                  </Badge>
                 ))}
               </div>
             )}

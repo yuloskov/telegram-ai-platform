@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Card } from "~/components/ui/card";
-import { Chip, type ChipProps } from "~/components/content/content-list-item";
+import { Badge } from "~/components/ui/badge";
+import type { ChipProps } from "~/components/content/content-list-item";
 import { TelegramHtml } from "~/components/telegram/telegram-html";
 import { useI18n } from "~/i18n";
 import { getMediaSrc, isVideoOnly, getValidMediaUrls } from "~/lib/media";
@@ -74,7 +75,9 @@ export function ContentDetailCard({
           {chips.length > 0 && (
             <div className="flex items-center gap-1 shrink-0">
               {chips.map((chip, idx) => (
-                <Chip key={idx} {...chip} />
+                <Badge key={idx} variant={chip.variant} icon={chip.icon}>
+                  {chip.label}
+                </Badge>
               ))}
             </div>
           )}

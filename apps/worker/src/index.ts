@@ -8,6 +8,8 @@ import { handleNotificationJob } from "./jobs/notify.js";
 import { handleContentPlanJob } from "./jobs/content-plan.js";
 import { handleParseDocumentJob } from "./jobs/parse-document.js";
 import { handleParseWebpageJob } from "./jobs/parse-webpage.js";
+import { handleCrawlWebsiteJob } from "./jobs/crawl-website.js";
+import { handleParseWebsitePageJob } from "./jobs/parse-website-page.js";
 import { getAutoScrapeScheduler } from "./services/auto-scrape-scheduler.js";
 import { getPostScheduler } from "./services/post-scheduler.js";
 import { getContentPlanScheduler } from "./services/content-plan-scheduler.js";
@@ -203,6 +205,48 @@ webpageParsingWorker.on("failed", (job, err) => {
   console.error(`Webpage parsing job ${job?.id} failed:`, err.message);
 });
 
+// Website crawl worker
+const websiteCrawlWorker = new Worker(
+  QUEUE_NAMES.WEBSITE_CRAWL,
+  async (job) => {
+    console.log(`Processing website crawl job: ${job.id}`);
+    return handleCrawlWebsiteJob(job.data);
+  },
+  {
+    connection,
+    concurrency: 1,
+  }
+);
+
+websiteCrawlWorker.on("completed", (job) => {
+  console.log(`Website crawl job ${job.id} completed`);
+});
+
+websiteCrawlWorker.on("failed", (job, err) => {
+  console.error(`Website crawl job ${job?.id} failed:`, err.message);
+});
+
+// Website page parse worker
+const websitePageParseWorker = new Worker(
+  QUEUE_NAMES.WEBSITE_PAGE_PARSE,
+  async (job) => {
+    console.log(`Processing website page parse job: ${job.id}`);
+    return handleParseWebsitePageJob(job.data);
+  },
+  {
+    connection,
+    concurrency: 3,
+  }
+);
+
+websitePageParseWorker.on("completed", (job) => {
+  console.log(`Website page parse job ${job.id} completed`);
+});
+
+websitePageParseWorker.on("failed", (job, err) => {
+  console.error(`Website page parse job ${job?.id} failed:`, err.message);
+});
+
 console.log("Worker started successfully!");
 console.log(`Listening on queues: ${Object.values(QUEUE_NAMES).join(", ")}`);
 
@@ -236,6 +280,8 @@ const shutdown = async () => {
     contentPlanWorker.close(),
     documentParsingWorker.close(),
     webpageParsingWorker.close(),
+    websiteCrawlWorker.close(),
+    websitePageParseWorker.close(),
     autoScrapeScheduler.close(),
     postScheduler.close(),
     contentPlanScheduler.close(),

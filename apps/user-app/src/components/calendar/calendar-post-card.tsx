@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Clock, AlertCircle, Check, FileText, Eye, Calendar, Edit2, RefreshCw, Send } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/i18n";
 import { cn } from "~/lib/utils";
@@ -24,6 +24,12 @@ interface CalendarPostCardProps {
   onReschedule: () => void;
   onRegenerate?: () => Promise<void>;
   onPublishNow?: () => Promise<void>;
+}
+
+interface StatusInfo {
+  label: string;
+  variant: BadgeVariant;
+  icon: React.ElementType;
 }
 
 export function CalendarPostCard({ post, onView, onEdit, onReschedule, onRegenerate, onPublishNow }: CalendarPostCardProps) {
@@ -51,51 +57,23 @@ export function CalendarPostCard({ post, onView, onEdit, onReschedule, onRegener
     }
   };
 
-  const getStatusInfo = () => {
+  const getStatusInfo = (): StatusInfo => {
     if (post.skippedAt) {
-      return {
-        label: t("calendar.skipped"),
-        color: "bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-200",
-        icon: AlertCircle,
-      };
+      return { label: t("calendar.skipped"), variant: "warning", icon: AlertCircle };
     }
     switch (post.status) {
       case "published":
-        return {
-          label: t("calendar.published"),
-          color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200",
-          icon: Check,
-        };
+        return { label: t("calendar.published"), variant: "success", icon: Check };
       case "scheduled":
-        return {
-          label: t("calendar.scheduled"),
-          color: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200",
-          icon: Clock,
-        };
+        return { label: t("calendar.scheduled"), variant: "info", icon: Clock };
       case "draft":
-        return {
-          label: t("calendar.draft"),
-          color: "bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200",
-          icon: FileText,
-        };
+        return { label: t("calendar.draft"), variant: "default", icon: FileText };
       case "pending_review":
-        return {
-          label: t("calendar.pendingReview"),
-          color: "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200",
-          icon: Eye,
-        };
+        return { label: t("calendar.pendingReview"), variant: "warning", icon: Eye };
       case "failed":
-        return {
-          label: t("calendar.failed"),
-          color: "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200",
-          icon: AlertCircle,
-        };
+        return { label: t("calendar.failed"), variant: "error", icon: AlertCircle };
       default:
-        return {
-          label: post.status,
-          color: "bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200",
-          icon: FileText,
-        };
+        return { label: post.status, variant: "default", icon: FileText };
     }
   };
 
@@ -124,8 +102,10 @@ export function CalendarPostCard({ post, onView, onEdit, onReschedule, onRegener
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <Badge className={cn("text-xs", statusInfo.color)}>
-            <StatusIcon className="h-3 w-3 mr-1" />
+          <Badge
+            variant={statusInfo.variant}
+            icon={<StatusIcon className="h-3 w-3" />}
+          >
             {statusInfo.label}
           </Badge>
           {getTimeDisplay() && (

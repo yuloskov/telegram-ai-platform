@@ -6,7 +6,7 @@ import { CreateContentSourceSchema } from "@repo/shared/types";
 
 interface ContentSourceResponse {
   id: string;
-  sourceType: "telegram" | "document" | "webpage";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   telegramId: string | null;
   documentName: string | null;
@@ -17,6 +17,13 @@ interface ContentSourceResponse {
   webpageTitle: string | null;
   webpageDomain: string | null;
   webpageError: string | null;
+  websiteUrl: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
+  websiteError: string | null;
+  websiteCrawlStatus: string | null;
+  websitePagesTotal: number;
+  websitePagesScraped: number;
   isActive: boolean;
   lastScrapedAt: string | null;
   createdAt: string;
@@ -71,6 +78,13 @@ async function handler(
         webpageTitle: source.webpageTitle,
         webpageDomain: source.webpageDomain,
         webpageError: source.webpageError,
+        websiteUrl: source.websiteUrl,
+        websiteTitle: source.websiteTitle,
+        websiteDomain: source.websiteDomain,
+        websiteError: source.websiteError,
+        websiteCrawlStatus: source.websiteCrawlStatus,
+        websitePagesTotal: source.websitePagesTotal,
+        websitePagesScraped: source.websitePagesScraped,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),
@@ -131,6 +145,13 @@ async function handler(
         webpageTitle: source.webpageTitle,
         webpageDomain: source.webpageDomain,
         webpageError: source.webpageError,
+        websiteUrl: source.websiteUrl,
+        websiteTitle: source.websiteTitle,
+        websiteDomain: source.websiteDomain,
+        websiteError: source.websiteError,
+        websiteCrawlStatus: source.websiteCrawlStatus,
+        websitePagesTotal: source.websitePagesTotal,
+        websitePagesScraped: source.websitePagesScraped,
         isActive: source.isActive,
         lastScrapedAt: source.lastScrapedAt?.toISOString() ?? null,
         createdAt: source.createdAt.toISOString(),

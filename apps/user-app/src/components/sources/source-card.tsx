@@ -3,13 +3,14 @@ import { useRouter } from "next/router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Trash2, ChevronRight, FileText, Globe, Loader2, AlertCircle } from "lucide-react";
 import { Card } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { useScrapeStatus } from "~/hooks/useScrapeStatus";
 import { useI18n } from "~/i18n";
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document" | "webpage";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   documentName: string | null;
   documentSize: number | null;
@@ -17,6 +18,13 @@ interface ContentSource {
   webpageTitle: string | null;
   webpageDomain: string | null;
   webpageError: string | null;
+  websiteUrl: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
+  websiteCrawlStatus: string | null;
+  websitePagesTotal: number;
+  websitePagesScraped: number;
+  websiteError: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {
@@ -37,13 +45,16 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
 
   const isDocument = source.sourceType === "document";
   const isWebpage = source.sourceType === "webpage";
+  const isWebsite = source.sourceType === "website";
   const isProcessing = (isDocument || isWebpage) && !source.lastScrapedAt;
+  const isCrawling = isWebsite && ["discovering", "scoring", "scraping"].includes(source.websiteCrawlStatus ?? "");
   const hasError = isWebpage && source.webpageError;
+  const hasWebsiteError = isWebsite && source.websiteError;
 
   // Track scrape job status from server (only for telegram sources)
   const { isRunning, latestLog } = useScrapeStatus(
     channelId,
-    isDocument || isWebpage ? "" : source.id
+    isDocument || isWebpage || isWebsite ? "" : source.id
   );
   const [prevIsRunning, setPrevIsRunning] = useState(false);
 
@@ -55,16 +66,16 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
     setPrevIsRunning(isRunning);
   }, [isRunning, prevIsRunning, queryClient, channelId]);
 
-  // Poll for document processing completion
+  // Poll for document/website processing completion
   useEffect(() => {
-    if (!isProcessing) return;
+    if (!isProcessing && !isCrawling) return;
 
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ["sources", channelId] });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isProcessing, queryClient, channelId]);
+  }, [isProcessing, isCrawling, queryClient, channelId]);
 
   const scrapeMutation = useMutation({
     mutationFn: async () => {
@@ -115,7 +126,34 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          {isWebpage ? (
+          {isWebsite ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+                  {source.websiteTitle || source.websiteDomain || t("sources.website")}
+                </span>
+                {isCrawling && (
+                  <Badge variant="purple" icon={<Loader2 className="h-3 w-3 animate-spin" />}>
+                    {t(`sources.crawlStatuses.${source.websiteCrawlStatus}` as Parameters<typeof t>[0])}
+                  </Badge>
+                )}
+                {hasWebsiteError && !isCrawling && (
+                  <Badge variant="error" icon={<AlertCircle className="h-3 w-3" />}>
+                    {t("sources.fetchError")}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {source.websitePagesScraped}/{source.websitePagesTotal} {t("sources.pagesScraped")}
+                </span>
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {source._count.scrapedContent} {t("sources.chunks")}
+                </span>
+              </div>
+            </>
+          ) : isWebpage ? (
             <>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -123,16 +161,14 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
                   {source.webpageTitle || source.webpageDomain || t("sources.webpage")}
                 </span>
                 {isProcessing && !hasError && (
-                  <span className="text-xs px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                  <Badge variant="default" icon={<Loader2 className="h-3 w-3 animate-spin" />}>
                     {t("sources.processing")}
-                  </span>
+                  </Badge>
                 )}
                 {hasError && (
-                  <span className="text-xs px-2 py-0.5 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-full flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
+                  <Badge variant="error" icon={<AlertCircle className="h-3 w-3" />}>
                     {t("sources.fetchError")}
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1">
@@ -154,10 +190,9 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
                   {source.documentName || t("sources.document")}
                 </span>
                 {isProcessing && (
-                  <span className="text-xs px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] rounded-full flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                  <Badge variant="default" icon={<Loader2 className="h-3 w-3 animate-spin" />}>
                     {t("sources.processing")}
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-1">
@@ -190,6 +225,29 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {isWebsite && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                refreshMutation.mutate();
+              }}
+              disabled={refreshMutation.isPending || !!isCrawling}
+            >
+              {refreshMutation.isPending || isCrawling ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  {t("sources.reCrawling")}
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t("sources.reCrawl")}
+                </>
+              )}
+            </Button>
+          )}
           {isWebpage && (
             <Button
               size="sm"
@@ -213,7 +271,7 @@ export function SourceCard({ source, channelId, onDelete }: SourceCardProps) {
               )}
             </Button>
           )}
-          {!isDocument && !isWebpage && (
+          {!isDocument && !isWebpage && !isWebsite && (
             <Button
               size="sm"
               variant="secondary"

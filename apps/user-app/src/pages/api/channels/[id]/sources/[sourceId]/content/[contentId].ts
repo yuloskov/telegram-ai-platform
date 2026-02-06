@@ -16,11 +16,13 @@ interface ScrapedContentResponse {
   scrapedAt: string;
   usedForGeneration: boolean;
   source: {
-    sourceType: "telegram" | "document" | "webpage";
+    sourceType: "telegram" | "document" | "webpage" | "website";
     telegramUsername: string | null;
     documentName: string | null;
     webpageTitle: string | null;
     webpageDomain: string | null;
+    websiteTitle: string | null;
+    websiteDomain: string | null;
   };
 }
 
@@ -59,6 +61,8 @@ async function handler(
             documentName: true,
             webpageTitle: true,
             webpageDomain: true,
+            websiteTitle: true,
+            websiteDomain: true,
           },
         },
       },
@@ -88,6 +92,8 @@ async function handler(
           documentName: content.source.documentName,
           webpageTitle: content.source.webpageTitle,
           webpageDomain: content.source.webpageDomain,
+          websiteTitle: content.source.websiteTitle,
+          websiteDomain: content.source.websiteDomain,
         },
       },
     });
@@ -131,6 +137,8 @@ async function handler(
           documentName: null,
           webpageTitle: null,
           webpageDomain: null,
+          websiteTitle: null,
+          websiteDomain: null,
         },
       },
     });

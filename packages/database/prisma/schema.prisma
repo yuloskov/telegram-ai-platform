@@ -116,6 +116,18 @@ model ContentSource {
   webpageError     String?           // Last fetch error (if any)
   skipChunking     Boolean @default(false) // If true, keep whole article as single source
 
+  // Website source fields (crawl entire site)
+  websiteUrl           String?
+  websiteTitle         String?
+  websiteDomain        String?
+  websiteError         String?
+  websiteCrawlStatus   String?   @default("idle") // idle, discovering, scoring, scraping, completed, failed
+  websitePagesTotal    Int       @default(0)
+  websitePagesScraped  Int       @default(0)
+  websiteStalenessDays Int       @default(30)
+  websiteMaxPages      Int       @default(50)
+  websiteFilterPatterns String[] @default([])
+
   isActive         Boolean  @default(true)
   lastScrapedAt    DateTime?
   createdAt        DateTime @default(now())
@@ -132,6 +144,7 @@ model ContentSource {
   scrapedContent      ScrapedContent[]
   scrapeLogs          ScrapeLog[]
   contentPlanSources  ContentPlanSource[]
+  websitePages        WebsitePage[]
 
   @@unique([channelId, telegramUsername])
   @@index([channelId])
@@ -152,6 +165,10 @@ model ScrapedContent {
   chunkIndex        Int?           // Order within document
   sectionTitle      String?        // Extracted section heading
 
+  // Website page reference (for website sources)
+  websitePageId     String?
+  websitePage       WebsitePage?   @relation(fields: [websitePageId], references: [id], onDelete: SetNull)
+
   text              String?
   mediaUrls         String[] @default([])
   views             Int      @default(0)
@@ -164,9 +181,31 @@ model ScrapedContent {
   imageAnalysis     ImageAnalysis?
 
   @@unique([sourceId, telegramMessageId])
-  @@unique([sourceId, chunkIndex])
+  @@unique([sourceId, websitePageId, chunkIndex])
   @@index([sourceId])
   @@index([scrapedAt])
+  @@index([websitePageId])
+}
+
+model WebsitePage {
+  id              String   @id @default(cuid())
+  sourceId        String
+  source          ContentSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  url             String
+  path            String?
+  title           String?
+  status          String   @default("discovered") // discovered, relevant, scraping, scraped, failed, skipped
+  relevanceScore  Float?
+  contentHash     String?
+  error           String?
+  discoveredAt    DateTime @default(now())
+  lastScrapedAt   DateTime?
+
+  scrapedContent  ScrapedContent[]
+
+  @@unique([sourceId, url])
+  @@index([sourceId])
+  @@index([status])
 }
 
 model ImageAnalysis {
@@ -227,6 +266,7 @@ enum ContentSourceType {
   telegram
   document
   webpage
+  website
 }
 
 model Post {

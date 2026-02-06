@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth, useRequireAuth } from "~/hooks/useAuth";
@@ -10,7 +10,8 @@ import { SourceList } from "~/components/sources/source-list";
 import { AddSourceModal } from "~/components/sources/add-source-modal";
 import { AddDocumentModal } from "~/components/sources/add-document-modal";
 import { AddWebpageModal } from "~/components/sources/add-webpage-modal";
-import { Plus, Upload, Globe } from "lucide-react";
+import { AddWebsiteModal } from "~/components/sources/add-website-modal";
+import { Plus, Upload, Globe, Network, ChevronDown } from "lucide-react";
 import { useI18n } from "~/i18n";
 
 interface Channel {
@@ -21,7 +22,7 @@ interface Channel {
 
 interface ContentSource {
   id: string;
-  sourceType: "telegram" | "document" | "webpage";
+  sourceType: "telegram" | "document" | "webpage" | "website";
   telegramUsername: string | null;
   documentName: string | null;
   documentSize: number | null;
@@ -29,6 +30,13 @@ interface ContentSource {
   webpageTitle: string | null;
   webpageDomain: string | null;
   webpageError: string | null;
+  websiteUrl: string | null;
+  websiteTitle: string | null;
+  websiteDomain: string | null;
+  websiteCrawlStatus: string | null;
+  websitePagesTotal: number;
+  websitePagesScraped: number;
+  websiteError: string | null;
   isActive: boolean;
   lastScrapedAt: string | null;
   _count: {
@@ -47,6 +55,19 @@ export default function SourcesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showWebpageModal, setShowWebpageModal] = useState(false);
+  const [showWebsiteModal, setShowWebsiteModal] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
+        setAddMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const { data: channel, isLoading: channelLoading } = useQuery({
     queryKey: ["channel", channelId],
@@ -131,19 +152,44 @@ export default function SourcesPage() {
             { label: t("sources.title") },
           ]}
           actions={
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => setShowWebpageModal(true)}>
-                <Globe className="h-4 w-4" />
-                {t("sources.addWebpage")}
-              </Button>
-              <Button variant="secondary" onClick={() => setShowUploadModal(true)}>
-                <Upload className="h-4 w-4" />
-                {t("sources.uploadDocument")}
-              </Button>
-              <Button onClick={() => setShowAddModal(true)}>
+            <div className="relative" ref={addMenuRef}>
+              <Button onClick={() => setAddMenuOpen(!addMenuOpen)}>
                 <Plus className="h-4 w-4" />
                 {t("sources.addSource")}
+                <ChevronDown className="h-3.5 w-3.5 ml-0.5" />
               </Button>
+              {addMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-56 rounded-lg border border-[var(--border-secondary)] bg-[var(--bg-primary)] py-1 shadow-lg z-50">
+                  <button
+                    onClick={() => { setShowAddModal(true); setAddMenuOpen(false); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
+                  >
+                    <Plus className="h-4 w-4 text-[var(--text-secondary)]" />
+                    {t("sources.addSource")}
+                  </button>
+                  <button
+                    onClick={() => { setShowUploadModal(true); setAddMenuOpen(false); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
+                  >
+                    <Upload className="h-4 w-4 text-[var(--text-secondary)]" />
+                    {t("sources.uploadDocument")}
+                  </button>
+                  <button
+                    onClick={() => { setShowWebpageModal(true); setAddMenuOpen(false); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
+                  >
+                    <Globe className="h-4 w-4 text-[var(--text-secondary)]" />
+                    {t("sources.addWebpage")}
+                  </button>
+                  <button
+                    onClick={() => { setShowWebsiteModal(true); setAddMenuOpen(false); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
+                  >
+                    <Network className="h-4 w-4 text-[var(--text-secondary)]" />
+                    {t("sources.addWebsite")}
+                  </button>
+                </div>
+              )}
             </div>
           }
         />
@@ -168,6 +214,12 @@ export default function SourcesPage() {
         <AddWebpageModal
           open={showWebpageModal}
           onOpenChange={setShowWebpageModal}
+          channelId={channelId as string}
+        />
+
+        <AddWebsiteModal
+          open={showWebsiteModal}
+          onOpenChange={setShowWebsiteModal}
           channelId={channelId as string}
         />
 

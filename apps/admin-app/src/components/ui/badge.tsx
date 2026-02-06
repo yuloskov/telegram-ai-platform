@@ -1,18 +1,19 @@
-import * as React from "react";
+import type { ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-[var(--radius-sm)] px-2 py-0.5 text-xs font-medium transition-colors",
+  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap",
   {
     variants: {
       variant: {
-        default: "bg-[var(--bg-tertiary)] text-[var(--text-secondary)]",
-        primary: "bg-[var(--accent-tertiary)] text-[var(--accent-primary)]",
-        success: "bg-[#d4edda] text-[#155724]",
-        warning: "bg-[#fff3cd] text-[#856404]",
-        error: "bg-[#f8d7da] text-[#721c24]",
-        info: "bg-[#cce5ff] text-[#004085]",
+        default: "bg-[var(--badge-neutral-bg)] text-[var(--badge-neutral-text)]",
+        primary: "bg-[var(--badge-info-bg)] text-[var(--badge-info-text)]",
+        success: "bg-[var(--badge-success-bg)] text-[var(--badge-success-text)]",
+        warning: "bg-[var(--badge-warning-bg)] text-[var(--badge-warning-text)]",
+        error: "bg-[var(--badge-error-bg)] text-[var(--badge-error-text)]",
+        info: "bg-[var(--badge-info-bg)] text-[var(--badge-info-text)]",
+        purple: "bg-[var(--badge-purple-bg)] text-[var(--badge-purple-text)]",
       },
     },
     defaultVariants: {
@@ -22,12 +23,17 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+  extends React.HTMLAttributes<HTMLSpanElement>,
+    VariantProps<typeof badgeVariants> {
+  icon?: ReactNode;
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, icon, children, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <span className={cn(badgeVariants({ variant }), className)} {...props}>
+      {icon}
+      {children}
+    </span>
   );
 }
 

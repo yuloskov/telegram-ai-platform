@@ -1,5 +1,4 @@
-import * as React from "react";
-import { Badge } from "~/components/ui/badge";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { useI18n } from "~/i18n";
 
 type PostStatus = "draft" | "scheduled" | "publishing" | "published" | "failed" | "pending_review";
@@ -8,9 +7,9 @@ interface StatusBadgeProps {
   status: PostStatus;
 }
 
-const statusVariants: Record<PostStatus, "default" | "primary" | "success" | "warning" | "error" | "info"> = {
+const statusVariants: Record<PostStatus, BadgeVariant> = {
   draft: "default",
-  scheduled: "primary",
+  scheduled: "info",
   publishing: "warning",
   published: "success",
   failed: "error",
@@ -20,25 +19,18 @@ const statusVariants: Record<PostStatus, "default" | "primary" | "success" | "wa
 export function StatusBadge({ status }: StatusBadgeProps) {
   const { t } = useI18n();
 
-  const getLabel = (status: PostStatus): string => {
-    switch (status) {
-      case "draft":
-        return t("posts.status.draft");
-      case "scheduled":
-        return t("posts.status.scheduled");
-      case "publishing":
-        return t("posts.status.publishing");
-      case "published":
-        return t("posts.status.published");
-      case "failed":
-        return t("posts.status.failed");
-      case "pending_review":
-        return t("posts.status.pending_review");
-      default:
-        return t("posts.status.draft");
-    }
+  const labels: Record<PostStatus, string> = {
+    draft: t("posts.status.draft"),
+    scheduled: t("posts.status.scheduled"),
+    publishing: t("posts.status.publishing"),
+    published: t("posts.status.published"),
+    failed: t("posts.status.failed"),
+    pending_review: t("posts.status.pending_review"),
   };
 
-  const variant = statusVariants[status] || statusVariants.draft;
-  return <Badge variant={variant}>{getLabel(status)}</Badge>;
+  return (
+    <Badge variant={statusVariants[status] ?? "default"}>
+      {labels[status] ?? labels.draft}
+    </Badge>
+  );
 }
