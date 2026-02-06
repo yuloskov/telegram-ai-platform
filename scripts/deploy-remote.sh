@@ -26,7 +26,11 @@ $COMPOSE_CMD up -d
 
 # Run database migrations
 log "Running database migrations..."
-$COMPOSE_CMD exec -T worker sh -c "cd /app/packages/database && npm exec -- prisma@6.19.2 db push --schema=./prisma/schema.prisma" || true
+MIGRATION_OUTPUT=$($COMPOSE_CMD exec -T worker sh -c "cd /app/packages/database && npm exec -- prisma@6.19.2 db push --schema=./prisma/schema.prisma --accept-data-loss" 2>&1) || {
+    log "WARNING: Database migration failed!"
+    log "$MIGRATION_OUTPUT"
+}
+log "$MIGRATION_OUTPUT"
 
 # Cleanup old images
 log "Cleaning up old images..."
