@@ -201,6 +201,33 @@ export async function getChannelInfo(channelId: number | string): Promise<{
 }
 
 /**
+ * Close any unclosed HTML tags after truncation.
+ * Removes partial tags at the end, then closes remaining open tags.
+ */
+function closeTruncatedHtml(html: string): string {
+  // Remove any partial tag at the end (e.g., "<b" or "</b" without ">")
+  const cleaned = html.replace(/<[^>]*$/, "");
+
+  const openTags: string[] = [];
+  const tagRegex = /<\/?([a-zA-Z]+)[^>]*>/g;
+  let match;
+
+  while ((match = tagRegex.exec(cleaned)) !== null) {
+    const isClosing = match[0].startsWith("</");
+    const tagName = match[1]!.toLowerCase();
+
+    if (isClosing) {
+      const idx = openTags.lastIndexOf(tagName);
+      if (idx !== -1) openTags.splice(idx, 1);
+    } else if (!match[0].endsWith("/>")) {
+      openTags.push(tagName);
+    }
+  }
+
+  return cleaned + "..." + openTags.reverse().map((t) => `</${t}>`).join("");
+}
+
+/**
  * Send a pending review notification to a user with action buttons
  * Returns the message ID for storing in PendingReview
  */
@@ -253,9 +280,9 @@ export async function sendPendingReviewNotification(
   // Build header with clear structure
   const buildMessage = (maxTotal: number) => {
     const header = `<b>${labels.title}</b>\n📢 <b>${labels.channel}:</b> ${channelTitle}\n\n<b>${labels.content}:</b>\n────────────────\n`;
-    const maxContentLength = maxTotal - header.length - 10; // Reserve space for "..."
+    const maxContentLength = maxTotal - header.length - 20; // Reserve space for "..." and closing tags
     const truncatedContent = content.length > maxContentLength
-      ? `${content.substring(0, maxContentLength)}...`
+      ? closeTruncatedHtml(content.substring(0, maxContentLength))
       : content;
     return `${header}${truncatedContent}`;
   };
