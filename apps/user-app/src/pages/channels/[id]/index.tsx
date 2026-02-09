@@ -14,7 +14,7 @@ import { PostList } from "~/components/posts/post-list";
 import { SelectionToolbar } from "~/components/posts/selection-toolbar";
 import { ScheduleModal } from "~/components/posts/schedule-modal";
 import { useContentSelectionStore } from "~/stores/content-selection-store";
-import { Sparkles, Plus, Settings, Lightbulb, ArrowRight, Calendar, CalendarDays } from "lucide-react";
+import { Sparkles, Plus, Settings, Lightbulb, ArrowRight, Calendar, CalendarDays, User } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { useI18n } from "~/i18n";
 import type { PostListItem, PostImage } from "~/types";
@@ -281,6 +281,28 @@ export default function ChannelDetailPage() {
             </div>
           </Link>
         </Card>
+
+        {/* Personal Blog Feature Card (only shown when in blog mode) */}
+        {channel.channelMode === "personal_blog" && (
+          <Card interactive className="mb-6">
+            <Link href={`/channels/${id}/settings`} className="block p-4">
+              <div className="flex items-center gap-4">
+                <div className="shrink-0 w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center">
+                  <User className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-[var(--text-primary)]">
+                    {t("persona.featureCardTitle")}
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+                    {t("persona.featureCardDescription")}
+                  </p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
+              </div>
+            </Link>
+          </Card>
+        )}
 
         <PostEditorModal
           open={showPostEditor}

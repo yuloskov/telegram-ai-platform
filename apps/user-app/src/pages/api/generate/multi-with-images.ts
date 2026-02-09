@@ -2,8 +2,8 @@ import type { NextApiResponse } from "next";
 import { prisma } from "~/server/db";
 import { withAuth, type AuthenticatedRequest } from "~/lib/auth";
 import type { ApiResponse } from "@repo/shared/types";
-import { generateMultiplePostsWithImages, generateSVG, generateImagePromptFromContent, generateImage, extractImageContent } from "@repo/ai";
-import type { SVGStyleConfig } from "@repo/ai";
+import { generateMultiplePostsWithImages, generateSVG, generateImagePromptFromContent, generateImage, extractImageContent, formatStoryArcContext } from "@repo/ai";
+import type { SVGStyleConfig, ChannelContext } from "@repo/ai";
 import { svgToPng } from "@repo/shared/svg";
 import { uploadFile, storagePathToBase64 } from "@repo/shared/storage";
 import {
@@ -99,13 +99,51 @@ async function handler(
   });
 
   try {
+    // Build channel context with persona fields if in personal blog mode
+    const channelContext: ChannelContext = {
+      niche: channel.niche ?? undefined,
+      tone: channel.tone,
+      language: channel.language,
+      hashtags: channel.hashtags,
+      channelMode: channel.channelMode,
+      personaName: channel.personaName ?? undefined,
+      personaDescription: channel.personaDescription ?? undefined,
+    };
+
+    // For personal blog mode, fetch persona assets and active story arcs
+    let effectivePrompt = customPrompt;
+    if (channel.channelMode === "personal_blog") {
+      const [personaAssets, activeArcs] = await Promise.all([
+        prisma.personaAsset.findMany({
+          where: { channelId },
+          orderBy: { sortOrder: "asc" },
+          select: { label: true, description: true },
+        }),
+        prisma.storyArc.findMany({
+          where: {
+            channelId,
+            isUsed: false,
+            activeDate: { lte: new Date() },
+            OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
+          },
+          orderBy: { activeDate: "asc" },
+          select: { title: true, description: true },
+        }),
+      ]);
+
+      channelContext.personaAssets = personaAssets.map((a) => ({
+        label: a.label,
+        description: a.description ?? undefined,
+      }));
+
+      if (activeArcs.length > 0) {
+        const arcContext = formatStoryArcContext(activeArcs, channel.language);
+        effectivePrompt = (effectivePrompt || "") + "\n" + arcContext;
+      }
+    }
+
     const result = await generateMultiplePostsWithImages(
-      {
-        niche: channel.niche ?? undefined,
-        tone: channel.tone,
-        language: channel.language,
-        hashtags: channel.hashtags,
-      },
+      channelContext,
       scrapedContent.map((c) => {
         const imageUrls = c.mediaUrls.filter((url) => !url.startsWith("skipped:"));
         return {
@@ -117,7 +155,7 @@ async function handler(
         };
       }),
       recentPosts.map((p) => p.content),
-      customPrompt,
+      effectivePrompt,
       postCount
     );
 

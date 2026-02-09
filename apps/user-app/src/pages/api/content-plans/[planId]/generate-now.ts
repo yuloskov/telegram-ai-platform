@@ -9,7 +9,9 @@ import {
   generateSVG,
   generateImagePromptFromContent,
   generateImage,
+  formatStoryArcContext,
   type SVGStyleConfig,
+  type ChannelContext,
 } from "@repo/ai";
 import { svgToPng } from "@repo/shared/svg";
 import { uploadFile } from "@repo/shared/storage";
@@ -155,12 +157,46 @@ async function handler(
   });
 
   // Build channel context
-  const channelContext = {
+  const channelContext: ChannelContext = {
     niche: channel.niche ?? undefined,
     tone: plan.toneOverride ?? channel.tone,
     language: plan.languageOverride ?? channel.language,
     hashtags: channel.hashtags,
+    channelMode: channel.channelMode,
+    personaName: channel.personaName ?? undefined,
+    personaDescription: channel.personaDescription ?? undefined,
   };
+
+  // For personal blog mode, fetch persona assets and active story arcs
+  let storyArcPromptAddition = "";
+  if (channel.channelMode === "personal_blog") {
+    const [personaAssets, activeArcs] = await Promise.all([
+      prisma.personaAsset.findMany({
+        where: { channelId: channel.id },
+        orderBy: { sortOrder: "asc" },
+        select: { label: true, description: true },
+      }),
+      prisma.storyArc.findMany({
+        where: {
+          channelId: channel.id,
+          isUsed: false,
+          activeDate: { lte: new Date() },
+          OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
+        },
+        orderBy: { activeDate: "asc" },
+        select: { title: true, description: true },
+      }),
+    ]);
+
+    channelContext.personaAssets = personaAssets.map((a) => ({
+      label: a.label,
+      description: a.description ?? undefined,
+    }));
+
+    if (activeArcs.length > 0) {
+      storyArcPromptAddition = formatStoryArcContext(activeArcs, channelContext.language);
+    }
+  }
 
   try {
     // Generate posts using AI
@@ -177,7 +213,7 @@ async function handler(
         };
       }),
       previousPosts.map((p) => p.content),
-      plan.promptTemplate || undefined,
+      (plan.promptTemplate || "") + (storyArcPromptAddition ? "\n" + storyArcPromptAddition : "") || undefined,
       count
     );
 

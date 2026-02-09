@@ -7,7 +7,9 @@ import {
   generateSVG,
   generateImagePromptFromContent,
   generateImage,
+  formatStoryArcContext,
   type SVGStyleConfig,
+  type ChannelContext,
 } from "@repo/ai";
 import { svgToPng } from "@repo/shared/svg";
 import { uploadFile, getFileBuffer } from "@repo/shared/storage";
@@ -203,15 +205,61 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
   }
 
   // Build channel context
-  const channelContext = {
+  const channelContext: ChannelContext = {
     niche: channel.niche ?? undefined,
     tone: plan.toneOverride ?? channel.tone,
     language: plan.languageOverride ?? channel.language,
     hashtags: channel.hashtags,
+    channelMode: channel.channelMode,
+    personaName: channel.personaName ?? undefined,
+    personaDescription: channel.personaDescription ?? undefined,
   };
+
+  // For personal blog mode, fetch persona assets and active story arcs
+  let storyArcPromptAddition = "";
+  if (channel.channelMode === "personal_blog") {
+    const [personaAssets, activeArcs] = await Promise.all([
+      prisma.personaAsset.findMany({
+        where: { channelId: channel.id },
+        orderBy: { sortOrder: "asc" },
+        select: { label: true, description: true },
+      }),
+      prisma.storyArc.findMany({
+        where: {
+          channelId: channel.id,
+          isUsed: false,
+          activeDate: { lte: new Date() },
+          OR: [
+            { endDate: null },
+            { endDate: { gte: new Date() } },
+          ],
+        },
+        orderBy: { activeDate: "asc" },
+        select: { id: true, title: true, description: true },
+      }),
+    ]);
+
+    channelContext.personaAssets = personaAssets.map((a) => ({
+      label: a.label,
+      description: a.description ?? undefined,
+    }));
+
+    if (activeArcs.length > 0) {
+      storyArcPromptAddition = formatStoryArcContext(
+        activeArcs.map((a) => ({ title: a.title, description: a.description })),
+        channelContext.language
+      );
+    }
+  }
 
   // Generate post using AI
   try {
+    // Combine prompt template with story arc context for personal blogs
+    let effectivePrompt = plan.promptTemplate || undefined;
+    if (storyArcPromptAddition) {
+      effectivePrompt = (effectivePrompt || "") + "\n" + storyArcPromptAddition;
+    }
+
     const result = await generateMultiplePostsWithImages(
       channelContext,
       scrapedContent.map((c) => {
@@ -225,7 +273,7 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
         };
       }),
       previousPosts.map((p) => p.content),
-      plan.promptTemplate || undefined,
+      effectivePrompt,
       1 // Generate one post per execution
     );
 
@@ -356,6 +404,22 @@ export async function handleContentPlanJob(data: ContentPlanJobPayload): Promise
       await prisma.scrapedContent.updateMany({
         where: { id: { in: generatedPost.sourceIds } },
         data: { usedForGeneration: true },
+      });
+    }
+
+    // Mark active story arcs as used (for personal blog mode)
+    if (channel.channelMode === "personal_blog") {
+      await prisma.storyArc.updateMany({
+        where: {
+          channelId: channel.id,
+          isUsed: false,
+          activeDate: { lte: new Date() },
+          OR: [
+            { endDate: null },
+            { endDate: { gte: new Date() } },
+          ],
+        },
+        data: { isUsed: true },
       });
     }
 

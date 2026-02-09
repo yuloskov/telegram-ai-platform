@@ -1,10 +1,18 @@
 export * from "./svg-prompts";
+export * from "./persona-prompts";
+
+import { buildPersonaSystemPrompt } from "./persona-prompts";
 
 export interface ChannelContext {
   niche?: string;
   tone: string;
   language: string;
   hashtags: string[];
+  // Personal blog mode fields
+  channelMode?: string;
+  personaName?: string;
+  personaDescription?: string;
+  personaAssets?: Array<{ label: string; description?: string }>;
 }
 
 // Tone translations
@@ -26,6 +34,11 @@ const toneTranslations: Record<string, Record<string, string>> = {
 };
 
 export function getSystemPrompt(channel: ChannelContext): string {
+  // Use persona prompt for personal blog mode
+  if (channel.channelMode === "personal_blog") {
+    return buildPersonaSystemPrompt(channel);
+  }
+
   const lang = channel.language;
   const tone = toneTranslations[lang]?.[channel.tone] || channel.tone;
 

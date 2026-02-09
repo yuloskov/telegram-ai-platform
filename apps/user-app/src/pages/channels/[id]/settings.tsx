@@ -11,6 +11,10 @@ import { Button } from "~/components/ui/button";
 import { Spinner } from "~/components/ui/spinner";
 import { ChannelSettingsForm, type ChannelSettings } from "~/components/channels/channel-settings-form";
 import { SVGSettingsInline } from "~/components/generate/svg-settings-inline";
+import { PersonaModeToggle } from "~/components/persona/persona-mode-toggle";
+import { PersonaDescriptionForm } from "~/components/persona/persona-description-form";
+import { PersonaAssetsManager } from "~/components/persona/persona-assets-manager";
+import { StoryArcList } from "~/components/persona/story-arc-list";
 import type { SvgGenerationSettings } from "~/hooks/useSvgSettings";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "~/i18n";
@@ -36,6 +40,9 @@ export default function ChannelSettingsPage() {
     fontStyle: "modern",
     stylePrompt: "",
   });
+  const [channelMode, setChannelMode] = useState("standard");
+  const [personaName, setPersonaName] = useState("");
+  const [personaDescription, setPersonaDescription] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { data: channel, isLoading: channelLoading } = useChannel(id, {
@@ -57,11 +64,20 @@ export default function ChannelSettingsPage() {
         fontStyle: channel.svgFontStyle as SvgGenerationSettings["fontStyle"],
         stylePrompt: channel.svgStylePrompt || "",
       });
+      setChannelMode(channel.channelMode || "standard");
+      setPersonaName(channel.personaName || "");
+      setPersonaDescription(channel.personaDescription || "");
     }
   }, [channel]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { settings: ChannelSettings; svgSettings: SvgGenerationSettings }) => {
+    mutationFn: async (data: {
+      settings: ChannelSettings;
+      svgSettings: SvgGenerationSettings;
+      channelMode: string;
+      personaName: string;
+      personaDescription: string;
+    }) => {
       const res = await fetch(`/api/channels/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -78,6 +94,9 @@ export default function ChannelSettingsPage() {
           svgTextColor: data.svgSettings.textColor,
           svgBackgroundStyle: data.svgSettings.backgroundStyle,
           svgFontStyle: data.svgSettings.fontStyle,
+          channelMode: data.channelMode,
+          personaName: data.personaName || null,
+          personaDescription: data.personaDescription || null,
         }),
       });
       const json = await res.json();
@@ -106,6 +125,10 @@ export default function ChannelSettingsPage() {
       </div>
     );
   }
+
+  const handleSave = () => {
+    updateMutation.mutate({ settings, svgSettings, channelMode, personaName, personaDescription });
+  };
 
   return (
     <PageLayout title={`${t("channelSettings.title")} - ${channel.title}`}>
@@ -140,13 +163,51 @@ export default function ChannelSettingsPage() {
           <ChannelSettingsForm
             settings={settings}
             onSettingsChange={setSettings}
-            onSave={() => updateMutation.mutate({ settings, svgSettings })}
+            onSave={handleSave}
             isSaving={updateMutation.isPending}
             isError={updateMutation.isError}
             errorMessage={updateMutation.error?.message}
             showSuccess={showSuccess}
           />
         </Card>
+
+        {/* Channel Mode Toggle */}
+        <Card className="p-6 mt-6">
+          <PersonaModeToggle value={channelMode} onChange={setChannelMode} />
+        </Card>
+
+        {/* Personal Blog Persona Settings */}
+        {channelMode === "personal_blog" && (
+          <>
+            <Card className="p-6 mt-6">
+              <h3 className="text-lg font-medium text-[var(--text-primary)] mb-4">
+                {t("persona.title")}
+              </h3>
+              <PersonaDescriptionForm
+                personaName={personaName}
+                personaDescription={personaDescription}
+                onNameChange={setPersonaName}
+                onDescriptionChange={setPersonaDescription}
+              />
+              <div className="mt-4">
+                <Button onClick={handleSave} disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? t("persona.saving") : t("persona.savePersona")}
+                </Button>
+                {showSuccess && (
+                  <span className="ml-3 text-sm text-green-600">{t("persona.saved")}</span>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-6 mt-6">
+              <PersonaAssetsManager channelId={id as string} />
+            </Card>
+
+            <Card className="p-6 mt-6">
+              <StoryArcList channelId={id as string} />
+            </Card>
+          </>
+        )}
 
         <Card className="p-6 mt-6">
           <h3 className="text-lg font-medium text-[var(--text-primary)] mb-4">

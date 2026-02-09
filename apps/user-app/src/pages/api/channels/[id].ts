@@ -22,6 +22,10 @@ interface ChannelResponse {
   svgTextColor: string;
   svgBackgroundStyle: string;
   svgFontStyle: string;
+  // Personal blog settings
+  channelMode: string;
+  personaName: string | null;
+  personaDescription: string | null;
 }
 
 async function handler(
@@ -68,6 +72,9 @@ async function handler(
         svgTextColor: channel.svgTextColor,
         svgBackgroundStyle: channel.svgBackgroundStyle,
         svgFontStyle: channel.svgFontStyle,
+        channelMode: channel.channelMode,
+        personaName: channel.personaName,
+        personaDescription: channel.personaDescription,
       },
     });
   }
@@ -85,6 +92,9 @@ async function handler(
       svgTextColor,
       svgBackgroundStyle,
       svgFontStyle,
+      channelMode,
+      personaName,
+      personaDescription,
     } = req.body;
 
     const updated = await prisma.channel.update({
@@ -101,6 +111,9 @@ async function handler(
         ...(svgTextColor && { svgTextColor }),
         ...(svgBackgroundStyle && { svgBackgroundStyle }),
         ...(svgFontStyle && { svgFontStyle }),
+        ...(channelMode && { channelMode }),
+        ...(personaName !== undefined && { personaName }),
+        ...(personaDescription !== undefined && { personaDescription }),
       },
     });
 
@@ -124,6 +137,9 @@ async function handler(
         svgTextColor: updated.svgTextColor,
         svgBackgroundStyle: updated.svgBackgroundStyle,
         svgFontStyle: updated.svgFontStyle,
+        channelMode: updated.channelMode,
+        personaName: updated.personaName,
+        personaDescription: updated.personaDescription,
       },
     });
   }

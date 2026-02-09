@@ -79,6 +79,11 @@ model Channel {
   svgBackgroundStyle String   @default("solid")  // "solid", "gradient", "transparent"
   svgFontStyle       String   @default("modern") // "modern", "classic", "playful", "technical"
 
+  // Personal Blog Mode
+  channelMode         String   @default("standard") // "standard" | "personal_blog"
+  personaName         String?
+  personaDescription  String?
+
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -87,9 +92,43 @@ model Channel {
   contentSources  ContentSource[]
   autoPostConfig  AutoPostConfig?
   contentPlans    ContentPlan[]
+  personaAssets   PersonaAsset[]
+  storyArcs       StoryArc[]
 
   @@index([userId])
   @@index([telegramId])
+}
+
+model PersonaAsset {
+  id          String   @id @default(cuid())
+  channelId   String
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  label       String
+  description String?
+  imageUrl    String
+  mimeType    String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([channelId])
+}
+
+model StoryArc {
+  id          String    @id @default(cuid())
+  channelId   String
+  channel     Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  activeDate  DateTime
+  endDate     DateTime?
+  isUsed      Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([channelId])
+  @@index([activeDate])
 }
 
 model ContentSource {

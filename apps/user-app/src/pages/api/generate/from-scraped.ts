@@ -63,6 +63,9 @@ async function handler(
         tone: channel.tone,
         language: channel.language,
         hashtags: channel.hashtags,
+        channelMode: channel.channelMode,
+        personaName: channel.personaName ?? undefined,
+        personaDescription: channel.personaDescription ?? undefined,
       },
       scrapedContent.map((c) => ({
         text: c.text,

@@ -18,6 +18,31 @@ export interface Channel {
   svgTextColor: string;
   svgBackgroundStyle: string;
   svgFontStyle: string;
+  // Personal blog settings
+  channelMode: string;
+  personaName: string | null;
+  personaDescription: string | null;
+}
+
+// === Persona Types ===
+
+export interface PersonaAsset {
+  id: string;
+  label: string;
+  description: string | null;
+  imageUrl: string;
+  mimeType: string | null;
+  sortOrder: number;
+}
+
+export interface StoryArc {
+  id: string;
+  title: string;
+  description: string;
+  activeDate: string;
+  endDate: string | null;
+  isUsed: boolean;
+  sortOrder: number;
 }
 
 // Minimal channel type for pages that only need basic info
