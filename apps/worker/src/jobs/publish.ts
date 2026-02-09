@@ -52,19 +52,8 @@ async function getMediaInputFile(url: string, index: number): Promise<InputFile>
   return new InputFile(buffer, `image_${index}.${ext}`);
 }
 
-/**
- * Truncate caption to Telegram's 1024 character limit
- * Preserves HTML tags where possible
- */
-function truncateCaption(content: string, maxLength: number = 1024): string {
-  if (content.length <= maxLength) {
-    return content;
-  }
-
-  // Simple truncation: just cut at maxLength and add ellipsis
-  // We could be smarter about closing HTML tags, but for now this is safe
-  return content.slice(0, maxLength - 1) + "…";
-}
+/** Telegram caption limit is 1024 chars; message limit is 4096 */
+const CAPTION_LIMIT = 1024;
 
 export async function handlePublishJob(data: PublishingJobPayload): Promise<void> {
   const { postId, channelTelegramId } = data;
@@ -103,12 +92,14 @@ export async function handlePublishJob(data: PublishingJobPayload): Promise<void
 
     // If there are media files, send them
     if (post.mediaFiles.length > 0) {
+      const captionFits = post.content.length <= CAPTION_LIMIT;
+
       if (post.mediaFiles.length === 1) {
         // Single image - fetch from storage and upload directly
         const mediaInput = await getMediaInputFile(post.mediaFiles[0]!.url, 0);
         const result = await bot.api.sendPhoto(channelTelegramId, mediaInput, {
-          caption: truncateCaption(post.content),
-          parse_mode: "HTML",
+          caption: captionFits ? post.content : undefined,
+          parse_mode: captionFits ? "HTML" : undefined,
         });
         telegramMessageId = result.message_id;
       } else {
@@ -117,12 +108,20 @@ export async function handlePublishJob(data: PublishingJobPayload): Promise<void
           post.mediaFiles.map(async (file, index) => ({
             type: "photo" as const,
             media: await getMediaInputFile(file.url, index),
-            caption: index === 0 ? truncateCaption(post.content) : undefined,
-            parse_mode: "HTML" as const,
+            caption: index === 0 && captionFits ? post.content : undefined,
+            parse_mode: index === 0 && captionFits ? ("HTML" as const) : undefined,
           }))
         );
         const results = await bot.api.sendMediaGroup(channelTelegramId, media);
         telegramMessageId = results[0]?.message_id;
+      }
+
+      // If caption was too long, send text as a separate message (4096 char limit)
+      if (!captionFits) {
+        const textResult = await bot.api.sendMessage(channelTelegramId, post.content, {
+          parse_mode: "HTML",
+        });
+        telegramMessageId = textResult.message_id;
       }
     } else {
       // Text only
