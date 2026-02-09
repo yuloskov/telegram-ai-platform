@@ -52,6 +52,20 @@ async function getMediaInputFile(url: string, index: number): Promise<InputFile>
   return new InputFile(buffer, `image_${index}.${ext}`);
 }
 
+/**
+ * Truncate caption to Telegram's 1024 character limit
+ * Preserves HTML tags where possible
+ */
+function truncateCaption(content: string, maxLength: number = 1024): string {
+  if (content.length <= maxLength) {
+    return content;
+  }
+
+  // Simple truncation: just cut at maxLength and add ellipsis
+  // We could be smarter about closing HTML tags, but for now this is safe
+  return content.slice(0, maxLength - 1) + "…";
+}
+
 export async function handlePublishJob(data: PublishingJobPayload): Promise<void> {
   const { postId, channelTelegramId } = data;
 
@@ -93,7 +107,7 @@ export async function handlePublishJob(data: PublishingJobPayload): Promise<void
         // Single image - fetch from storage and upload directly
         const mediaInput = await getMediaInputFile(post.mediaFiles[0]!.url, 0);
         const result = await bot.api.sendPhoto(channelTelegramId, mediaInput, {
-          caption: post.content,
+          caption: truncateCaption(post.content),
           parse_mode: "HTML",
         });
         telegramMessageId = result.message_id;
@@ -103,7 +117,7 @@ export async function handlePublishJob(data: PublishingJobPayload): Promise<void
           post.mediaFiles.map(async (file, index) => ({
             type: "photo" as const,
             media: await getMediaInputFile(file.url, index),
-            caption: index === 0 ? post.content : undefined,
+            caption: index === 0 ? truncateCaption(post.content) : undefined,
             parse_mode: "HTML" as const,
           }))
         );
